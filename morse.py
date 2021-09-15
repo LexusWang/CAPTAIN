@@ -7,7 +7,7 @@ from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import initObjectTags, initSubjectTags
 from policy.propTags import propTags
-from policy.alarms import check_alarm
+from policy.alarms import check_alarm, check_alarm_pre
 
 
 class Morse:
@@ -298,8 +298,11 @@ class Morse:
         src = self.Nodes.get(event['src'], None)
         dest = self.Nodes.get(event['dest'], None)
         if src and dest:
+            origtags = self.detect_alarm_pre(event, src, dest)
             self.propagate(event, src, dest)
-            self.detect_alarm(event, src, dest)
+            self.detect_alarm(event, src, dest, origtags)
+        else:
+            a = 0
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
@@ -313,7 +316,10 @@ class Morse:
         initSubjectTags(subject)
         self.Nodes[subject_node['uuid']] = subject
 
-    def detect_alarm(self,event,s ,o):
+    def detect_alarm(self,event,s ,o, origtags):
         self.alarm[(s.get_pid(), o.get_name())] = False
-        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format)
+        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, origtags, format=self.format)
+
+    def detect_alarm_pre(self,event,s ,o):
+        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format)
         

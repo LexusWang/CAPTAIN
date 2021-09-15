@@ -6,6 +6,9 @@ def isRoot(pric_id):
    #TODO
    pass
 
+def propTags_pre():
+   pass
+
 def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 'cdm'):
    if format == 'cdm':
       event_type = cdm_events[event['type']]
@@ -25,9 +28,41 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
       intags = o.tags()
       whitelisted = False
 
+   # if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ']}:
+   #    intags = o.tags()
+   #    whitelisted = False
 
-   if event_type == standard_events['EVENT_LOADLIBRARY']:
-      if (o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False):
+
+   if event_type == standard_events['EVENT_READ']:
+      if (s.isMatch("sshd")):
+         stg = s.tags()
+         cit = citag(stg)
+         et = etag(stg)
+         if (isRoot(s.owner) and cit == TRUSTED and et == TRUSTED ):
+            s.setSubjTags(stg)
+            whitelisted = True
+
+      if (whitelisted == False and o.isMatch("UnknownObject")):
+         stg = s.tags()
+         whitelisted = True
+         s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
+
+      if (whitelisted == False and o.isMatch("/.X11-unix/")) or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
+         whitelisted = True
+
+      if (whitelisted == False):
+         stg = s.tags()
+         it = itag(stg)
+         oit = itag(intags)
+         ct = ctag(stg)
+         oct = ctag(intags)
+         if (invtag(stg) !=  TRUSTED):
+            it = min(it, oit)
+            ct = min(ct, oct)
+         s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), it, ct))
+
+   elif event_type == standard_events['EVENT_LOADLIBRARY']:
+      if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
          stg = s.tags()
          cit = min(citag(stg), citag(intags))
          et = etag(stg)
@@ -69,6 +104,20 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
          inv = UNTRUSTED
          s.setSubjTags(alltags(cit, et, inv, it, ct))
 
+   # elif event_type == standard_events['sys_setuid']:
+   #    st = s.tags()
+   #    if isRoot(p)==False and invtag(st) == TRUSTED:
+   #       s.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)));
+      
+   elif event_type == standard_events['EVENT_CREATE_OBJECT']:
+      st = s.tags(); 
+      sit = itag(st)
+      cit = ctag(st)
+      if (citag(st) == TRUSTED and etag(st) == TRUSTED):
+         o.setObjTags(alltags2(BENIGN, PUBLIC))
+      else:
+         o.setObjTags(alltags2(sit, cit))
+
    elif event_type == standard_events['EVENT_WRITE']:
       stg = s.tags()
       otg = o.tags()
@@ -92,43 +141,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
 
       if (o.isIP() == False and o.isMatch("UnknownObject")== False):
          o.setObjTags(newtags); 
-
-   elif event_type == standard_events['EVENT_READ']:
-      if (s.isMatch("sshd")):
-         stg = s.tags()
-         cit = citag(stg)
-         et = etag(stg)
-         if (isRoot(s.owner) and cit == TRUSTED and et == TRUSTED ):
-            s.setSubjTags(stg)
-            whitelisted = True
-
-      if (whitelisted == False and o.isMatch("UnknownObject")):
-         stg = s.tags()
-         whitelisted = True
-         s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
-
-      if (whitelisted == False) and (o.isMatch("/.X11-unix/") or o.isMatch("/dev/null") or o.isMatch("/dev/pts")):
-         whitelisted = True
-
-      if (whitelisted == False):
-         stg = s.tags()
-         it = itag(stg)
-         oit = itag(intags)
-         ct = ctag(stg)
-         oct = ctag(intags)
-         if (invtag(stg) !=  TRUSTED):
-            it = min(it, oit)
-            ct = min(ct, oct)
-         s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), it, ct))
-      
-   elif event_type == standard_events['EVENT_CREATE_OBJECT']:
-      st = s.tags(); 
-      sit = itag(st)
-      cit = ctag(st)
-      if (citag(st) == TRUSTED and etag(st) == TRUSTED):
-         o.setObjTags(alltags2(BENIGN, PUBLIC))
-      else:
-         o.setObjTags(alltags2(sit, cit))
    
    if 0 <= event_type < len(standard_events) and s and o:
       diff = 0

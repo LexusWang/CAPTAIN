@@ -35,9 +35,76 @@ def prtSAlarm(ts, an, s):
    printTime(ts)
    print(": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid()," ", s.get_cmdln(), " AlarmE", "\n")
 
+def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
+   ts = event['timestamp']
+   if format == 'cdm':
+      event_type = cdm_events[event['type']]
+   elif format == 'lttng':
+      event_type = lttng_events[event['type']]
+
+   origtags = None
+
+   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
+      origtags = s.tags()
+
+   # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
+   if event_type == standard_events['EVENT_WRITE']:
+      origtags = o.tags()
+
+   # setuid_pre(s, _, ts) --> {
+   #    if (itag(subjTags(s)) < 128) {
+   #       rootprinc = isRoot(sowner(s));
+   #    }
+   # }
+   if event_type == standard_events['EVENT_WRITE']:
+      origtags = o.tags()
+
+   #    remove_pre(s, o, ts) --> {
+   #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null")  ) {
+   #          if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
+   #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
+   #       }
+   #    }
+   
+  
+   #    rename_pre(s, o, _, _, ts) --> {
+   #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null") ) {
+   #          if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
+   #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
+   #       }
+
+   #    }
+
+   if event_type == standard_events['EVENT_RENAME']:
+      if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null")==False:
+         if not alarms[(s.get_pid(), o.get_name())]:
+            alarm_sum[1] = alarm_sum[1] + 1
+         prtSOAlarm(ts, "FileCorruption", s, o, alarms)
+
+   #    chmod_pre(s, o, p, ts) --> {
+   #       unsigned ositag = itag(objTags(o))
+   #       unsigned prm = permbits(p)
+      
+   #       if (ositag < 128 && ((prm & 0111) != 0)) {
+   #    if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
+   #          prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
+   #       }
+   #    }
+   '''
+   if event_type == standard_events['sys_chmod']:
+      ositag = itag(objTags(o))
+      prm = permbits(p)
+      
+      if (ositag < 128 && ((prm & 0111) != 0)):
+         if (!alarms[(pid(s), name(o))]):
+            talarms = talarms + 1
+         prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
+   '''
+
+   return origtags
 
 
-def check_alarm(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
+def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm'):
    ts = event['timestamp']
    if format == 'cdm':
       event_type = cdm_events[event['type']]
@@ -51,20 +118,6 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
    if event_type == standard_events['EVENT_CREATE_OBJECT']:
       created[(s.get_pid(), o.get_name())] = True
       
-
-   #    read_pre(s, _, _, useful, _)|useful \/ 
-   #       subjread_pre(s, _, useful, _)|useful \/ 
-   #       load_pre(s, _, useful, _, _)|useful \/
-   #       execve_pre(s, _, _, _) \/
-   #       inject_pre(_, s, useful, _)|useful -->
-   #       origtags = subjTags(s)
-
-   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
-      origtags = s.tags()
-
-   # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
-   if event_type == standard_events['EVENT_WRITE']:
-      origtags = o.tags()
 
    if event_type == standard_events['EVENT_EXECUTE']:
       # if citag(s.tags()) == UNTRUSTED:
@@ -105,8 +158,6 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
                prtSOAlarm(ts, "DataLeak", s, o, alarms)
    
    
-   #    }
-
    #    setuid_pre(s, _, ts) --> {
    #       if (itag(subjTags(s)) < 128) {
    #          rootprinc = isRoot(sowner(s))
@@ -121,50 +172,6 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
    #    }
    #       }
    #    }
-
-
-   #    remove_pre(s, o, ts) --> {
-   #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null")  ) {
-   #          if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
-   #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
-   #       }
-
-   #    }
-
-   
-   #    rename_pre(s, o, _, _, ts) --> {
-   #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null") ) {
-   #          if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
-   #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
-   #       }
-
-   #    }
-
-   if event_type == standard_events['EVENT_RENAME']:
-      if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null")==False:
-         if not alarms[(s.get_pid(), o.get_name())]:
-            alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts, "FileCorruption", s, o, alarms)
-
-   #    chmod_pre(s, o, p, ts) --> {
-   #       unsigned ositag = itag(objTags(o))
-   #       unsigned prm = permbits(p)
-      
-   #       if (ositag < 128 && ((prm & 0111) != 0)) {
-   #    if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
-   #          prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
-   #       }
-   #    }
-   '''
-   if event_type == standard_events['sys_chmod']:
-      ositag = itag(objTags(o))
-      prm = permbits(p)
-      
-      if (ositag < 128 && ((prm & 0111) != 0)):
-         if (!alarms[(pid(s), name(o))]):
-            talarms = talarms + 1
-         prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
-   '''
    
 
    #    mprotect(s, o, p, ts) --> {

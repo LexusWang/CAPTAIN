@@ -16,6 +16,7 @@ def parse_logs(file):
     event_types = set()
     with open(file,'r') as fin:
         for line in tqdm.tqdm(fin):
+        # for line in fin:
             record_datum = eval(line)['datum']
             record_type = list(record_datum.keys())
             assert len(record_type)==1
@@ -69,7 +70,7 @@ def parse_lttng_logs(file):
                     # process node
                     if len(record.params)>0:
                         subject_node, subject = parse_subject(record, format='lttng')
-                        print(subject.cmdLine)
+                        # print(subject.cmdLine)
                         mo.add_subject(subject_node, subject)
                 elif 0 <= record.subtype < 5:
                     # file node
@@ -86,9 +87,9 @@ def parse_lttng_logs(file):
 
 
 if __name__ == '__main__':
-    # file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
-    # parse_logs(file)
-    file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
-    parse_lttng_logs(file)
+    file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
+    parse_logs(file)
+    # file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
+    # parse_lttng_logs(file)
     
     
