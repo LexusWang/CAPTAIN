@@ -2,6 +2,7 @@
 #include "float_tags.h"
 #include "propTagsNewTagEng.h"
 #include "alarmNewTagEng.h"
+from graph.Subject import Subject
 import re
 
 a = re.match(r'.*com', 'www.runoob.com')
@@ -72,6 +73,8 @@ def match_ip(ip_address):
 
 
 def initSubjectTags(subject):
+    cmdLine = subject.get_cmdln()
+    pname = Subject.get_name()
     citag = 0
     eTag = 0
     invTag = 0
@@ -103,7 +106,6 @@ def initObjectTags(object, format = 'cdm'):
         elif object.type in {'MemoryObject','share_memory'}:
             b = 0
     elif format == 'lttng':
-        print(object.type)
         if object.type in {'NetFlowObject','inet_scoket_file'}:
             ctag = 0
             itag, ctag = match_ip(object.IP)
