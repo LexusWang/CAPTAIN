@@ -72,14 +72,14 @@ def parse_lttng_logs(file):
                         subject_node, subject = parse_subject(record, format='lttng')
                         # print(subject.cmdLine)
                         mo.add_subject(subject_node, subject)
-                elif 0 <= record.subtype < 5:
-                    # file node
+                elif 0 < record.subtype < 5:
+                    # non-common file node
                     object_node, object = parse_object(record, record.subtype, format='lttng')
                     mo.add_object(object_node, object)
-                # elif record.subtype == -1:
-                #     # common file
-                #     object = parse_object(record_datum, record_type)
-                #     mo.add_object(object, record_datum)
+                elif record.subtype == -1:
+                    # common file node
+                    object_node, object = parse_object(record, 0, format='lttng')
+                    mo.add_object(object_node, object)
             else:
                 pass
 

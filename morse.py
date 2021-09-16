@@ -294,20 +294,21 @@ class Morse:
         propTags(event, s, o, format=self.format)
 
     def add_event(self, event):
-        self.G.add_edge(event['src'], event['dest'])
-        src = self.Nodes.get(event['src'], None)
-        dest = self.Nodes.get(event['dest'], None)
-        if src and dest:
-            origtags = self.detect_alarm_pre(event, src, dest)
-            self.propagate(event, src, dest)
-            self.detect_alarm(event, src, dest, origtags)
-        else:
-            a = 0
+        if event['src'] != -1 and event['dest'] != -1:
+            self.G.add_edge(event['src'], event['dest'])
+            src = self.Nodes.get(event['src'], None)
+            dest = self.Nodes.get(event['dest'], None)
+            if src and dest:
+                origtags = self.detect_alarm_pre(event, src, dest)
+                self.propagate(event, src, dest)
+                self.detect_alarm(event, src, dest, origtags)
+            else:
+                a = 0
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
         # self.G.nodes[object_node['uuid']]['tags'] = object_node['tags']
-        initObjectTags(object)
+        initObjectTags(object,format='lttng')
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
