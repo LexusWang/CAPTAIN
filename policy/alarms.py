@@ -8,7 +8,9 @@ from policy.floatTags import citag,ctag,invtag,itag,etag,alltags
 from parse.eventType import lttng_events, cdm_events, standard_events
 
 def printTime(ts):
-   print(ts)
+   time_local = time.localtime(ts/1000000000)
+   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+   print(dt)
 
 def prtSOAlarm(ts, an, s, o, alarms):
    if not alarms[(s.get_pid(), o.get_name())]:
@@ -65,7 +67,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
    #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
    #       }
    #    }
-   
+
   
    #    rename_pre(s, o, _, _, ts) --> {
    #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null") ) {
