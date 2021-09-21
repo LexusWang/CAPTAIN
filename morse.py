@@ -308,7 +308,7 @@ class Morse:
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
         # self.G.nodes[object_node['uuid']]['tags'] = object_node['tags']
-        initObjectTags(object,format='lttng')
+        initObjectTags(object,format=self.format)
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
