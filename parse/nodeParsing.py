@@ -21,7 +21,16 @@ def parse_subject_cdm(datum):
     elif subject_type == 'SUBJECT_THREAD':
         pass
     elif subject_type == 'SUBJECT_UNIT':
-        subject = Subject(id=datum['uuid'])
+        type_ = datum['type']
+        pid_ = datum['cid']
+        pname_ = datum['properties']['map']['name']
+        ppid_ = datum['properties']['map']['ppid']
+        seen_time_ = float(datum['startTimestampNanos'])
+        if isinstance(datum['cmdLine'], dict):
+            cmdLine_ = datum['cmdLine'].get('string')
+        else:
+            cmdLine_ = None
+        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
     elif subject_type == 'SUBJECT_BASIC_BLOCK':
         pass
     else:
@@ -43,10 +52,12 @@ def parse_subject_lttng(datum):
     return subject
 
 def parse_object_cdm(datum, object_type):
-    object = Object(type = object_type)
+    object = Object(id=datum['uuid'], type = object_type)
     if object_type == 'FileObject':
         subtype_ = datum['type']
         object.subtype = subtype_
+        permission = datum['baseObject']['permission']
+        object.name = datum['baseObject']['properties']['map']['path']
         object.path = datum['baseObject']['properties']['map']['path']
     elif object_type == 'UnnamedPipeObject':
         pass

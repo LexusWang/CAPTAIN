@@ -299,6 +299,8 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
+                if (src.get_pid(), dest.get_name()) not in self.alarm:
+                    self.alarm[(src.get_pid(), dest.get_name())] = False
                 origtags = self.detect_alarm_pre(event, src, dest)
                 self.propagate(event, src, dest)
                 self.detect_alarm(event, src, dest, origtags)
@@ -318,7 +320,6 @@ class Morse:
         self.Nodes[subject_node['uuid']] = subject
 
     def detect_alarm(self,event,s ,o, origtags):
-        self.alarm[(s.get_pid(), o.get_name())] = False
         check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, origtags, format=self.format)
 
     def detect_alarm_pre(self,event,s ,o):

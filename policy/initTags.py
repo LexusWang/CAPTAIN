@@ -20,7 +20,7 @@ benign_secret_group = [r'.*passwd',r'.*pwd\.db',r'.*auth\.log.*',r'.*shadow',r'.
 # init_otag("/log/[:any:]*", BENIGN, PUBLIC)
 # init_otag("(/root/|/data/|/dev/|/proc/)[:any:]*", BENIGN, PUBLIC)
 # init_otag("(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/)[:any:]*", BENIGN, PUBLIC)
-benign_public_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*',r'(/lib/|/bin/).*',r'/log/.*',r'(/root/|/data/|/dev/|/proc/).*',r'(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/).*']
+benign_public_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*',r'(/lib64/|/lib/|/bin/).*',r'/log/.*',r'(/root/|/data/|/dev/|/proc/).*',r'(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/).*']
 
 # init_otag("/tmp[:any:]*", UNTRUSTED, PUBLIC)
 # init_otag("/media/[:any:]*", UNTRUSTED, PUBLIC)
@@ -72,9 +72,9 @@ def match_ip(ip_address):
 
 
 def initSubjectTags(subject):
-    citag = 0
-    eTag = 0
-    invTag = 0
+    citag = 1
+    eTag = 1
+    invTag = 1
     itag = 1
     ctag = 1
     subject.setSubjTags([citag, eTag, invTag, itag, ctag])
@@ -103,13 +103,12 @@ def initObjectTags(object, format = 'cdm'):
         elif object.type in {'MemoryObject','share_memory'}:
             b = 0
     elif format == 'lttng':
-        print(object.type)
         if object.type in {'NetFlowObject','inet_scoket_file'}:
             ctag = 0
+            print(object.IP)
             itag, ctag = match_ip(object.IP)
         elif object.type == 'common_file':
             path = object.path
-            print(path)
             itag, ctag = match_path(path)
         elif object.type == 'unix_socket_file':
             b = 0

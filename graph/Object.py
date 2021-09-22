@@ -7,7 +7,7 @@ import re
 
 
 class Object:
-    def __init__(self, id: int = None, time: int = None, type: str = None, subtype: str = None, pid: int = None, ppid: int = None,
+    def __init__(self, id = None, time: int = None, type: str = None, subtype: str = None, pid: int = None, ppid: int = None,
                  objName: str = None):
         self.id = id
         self.time = time
@@ -16,6 +16,7 @@ class Object:
         self.ppid = ppid
         self.name = objName
         self.path = None
+        self.updateTime = 0
         self.pipe = []
 
         self.event_list = []
