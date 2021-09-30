@@ -28,10 +28,10 @@ for i, event in enumerate(cdm_events_list):
 
 lttng_common_events = {'sys_open':29,'sys_close':8,'sys_read':31,'sys_write': 48,'sys_clone':7,'sys_fork':17,
     'sys_execve':13,'sys_accept':0,'sys_connect':9,'sys_recvfrom':33,'sys_recvmsg':34,'sys_sendto':36,'sys_sendmsg':37,
-    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45}
+    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45, 'sys_setuid':5}
 
 lttng_special_events = ['sys_openat', 'sys_readv','sys_pread', 'sys_preadv', 'sys_writev','sys_pwrite','sys_pwritev',
-'sys_socket', 'sys_renameat', 'sys_chmod','sys_chown','sys_pipe','sys_pipe2','sys_setuid','sys_setgid',
+'sys_socket', 'sys_renameat', 'sys_chmod','sys_chown','sys_pipe','sys_pipe2','sys_setgid',
 'sys_unlinkat','sys_unknow','sys_imageload','ipaddr_info','dns_info']
 
 lttng_special_events.extend(lttng_sched_event)
@@ -109,23 +109,21 @@ for i, event in enumerate(lttng_special_events):
 # sys_chown: 60
 # sys_pipe: 61
 # sys_pipe2: 62
-# sys_setuid: 63
-# sys_setgid: 64
-# sys_unlinkat: 65
-# sys_unknow: 66
-# sys_imageload: 67
-# ipaddr_info: 68
-# dns_info: 69
-# sched_switch: 70
-# sched_process_fork: 71
-# sched_process_free: 72
-# sched_process_exec: 73
-# sched_wakeup_new: 74
-# lttng_statedump_start: 75
-# lttng_statedump_end: 76
-# lttng_statedump_process_state: 77
-# lttng_statedump_file_descriptor: 78
-
+# sys_setgid: 63
+# sys_unlinkat: 64
+# sys_unknow: 65
+# sys_imageload: 66
+# ipaddr_info: 67
+# dns_info: 68
+# sched_switch: 69
+# sched_process_fork: 70
+# sched_process_free: 71
+# sched_process_exec: 72
+# sched_wakeup_new: 73
+# lttng_statedump_start: 74
+# lttng_statedump_end: 75
+# lttng_statedump_process_state: 76
+# lttng_statedump_file_descriptor: 77
 
 
 

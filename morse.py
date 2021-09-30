@@ -13,17 +13,11 @@ from policy.alarms import check_alarm, check_alarm_pre
 class Morse:
 
     def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0):
-
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
 
         self.format = format
-
-        # init graph
-        self.G = nx.DiGraph()
-        self.Nodes = {}
-        # self.Objects = {}
 
         # init value
         self.stag_benign = 0.5
@@ -43,6 +37,14 @@ class Morse:
         # decay and attenuation
         self.a_b = 0.1
         self.a_e = 0.05
+
+
+        # init graph
+        self.G = nx.DiGraph()
+        self.Nodes = {}
+        self.Principals = {}
+        self.processes = {}
+        # self.Objects = {}
 
         # alarm
         self.alarm = {}
@@ -290,10 +292,22 @@ class Morse:
         self.suspect_env_model.update_weight(w_grad, b_grad)
 
 
+    # ------------------ save & load ----------- #
+    def save(path):
+        pass
+
+    def load(path):
+        pass
+
     def propagate(self, event, s, o):
-        propTags(event, s, o, format=self.format)
+        propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
+        if event['type'] == 'EVENT_EXIT':
+            try:
+                self.processes[self.Nodes[event['src']].pid]['alive'] = False
+            except KeyError:
+                print('Oops! Cannot find Node!')
         if event['src'] != -1 and event['dest'] != -1:
             self.G.add_edge(event['src'], event['dest'])
             src = self.Nodes.get(event['src'], None)
@@ -301,27 +315,32 @@ class Morse:
             if src and dest:
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                origtags = self.detect_alarm_pre(event, src, dest)
+                alarmArg = self.detect_alarm_pre(event, src, dest)
                 self.propagate(event, src, dest)
-                self.detect_alarm(event, src, dest, origtags)
+                self.detect_alarm(event, src, dest, alarmArg)
             else:
                 a = 0
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
-        # self.G.nodes[object_node['uuid']]['tags'] = object_node['tags']
         initObjectTags(object,format=self.format)
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
         self.G.add_node(subject_node['uuid'])
-        # self.G.nodes[subject_node['uuid']]['tags'] = subject_node['tags']
-        initSubjectTags(subject)
+        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
+            a = self.Nodes[self.processes[subject.pid]['node']]
+            subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
+        else:
+            initSubjectTags(subject)
+        self.processes[subject.pid] = {}
+        self.processes[subject.pid]['node'] = subject_node['uuid']
+        self.processes[subject.pid]['alive'] = True
         self.Nodes[subject_node['uuid']] = subject
 
-    def detect_alarm(self,event,s ,o, origtags):
-        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, origtags, format=self.format)
+    def detect_alarm(self,event,s ,o, alarmArg):
+        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, format=self.format, morse = self)
 
     def detect_alarm_pre(self,event,s ,o):
-        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format)
+        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format, morse = self)
         

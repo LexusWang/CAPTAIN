@@ -12,42 +12,44 @@ from morse import Morse
 def parse_logs(file):
     null = 0
     mo = Morse()
-    log_types = set()
-    event_types = set()
-    with open(file,'r') as fin:
-        # for line in tqdm.tqdm(fin):
-        for line in fin:
-            record_datum = eval(line)['datum']
-            record_type = list(record_datum.keys())
-            assert len(record_type)==1
-            record_datum = record_datum[record_type[0]]
-            record_type = record_type[0].split('.')[-1]
-            log_types.add(record_type)
-            if record_type == 'Event':
-                event = parse_event(record_datum)
-                event_types.add(event['type'])
-                mo.add_event(event)
-            elif record_type == 'Subject':
-                subject_node, subject = parse_subject(record_datum)
-                mo.add_subject(subject_node, subject)
-            elif record_type == 'TimeMarker':
-                b = 0
-            elif record_type == 'StartMarker':
-                b = 0
-            elif record_type == 'UnitDependency':
-                b = 0
-            elif record_type == 'Host':
-                b = 0
-            elif record_type == 'Principal':
-                b = 0
-            elif record_type.endswith('Object'):
-                object_node, object = parse_object(record_datum, record_type)
-                mo.add_object(object_node, object)
-            else:
-                pass
-    print(event_types)
+    data_line = 0
+    for i in range(7):
+        with open(file+'.'+str(i),'r') as fin:
+            # for line in tqdm.tqdm(fin):
+            for line in fin:
+                data_line += 1
+                if data_line % 100000 == 0:
+                    print("Morse has parsed {} lines.".format(data_line))
 
-    return log_types
+                record_datum = eval(line)['datum']
+                record_type = list(record_datum.keys())
+                assert len(record_type)==1
+                record_datum = record_datum[record_type[0]]
+                record_type = record_type[0].split('.')[-1]
+                if record_type == 'Event':
+                    if record_datum['uuid'] == '0ECDFE9E-0628-499C-06A6-DC96098C5E40':
+                        a = 0
+                    event = parse_event(record_datum)
+                    mo.add_event(event)
+                elif record_type == 'Subject':
+                    subject_node, subject = parse_subject(record_datum)
+                    mo.add_subject(subject_node, subject)
+                elif record_type == 'TimeMarker':
+                    b = 0
+                elif record_type == 'StartMarker':
+                    b = 0
+                elif record_type == 'UnitDependency':
+                    b = 0
+                elif record_type == 'Host':
+                    b = 0
+                elif record_type == 'Principal':
+                    mo.Principals[record_datum['uuid']] = record_datum
+                elif record_type.endswith('Object'):
+                    object_node, object = parse_object(record_datum, record_type)
+                    mo.add_object(object_node, object)
+                else:
+                    pass
+
 
 
 def parse_lttng_logs(file):
@@ -87,9 +89,9 @@ def parse_lttng_logs(file):
 
 
 if __name__ == '__main__':
-    # file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
-    # parse_logs(file)
-    file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
-    parse_lttng_logs(file)
+    file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
+    parse_logs(file)
+    # file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
+    # parse_lttng_logs(file)
     
     

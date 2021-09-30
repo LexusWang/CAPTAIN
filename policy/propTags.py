@@ -1,19 +1,16 @@
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2
+from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2, isRoot
 from parse.eventType import lttng_events, cdm_events, standard_events
-
-def isRoot(pric_id):
-   #TODO
-   pass
 
 def propTags_pre():
    pass
 
-def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 'cdm'):
+def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 'cdm', morse = None):
    if format == 'cdm':
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
+
    intags = None
    newtags = None
    whitelisted = False
@@ -28,17 +25,12 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
       intags = o.tags()
       whitelisted = False
 
-   # if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ']}:
-   #    intags = o.tags()
-   #    whitelisted = False
-
-
    if event_type == standard_events['EVENT_READ']:
       if (s.isMatch("sshd")):
          stg = s.tags()
          cit = citag(stg)
          et = etag(stg)
-         if (isRoot(s.owner) and cit == TRUSTED and et == TRUSTED ):
+         if (isRoot(morse.Principals[s.owner]) and cit == TRUSTED and et == TRUSTED ):
             s.setSubjTags(stg)
             whitelisted = True
 
@@ -47,7 +39,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
          whitelisted = True
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
 
-      if (whitelisted == False and o.isMatch("/.X11-unix/")) or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
+      if whitelisted == False and o.isMatch("/.X11-unix/") or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
          whitelisted = True
 
       if (whitelisted == False):
@@ -98,16 +90,18 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
                it = min(itag(stg), itag(intags))
                ct = min(ctag(stg), ctag(intags))
          else:
-            cit = UNTRUSTED; et = UNTRUSTED
+            cit = UNTRUSTED
+            et = UNTRUSTED
             it = min(itag(stg), itag(intags))
             ct = min(ctag(stg), ctag(intags))
          inv = UNTRUSTED
          s.setSubjTags(alltags(cit, et, inv, it, ct))
 
-   # elif event_type == standard_events['sys_setuid']:
-   #    st = s.tags()
-   #    if isRoot(p)==False and invtag(st) == TRUSTED:
-   #       s.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)));
+   elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+      st = s.tags()
+      new_owner = morse.Principals[o.owner]
+      if isRoot(new_owner) == False and invtag(st) == TRUSTED:
+         o.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)))
       
    elif event_type == standard_events['EVENT_CREATE_OBJECT']:
       st = s.tags(); 

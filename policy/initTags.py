@@ -80,8 +80,8 @@ def initSubjectTags(subject):
     subject.setSubjTags([citag, eTag, invTag, itag, ctag])
 
 def initObjectTags(object, format = 'cdm'):
-    itag = 0
-    ctag = 0
+    itag = 1
+    ctag = 1
     if format == 'cdm':
         if object.type in {'NetFlowObject','inet_scoket_file'}:
             ctag = 0
