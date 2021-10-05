@@ -60,7 +60,9 @@ def parse_object_cdm(datum, object_type):
         object.name = datum['baseObject']['properties']['map']['path']
         object.path = datum['baseObject']['properties']['map']['path']
     elif object_type == 'UnnamedPipeObject':
-        pass
+        permission = datum['baseObject']['permission']
+        object.name = 'UnknownObject'
+        object.path = 'UnknownObject'
     elif object_type == 'RegistryKeyObject':
         pass
     elif object_type == 'PacketSocketObject':
@@ -68,9 +70,14 @@ def parse_object_cdm(datum, object_type):
     elif object_type == 'NetFlowObject':
         object.set_IP(datum['remoteAddress'], datum['remotePort'])
     elif object_type == 'MemoryObject':
-        pass
+        object.name = 'MemoryObject'
+        object.path = 'MemoryObject'
     elif object_type == 'SrcSinkObject':
-        pass
+        subtype_ = datum['type']
+        object.subtype = subtype_
+        permission = datum['baseObject']['permission']
+        object.name = 'UnknownObject'
+        object.path = 'UnknownObject'
     else:
         # error!
         pass

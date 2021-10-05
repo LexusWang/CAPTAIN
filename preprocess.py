@@ -13,6 +13,7 @@ def parse_logs(file):
     null = 0
     mo = Morse()
     data_line = 0
+    last_time = 0
     for i in range(7):
         with open(file+'.'+str(i),'r') as fin:
             # for line in tqdm.tqdm(fin):
@@ -27,8 +28,10 @@ def parse_logs(file):
                 record_datum = record_datum[record_type[0]]
                 record_type = record_type[0].split('.')[-1]
                 if record_type == 'Event':
-                    if record_datum['uuid'] == '0ECDFE9E-0628-499C-06A6-DC96098C5E40':
-                        a = 0
+                    # if record_datum['timestampNanos'] < last_time:
+                    #     a = 0
+                    # else:
+                    #     last_time = record_datum['timestampNanos']
                     event = parse_event(record_datum)
                     mo.add_event(event)
                 elif record_type == 'Subject':

@@ -80,28 +80,24 @@ def initSubjectTags(subject):
     subject.setSubjTags([citag, eTag, invTag, itag, ctag])
 
 def initObjectTags(object, format = 'cdm'):
-    itag = 1
-    ctag = 1
+    itag = 0
+    ctag = 0
     if format == 'cdm':
-        if object.type in {'NetFlowObject','inet_scoket_file'}:
-            ctag = 0
+        if object.type in 'NetFlowObject':
+            ctag = 1
             itag, ctag = match_ip(object.IP)
         elif object.type == 'SrcSinkObject':
-            b = 0
+            ctag = 1
+            itag = 0
         elif object.type == 'FileObject':
-            if object.subtype == 'FILE_OBJECT_UNIX_SOCKET':
-                b = 0
-            elif object.subtype == 'FILE_OBJECT_FILE' or object.subtype == 'FILE_OBJECT_DIR':
-                path = object.path
-                itag, ctag = match_path(path)
-            elif object.subtype == 'FILE_OBJECT_CHAR':
-                b = 0
-            else:
-                b = 0
-        elif object.type in {'UnnamedPipeObject','pipe_file'}:
-            b = 0
-        elif object.type in {'MemoryObject','share_memory'}:
-            b = 0
+            path = object.path
+            itag, ctag = match_path(path)
+        elif object.type == 'UnnamedPipeObject':
+            ctag = 1
+            itag = 0
+        elif object.type == 'MemoryObject':
+            ctag = 0
+            itag = 0
     elif format == 'lttng':
         if object.type in {'NetFlowObject','inet_scoket_file'}:
             ctag = 0
@@ -118,6 +114,8 @@ def initObjectTags(object, format = 'cdm'):
             b = 0
 
     object.setObjTags([itag, ctag])
+    if itag + ctag != 2:
+        a = 0
 
 
 #         init_otag("stderr", BENIGN, PUBLIC)

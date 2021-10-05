@@ -7,12 +7,12 @@ from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import initObjectTags, initSubjectTags
 from policy.propTags import propTags
-from policy.alarms import check_alarm, check_alarm_pre
+from policy.alarms import check_alarm, check_alarm_pre, printTime
 
 
 class Morse:
 
-    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0):
+    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
@@ -50,6 +50,9 @@ class Morse:
         self.alarm = {}
         self.created = {}
         self.alarm_sum = [0, 0]
+
+        # alarm file
+        self.alarm_file = alarm_file
 
         # # scaler w and b
         # self.benign_thresh_model = simple_net.SimpleNet()
@@ -303,6 +306,8 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
+        # alarm_file = open(self.alarm_file,'wt')
+        alarm_file = self.alarm_file
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
@@ -313,11 +318,13 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
+                # if src.pid == 3300:
+                #     print("Time: {} Event type:{} SubjectName: {} Tags: {} ObjectName: {} Tags: {}".format(printTime(event['timestamp']), event['type'], src.get_name(), src.tags(), dest.get_name(), dest.tags()))
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                alarmArg = self.detect_alarm_pre(event, src, dest)
+                alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
                 self.propagate(event, src, dest)
-                self.detect_alarm(event, src, dest, alarmArg)
+                self.detect_alarm(event, src, dest, alarmArg, alarm_file)
             else:
                 a = 0
 
@@ -338,9 +345,9 @@ class Morse:
         self.processes[subject.pid]['alive'] = True
         self.Nodes[subject_node['uuid']] = subject
 
-    def detect_alarm(self,event,s ,o, alarmArg):
-        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, format=self.format, morse = self)
+    def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
+        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
 
-    def detect_alarm_pre(self,event,s ,o):
-        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format, morse = self)
+    def detect_alarm_pre(self,event,s ,o, alarm_file = None):
+        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, self.format, self, alarm_file)
         
