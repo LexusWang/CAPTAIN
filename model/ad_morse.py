@@ -75,6 +75,12 @@ class Morse:
         self.simple_net_grad_tensor = None
         self.morse_grad_tensor = None
 
+    def forward(self):
+        pass
+
+    def backward(self):
+        pass
+
 
     # def forward(self, learn):
     #     # feed forward, get the predicted result
