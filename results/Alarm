@@ -1,0 +1,23 @@
+AlarmS 
+2018-04-13 12:47:46
+: Alarm:  FileExec : Object  96FE4223-D38F-9D49-C00F-D51954FA7DD4  ( /tmp/ztmp ) Subject  D64910E4-454E-156D-BF13-BC7AD66F7A6A  pid= 19482   /tmp/ztmp  AlarmE 
+
+AlarmS 
+2018-04-13 12:47:46
+: Alarm:  FileExec : Object  D64910E4-454E-156D-BF13-BC7AD66F7A6A  ( ztmp ) Subject  B5488FE1-041D-E949-3CE3-CACFB014B74D  pid= 19482   ./gtcache  AlarmE 
+
+AlarmS 
+2018-04-13 12:50:42
+: Alarm:  FileCorruption : Object  3E325102-874D-BC2B-DEF5-6037B0D42C29  ( None ) Subject  D64910E4-454E-156D-BF13-BC7AD66F7A6A  pid= 19482   /tmp/ztmp  AlarmE 
+
+AlarmS 
+2018-04-13 14:20:18
+: Alarm:  FileExec : Object  7169B097-1601-297F-2F6E-CEF5924F1C68  ( /tmp/tcexec ) Subject  0BF26B23-2DE5-B70A-45F7-64BE377293F3  pid= 27201   tcexec  AlarmE 
+
+AlarmS 
+2018-04-13 14:20:18
+: Alarm:  FileExec : Object  0BF26B23-2DE5-B70A-45F7-64BE377293F3  ( tcexec ) Subject  E0B0EC6B-4627-6502-E7B1-9184046C08C9  pid= 27201   ./pine  AlarmE 
+
+AlarmS 
+2018-04-13 14:20:50
+: Alarm:  FileCorruption : Object  298C5C47-49C3-7A6F-3B5E-3E84E9D0AE41  ( /dev/pts/5 ) Subject  0BF26B23-2DE5-B70A-45F7-64BE377293F3  pid= 27201   tcexec  AlarmE

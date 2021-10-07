@@ -46,6 +46,7 @@ class Object:
     def isMatch(self, string):
         if self.path == None:
             return False
+        # a = re.search(string, self.path)
         return isinstance(re.search(string, self.path), re.Match)
 
     def isIP(self):
