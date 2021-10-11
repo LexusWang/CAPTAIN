@@ -31,7 +31,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          cit = citag(stg)
          et = etag(stg)
          if (isRoot(morse.Principals[s.owner]) and cit == TRUSTED and et == TRUSTED ):
-            s.setSubjTags(stg)
+            s.setSubjTags(stg) # is this doing anything?
             whitelisted = True
 
       if (whitelisted == False and o.isMatch("UnknownObject")):
@@ -40,6 +40,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          stg = s.tags()
          whitelisted = True
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
+         s.update_grad([1, 1, 1, 0, 1])
 
       if whitelisted == False and o.isMatch("/.X11-unix/") or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
          whitelisted = True
@@ -50,44 +51,86 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          oit = itag(intags)
          ct = ctag(stg)
          oct = ctag(intags)
+         citag_grad = s.get_citag_grad()
+         etag_grad = s.get_etag_grad()
+         invtag_grad = s.get_invtag_grad()
+         itag_grad = s.get_itag_grad()
+         ctag_grad = s.get_ctag_grad()
+
          if (invtag(stg) !=  TRUSTED):
+            if it > oit:
+               itag_grad = o.get_itag_grad()
             it = min(it, oit)
+
+            if ct > oct:
+               ctag_grad = o.get_ctag_grad()
             ct = min(ct, oct)
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type == standard_events['EVENT_LOADLIBRARY']:
       if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
          if (o.iTag+o.cTag) != 2:
             print(o.path)
          stg = s.tags()
+         citag_grad = s.get_citag_grad()
+         etag_grad = s.get_etag_grad()
+         invtag_grad = s.get_invtag_grad()
+         itag_grad = s.get_itag_grad()
+         ctag_grad = s.get_ctag_grad()
+
+         if citag(stg) > citag(intags):
+            citag_grad = o.get_citag_grad()
          cit = min(citag(stg), citag(intags))
+
          et = etag(stg)
          if (et > cit):
             et = cit
+            etag_grad = citag_grad
          inv = invtag(stg)
          if (cit == UNTRUSTED):
             inv = UNTRUSTED
+            invtag_grad = 0
+         if itag(stg) > itag(intags):
+            itag_grad = o.get_itag_grad()
          it = min(itag(stg), itag(intags))
          ct = ctag(stg)
 
          s.setSubjTags(alltags(cit, et, inv, it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
       intags = s.tags()
       stg = o.tags()
+      citag_grad = s.get_citag_grad()
+      etag_grad = o.get_etag_grad()
+      invtag_grad = o.get_invtag_grad()
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
+
+      if citag(stg) < citag(intags):
+         citag_grad = o.get_citag_grad()
       cit = min(citag(stg), citag(intags))
       if (cit == TRUSTED and itag(intags) < 0.5):
          cit = UNTRUSTED
+         citag_grad = 0
       et = etag(stg)
       if (et > cit):
          et = cit
+         etag_grad = citag_grad
       inv = invtag(stg)
       if (cit == UNTRUSTED):
          inv = UNTRUSTED
+         invtag_grad = 0
+      if itag(stg) < itag(intags):
+         itag_grad = o.get_itag_grad()
       it = min(itag(stg), itag(intags))
+      if ctag(stg) < ctag(intags):
+         ctag_grad = o.get_ctag_grad()
       ct = min(ctag(stg), ctag(intags))
        
       s.setSubjTags(alltags(cit, et, inv, it, ct))
+      s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type == standard_events['EVENT_EXECUTE']:
       if (o.isMatch("/bin/bash")):
@@ -97,65 +140,119 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          stg = s.tags()
          cit = citag(stg)
          et = etag(stg)
+         citag_grad = s.get_citag_grad()
+         etag_grad = s.get_etag_grad()
+         invtag_grad = s.get_invtag_grad()
+         itag_grad = s.get_itag_grad()
+         ctag_grad = s.get_ctag_grad()
+
          if (citag(intags) == TRUSTED):
             if (cit == TRUSTED and et == TRUSTED):
                it = BENIGN
+               itag_grad = 0
                ct = PUBLIC
+               ctag_grad = 0
             elif (cit == TRUSTED and et == UNTRUSTED):
                et = TRUSTED
+               etag_grad = 0
+               if itag(stg) > itag(intags):
+                  itag_grad = o.get_itag_grad()
                it = min(itag(stg), itag(intags))
+               if ctag(stg) > ctag(intags):
+                  ctag_grad = o.get_ctag_grad()
                ct = min(ctag(stg), ctag(intags))
             else:
                cit = TRUSTED
+               citag_grad = 0
                et = UNTRUSTED
+               etag_grad = 0
+               if itag(stg) > itag(intags):
+                  itag_grad = o.get_itag_grad()
                it = min(itag(stg), itag(intags))
+               if ctag(stg) > ctag(intags):
+                  ctag_grad = o.get_ctag_grad()
                ct = min(ctag(stg), ctag(intags))
          else:
             cit = UNTRUSTED
+            citag_grad = 0
             et = UNTRUSTED
+            etag_grad = 0
+            if itag(stg) > itag(intags):
+                  itag_grad = o.get_itag_grad()
             it = min(itag(stg), itag(intags))
+            if ctag(stg) > ctag(intags):
+                  ctag_grad = o.get_ctag_grad()
             ct = min(ctag(stg), ctag(intags))
          inv = UNTRUSTED
+         invtag_grad = 0
          s.setSubjTags(alltags(cit, et, inv, it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
       st = s.tags()
       new_owner = morse.Principals[o.owner]
       if isRoot(new_owner) == False and invtag(st) == TRUSTED:
          o.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)))
+         o.update_grad(1, 1, 0, 1, 1)
       
    elif event_type == standard_events['EVENT_CREATE_OBJECT']:
       st = s.tags(); 
       sit = itag(st)
       cit = ctag(st)
+      citag_grad = o.get_citag_grad()
+      etag_grad = o.get_etag_grad()
+      invtag_grad = o.get_invtag_grad()
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
       if (citag(st) == TRUSTED and etag(st) == TRUSTED):
          o.setObjTags(alltags2(BENIGN, PUBLIC))
+         itag_grad = 0
+         ctag_grad = 0
       else:
          o.setObjTags(alltags2(sit, cit))
+      o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type == standard_events['EVENT_WRITE']:
       stg = s.tags()
       otg = o.tags()
       it = itag(stg)
       ct = ctag(stg)
+      citag_grad = o.get_citag_grad()
+      etag_grad = o.get_etag_grad()
+      invtag_grad = o.get_invtag_grad()
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
 
       if (citag(stg) == TRUSTED and etag(stg) == TRUSTED):
          it = it + ab
          ct = ct + ab
+         if it > 1:
+            itag_grad = 0
          it = min(1, it)
+         if ct > 1:
+            ctag_grad = 0
          ct = min(1, ct)
       elif (citag(stg) == TRUSTED and etag(stg) == UNTRUSTED): 
          it = it + ae
          ct = ct + ae
+         if it > 1:
+            itag_grad = 0
          it = min(1, it)
+         if ct > 1:
+            ctag_grad = 0
          ct = min(1, ct)
 
+      if itag(otg) < it:
+         itag_grad = o.get_itag_grad()
       it = min(itag(otg), it)
+      if ctag(otg) < ct:
+         ctag_grad = o.get_ctag_grad()
       ct = min(ctag(otg), ct)
       newtags = alltags2(it, ct)
 
       if (o.isIP() == False and o.isMatch("UnknownObject")== False):
          o.setObjTags(newtags); 
+         o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
    
    if 0 <= event_type < len(standard_events) and s and o:
       diff = 0
@@ -164,6 +261,11 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       ct = ctag(stg)
       et = etag(stg)
       inv = invtag(stg)
+      citag_grad = s.get_citag_grad()
+      etag_grad = s.get_etag_grad()
+      invtag_grad = s.get_invtag_grad()
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
       ts = event['timestamp']
       if (s.updateTime == 0):
          s.updateTime = ts
@@ -173,9 +275,14 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          nit = temp * it + (1 - temp) * 0.75
          temp = pow(dpc, diff)
          nct = temp * ct + (1 - temp) * 0.75
+         if nit > it:
+            itag_grad *= temp
          it = max(it, nit)
+         if nct > ct:
+            ctag_grad *= temp
          ct = max(ct, nct)
          s.setSubjTags(alltags(citag(stg), et, inv, it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
       elif (citag(stg) == TRUSTED and et == UNTRUSTED and it < 0.5):
          diff = (ts - s.updateTime) / 4000000
@@ -184,10 +291,15 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          temp = pow(dpc, diff)
          nct = temp * ct + (1 - temp) * 0.45
          if (nit < 0.5):
+            if nit > it:
+               itag_grad *= temp
             it = max(it, nit)
+            if nct > ct:
+               ctag_grad *= temp
             ct = max(ct, nct)
       
          s.setSubjTags(alltags(citag(stg), et, inv, it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
       stg = s.tags()
       if ((itag(stg)> 0.5 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):

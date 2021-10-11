@@ -32,6 +32,12 @@ class Object:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
+        self.ciTag_grad: float = 1.0
+        self.eTag_grad: float = 1.0
+        self.invTag_grad: float = 1.0
+        self.iTag_grad: float = 1.0
+        self.cTag_grad: float = 1.0
+
     def tags(self):
         if self.iTag > 0.5:
             ciTag = 1
@@ -63,4 +69,34 @@ class Object:
     def get_id(self):
         return self.id
 
-        
+    def get_grad(self):
+        return [self.ciTag_grad, self.eTag_grad, self.invTag_grad, self.iTag_grad, self.cTag_grad]
+
+    def get_citag_grad(self):
+        return self.ciTag_grad
+
+    def get_etag_grad(self):
+        return self.eTag_grad
+
+    def get_invtag_grad(self):
+        return self.invTag_grad
+
+    def get_itag_grad(self):
+        return self.iTag_grad
+
+    def get_ctag_grad(self):
+        return self.cTag_grad
+
+    def set_grad(self, grads):
+        self.ciTag_grad = grads[0]
+        self.eTag_grad = grads[1]
+        self.invTag_grad = grads[2]
+        self.iTag_grad = grads[3]
+        self.cTag_grad = grads[4]
+
+    def update_grad(self, grads):
+        self.ciTag_grad *= grads[0]
+        self.eTag_grad *= grads[1]
+        self.invTag_grad *= grads[2]
+        self.iTag_grad *= grads[3]
+        self.cTag_grad *= grads[4]

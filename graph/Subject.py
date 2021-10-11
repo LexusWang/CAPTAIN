@@ -41,6 +41,12 @@ class Subject:
         #
         self.cTag: float = 0.0
 
+        self.ciTag_grad: float = 1.0
+        self.eTag_grad: float = 1.0
+        self.invTag_grad: float = 1.0
+        self.iTag_grad: float = 1.0
+        self.cTag_grad: float = 1.0
+
 
         # if self.ppid == -1:
         #     pass
@@ -84,6 +90,38 @@ class Subject:
         self.invTag = tags[2]
         self.iTag = tags[3]
         self.cTag = tags[4]
+
+    def get_grad(self):
+        return [self.ciTag_grad, self.eTag_grad, self.invTag_grad, self.iTag_grad, self.cTag_grad]
+
+    def get_citag_grad(self):
+        return self.ciTag_grad
+
+    def get_etag_grad(self):
+        return self.eTag_grad
+
+    def get_invtag_grad(self):
+        return self.invTag_grad
+
+    def get_itag_grad(self):
+        return self.iTag_grad
+
+    def get_ctag_grad(self):
+        return self.cTag_grad
+
+    def set_grad(self, grads):
+        self.ciTag_grad = grads[0]
+        self.eTag_grad = grads[1]
+        self.invTag_grad = grads[2]
+        self.iTag_grad = grads[3]
+        self.cTag_grad = grads[4]
+
+    def update_grad(self, grads):
+        self.ciTag_grad *= grads[0]
+        self.eTag_grad *= grads[1]
+        self.invTag_grad *= grads[2]
+        self.iTag_grad *= grads[3]
+        self.cTag_grad *= grads[4]
 
     def isMatch(self, string):
         if self.processName == None:
