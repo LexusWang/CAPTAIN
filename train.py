@@ -129,3 +129,4 @@ if __name__ == '__main__':
     parse_logs(file)
     # file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
     # parse_lttng_logs(file)
+>>>>>>> initTags
