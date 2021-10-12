@@ -8,6 +8,6 @@ class Initializer(nn.Module):
         super().__init__()
         self.fc = Linear(input_dim, output_dim)
 
-    def initialze(self, features):
+    def initialize(self, features):
         tags = torch.sigmoid(self.fc(features))
         return tags
