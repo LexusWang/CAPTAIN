@@ -7,6 +7,18 @@ ExtensionNameType = [
     'cpp'
 ]
 
-file_object_type = {}
+extentsion_name_type = {}
 for i, item in enumerate(ExtensionNameType):
-    file_object_type[item] = i
+    extentsion_name_type[item] = i
+
+DirNameType = set([
+    'usr','sys','run','sbin','etc',
+    'var','home','maildrop','stat',
+    'active','incoming','tmp','media',
+    'root','data','dev','proc','lib64','lib','bin'
+])
+
+dir_name_type = {}
+
+for i, item in enumerate(list(DirNameType)):
+    dir_name_type[item] = i

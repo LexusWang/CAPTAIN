@@ -17,7 +17,7 @@ def parse_logs(file):
     # ============= Tag Initializer =============== #
     subj_init = Initializer(2,5)
     obj_inits = {}
-    obj_inits['NetFlowObject'] = NetFlowObj_Initializer(2)
+    obj_inits['NetFlowObject'] = Initializer(1,2)
     obj_inits['SrcSinkObject'] = Initializer(111,2)
     obj_inits['FileObject'] = FileObj_Initializer(2)
     obj_inits['UnnamedPipeObject'] = Initializer(1,2)
@@ -34,7 +34,7 @@ def parse_logs(file):
             for line in fin:
                 initialized_line += 1
                 if initialized_line % 100000 == 0:
-                    print("Morse has parsed {} lines.".format(initialized_line))
+                    print("Morse has initialized {} lines.".format(initialized_line))
                 record_datum = eval(line)['datum']
                 record_type = list(record_datum.keys())
                 assert len(record_type)==1
@@ -67,27 +67,27 @@ def parse_logs(file):
                 if record_type == 'Event':
                     event = parse_event(record_datum)
                     mo.add_event(event)
-                elif record_type == 'Subject':
-                    subject_node, subject = parse_subject(record_datum)
-                    mo.add_subject(subject_node, subject)
-                elif record_type == 'Principal':
-                    mo.Principals[record_datum['uuid']] = record_datum
-                elif record_type.endswith('Object'):
-                    object_node, object = parse_object(record_datum, record_type)
-                    mo.add_object(object_node, object)
-                elif record_type == 'TimeMarker':
-                    pass
-                elif record_type == 'StartMarker':
-                    pass
-                elif record_type == 'UnitDependency':
-                    pass
-                elif record_type == 'Host':
-                    pass
-                else:
-                    pass
+                # elif record_type == 'Subject':
+                #     subject_node, subject = parse_subject(record_datum)
+                #     mo.add_subject(subject_node, subject)
+                # elif record_type == 'Principal':
+                #     mo.Principals[record_datum['uuid']] = record_datum
+                # elif record_type.endswith('Object'):
+                #     object_node, object = parse_object(record_datum, record_type)
+                #     mo.add_object(object_node, object)
+                # elif record_type == 'TimeMarker':
+                #     pass
+                # elif record_type == 'StartMarker':
+                #     pass
+                # elif record_type == 'UnitDependency':
+                #     pass
+                # elif record_type == 'Host':
+                #     pass
+                # else:
+                #     pass
 
     # ============= Backward & Update =================== #
-    
+
     
 
 
