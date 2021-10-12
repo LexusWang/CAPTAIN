@@ -5,7 +5,7 @@ import sys
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
-from policy.initTags import initObjectTags, initSubjectTags
+from policy.initTagsAT import initObjectTags, initSubjectTags
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre, printTime
 
@@ -19,16 +19,9 @@ class Morse:
 
         self.format = format
 
-        # init value
-        self.stag_benign = 0.5
-        self.stag_suspect_env = 0.25
-        self.stag_dangerous = 0.2
-        self.itag_benign = 0.5
-        self.itag_suspect_env = 0.25
-        self.itag_dangerous = 0.2
-        self.ctag_benign = 0.5
-        self.ctag_suspect_env = 0.25
-        self.ctag_dangerous = 0.2
+        # initializer
+        self.subj_init = None
+        self.obj_inits = None
 
         # threshold
         self.benign = 0.5
@@ -306,7 +299,7 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        # alarm_file = open(self.alarm_file,'wt')
+        # alarm_file = open(self.alarm_file,'a')
         alarm_file = self.alarm_file
         if event['type'] == 'EVENT_EXIT':
             try:
@@ -330,16 +323,15 @@ class Morse:
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
-        initObjectTags(object,format=self.format)
+        initObjectTags(object, self.obj_inits, format=self.format)
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
         self.G.add_node(subject_node['uuid'])
         if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-            a = self.Nodes[self.processes[subject.pid]['node']]
             subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         else:
-            initSubjectTags(subject)
+            initSubjectTags(subject, self.subj_init)
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject_node['uuid']
         self.processes[subject.pid]['alive'] = True
