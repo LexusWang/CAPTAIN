@@ -1,13 +1,8 @@
 from parse.eventParsing import parse_event
 from parse.nodeParsing import parse_subject, parse_object
 from parse.lttng.recordParsing import read_lttng_record
-import re
-import sys
-import os
 import tqdm
-import json
-from datetime import *
-from morse import Morse
+from model.morse import Morse
 
 def parse_logs(file):
     null = 0
