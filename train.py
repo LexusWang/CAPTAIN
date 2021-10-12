@@ -8,22 +8,22 @@ import tqdm
 import json
 from datetime import *
 from morse import Morse
-from utils.Initializer import Initializer
+from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
 def parse_logs(file):
     null = 0
     mo = Morse()
     
     # ============= Tag Initializer =============== #
-    subj_init = Initializer(10,5)
+    subj_init = Initializer(2,5)
     obj_inits = {}
-    obj_inits['NetFlowObject'] = Initializer(10,2)
-    obj_inits['SrcSinkObject'] = Initializer(10,2)
-    obj_inits['FileObject'] = Initializer(10,2)
-    obj_inits['UnnamedPipeObject'] = Initializer(10,2)
-    obj_inits['MemoryObject'] = Initializer(10,2)
-    obj_inits['PacketSocketObject'] = Initializer(10,2)
-    obj_inits['RegistryKeyObject'] = Initializer(10,2)
+    obj_inits['NetFlowObject'] = NetFlowObj_Initializer(2)
+    obj_inits['SrcSinkObject'] = Initializer(111,2)
+    obj_inits['FileObject'] = FileObj_Initializer(2)
+    obj_inits['UnnamedPipeObject'] = Initializer(1,2)
+    obj_inits['MemoryObject'] = Initializer(1,2)
+    obj_inits['PacketSocketObject'] = Initializer(1,2)
+    obj_inits['RegistryKeyObject'] = Initializer(1,2)
     mo.subj_init = subj_init
     mo.obj_inits = obj_inits
 
@@ -85,6 +85,10 @@ def parse_logs(file):
                     pass
                 else:
                     pass
+
+    # ============= Backward & Update =================== #
+    
+    
 
 
 
