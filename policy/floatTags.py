@@ -28,3 +28,10 @@ def etag(allTags):
 
 def citag(allTags):
    return allTags[0]
+
+
+def isRoot(principal):
+   if principal['userId'] == '0':
+      return True
+   else:
+      return False

@@ -4,60 +4,83 @@ sys.path.extend(['.','..','...'])
 
 # import floatTags
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag,ctag,invtag,itag,etag,alltags
+from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot
 from parse.eventType import lttng_events, cdm_events, standard_events
 
-def printTime(ts):
-   print(ts)
+class AlarmArguments():
+   
+   def __init__(self) -> None:
+       self.rootprinc = None
 
-def prtSOAlarm(ts, an, s, o, alarms):
+def printTime(ts):
+   # Transfer time to ET
+   time_local = time.localtime((ts/1000000000) + 3600)
+   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+   print(dt, end='')
+
+def getTime(ts):
+   # Transfer time to ET
+   time_local = time.localtime((ts/1000000000) + 3600)
+   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+   return dt
+
+def prtSOAlarm(ts, an, s, o, alarms, alarmfile= None):
    if not alarms[(s.get_pid(), o.get_name())]:
-      print("AlarmS ")
-      printTime(ts)
       alarms[(s.get_pid(), o.get_name())] = True
-      print(": Alarm: ", an, ": Object ", o.get_id(), " (", o.get_name(), 
-             ") Subject ", s.get_id(), " pid=", s.get_pid(), " ", s.get_cmdln(), " AlarmE" ,"\n")
+      if alarmfile:
+         with open(alarmfile, 'a') as fout:
+            print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Object ", o.get_id(), " (", o.get_name(), 
+               ") Subject ", s.get_id(), " pid=", s.get_pid(), " ", s.get_cmdln(), " AlarmE", file = fout)
       # setAlarm(s, o, an, ts)
    
 
-def prtSSAlarm(ts, an, s, ss):
-   print("AlarmS ")
-   printTime(ts)
+def prtSSAlarm(ts, an, s, ss, alarmfile= None):
    # Question
    # print(": Alarm: ", an, ": Subject ", s.get_subjid(), " pid=", s.get_pid(),
    #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
-   print(": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid(),
-          " ", s.get_cmdln(), " Subject ", ss.get_id(), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
+   if alarmfile:
+      with open(alarmfile, 'a') as fout:
+         print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid(),
+            " ", s.get_cmdln(), " Subject ", ss.get_id(), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", file = fout)
 
 
-def prtSAlarm(ts, an, s):
-   print("AlarmS ")
-   printTime(ts)
-   print(": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid()," ", s.get_cmdln(), " AlarmE", "\n")
+def prtSAlarm(ts, an, s, alarmfile= None):
+   if alarmfile:
+      with open(alarmfile, 'a') as fout:
+         print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid()," ", s.get_cmdln(), " AlarmE", file = fout)
 
-def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
+def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', morse = None, alarm_file = None):
    ts = event['timestamp']
    if format == 'cdm':
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
 
-   origtags = None
+   alarmarg = AlarmArguments()
+   alarmarg.origtags = None
 
    if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
-      origtags = s.tags()
+      alarmarg.origtags = s.tags()
 
    # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
    if event_type == standard_events['EVENT_WRITE']:
-      origtags = o.tags()
+      alarmarg.origtags = o.tags()
+
+   # inject_pre(_, s, useful, _)|useful -->  origtags = subjTags(s);
+   if event_type == standard_events['EVENT_MODIFY_PROCESS']:
+      alarmarg.origtags = o.tags()
 
    # setuid_pre(s, _, ts) --> {
    #    if (itag(subjTags(s)) < 128) {
    #       rootprinc = isRoot(sowner(s));
    #    }
    # }
+   if event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+      if (itag(s.tags()) < 0.5):
+         alarmarg.rootprinc = isRoot(morse.Principals[s.owner])
+
    if event_type == standard_events['EVENT_WRITE']:
-      origtags = o.tags()
+      alarmarg.origtags = o.tags()
 
    #    remove_pre(s, o, ts) --> {
    #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null")  ) {
@@ -65,7 +88,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
    #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
    #       }
    #    }
-   
+
   
    #    rename_pre(s, o, _, _, ts) --> {
    #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null") ) {
@@ -79,7 +102,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
       if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null")==False:
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts, "FileCorruption", s, o, alarms)
+         prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
 
    #    chmod_pre(s, o, p, ts) --> {
    #       unsigned ositag = itag(objTags(o))
@@ -101,30 +124,24 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm'):
          prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
    '''
 
-   return origtags
+   return alarmarg
 
 
-def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm'):
+def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm', morse = None, alarm_file = None):
    ts = event['timestamp']
    if format == 'cdm':
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
-   # print(s.tags())
-   # print(o.tags())
-   # print("================")
-
-
+   
    if event_type == standard_events['EVENT_CREATE_OBJECT']:
-      created[(s.get_pid(), o.get_name())] = True
-      
+      created[(s.get_pid(), o.get_name())] = True  
 
    if event_type == standard_events['EVENT_EXECUTE']:
-      # if citag(s.tags()) == UNTRUSTED:
-      if (citag(origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
+      if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms)
+         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
          
 
    #    load(s, o, useful, _, ts)|useful --> 
@@ -133,37 +150,35 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm
    #          prtSOAlarm(ts,"FileExec", s, o, alarms)
    #       }
    if event_type == standard_events['EVENT_LOADLIBRARY']:
-      if (citag(origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
+      if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms)
+         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
 
    #    inject(s, ss, useful, ts)|useful --> 
    #       if (citag(origtags) == TRUSTED && citag(subjTags(ss)) == UNTRUSTED) {
    #          prtSSAlarm(ts,"Inject", s, ss)
    #          talarms = talarms + 1
    #       }
+   if event_type == standard_events['EVENT_MODIFY_PROCESS']:
+      if (citag(alarmarg.origtags) == TRUSTED and citag(o.tags()) == UNTRUSTED):
+         prtSSAlarm(ts,"Inject", s, o, alarm_file)
+         alarm_sum[1] = alarm_sum[1] + 1
    
    if event_type == standard_events['EVENT_WRITE']:
-      if (o.isIP() and not o.isMatch("UnknownObject") and not o.isMatch("Pipe[") and not o.isMatch("pipe") and not o.isMatch("null") and itag(origtags) > 0.5 and itag(o.tags()) <= 0.5):
-         if not created[(s.get_pid(), o.get_name())]:
+      if (not o.isIP() and not o.isMatch("UnknownObject") and not o.isMatch("Pipe\[") and not o.isMatch("pipe") and not o.isMatch("null") and itag(alarmarg.origtags) > 0.5 and itag(o.tags()) <= 0.5):
+         if not created.get((s.get_pid(), o.get_name()), False):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "FileCorruption", s, o, alarms)
+               prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
 
-         if (itag(s.tags()) < 128 and ctag(s.tags()) < 128):
-            if (o.isIP() and itag(o.tags()) < 128):
+         if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
+            if (o.isIP() and itag(o.tags()) < 0.5):
                if not alarms[(s.get_pid(), o.get_name())]:
                   alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "DataLeak", s, o, alarms)
+               prtSOAlarm(ts, "DataLeak", s, o, alarms, alarm_file)
    
    
-   #    setuid_pre(s, _, ts) --> {
-   #       if (itag(subjTags(s)) < 128) {
-   #          rootprinc = isRoot(sowner(s))
-   #       }
-   #    }
-
    #    setuid(s, _, ts) --> {
    #       if (itag(subjTags(s)) < 128 && !rootprinc) {
    #          if (isRoot(sowner(s))) {
@@ -172,6 +187,11 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm
    #    }
    #       }
    #    }
+   if event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+      if itag(s.tags()) < 0.5 and alarmarg.rootprinc == False:
+         if isRoot(morse.Principals[o.owner]):
+            prtSAlarm(ts, "PrivilegeEscalation", s, alarm_file)
+            alarm_sum[1] = alarm_sum[1] + 1
    
 
    #    mprotect(s, o, p, ts) --> {
@@ -183,16 +203,18 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm
    #          prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
    #       }
    #    }
-   '''
-   if event_type == standard_events['EVENT_MPROTECT']:
-      it = itag(s.tags())
-      prm = permbits(p)
+   
+   # if event_type == standard_events['EVENT_MPROTECT']:
+   #    it = itag(s.tags())
+   #    # print(event['properties']['map']['protection'])
+   #    # prm = permbits(p)
       
-      if (it < 0.5 and ((prm & 0100) == 0100)):
-         if not alarms[(pid(s), name(o))]:
-            alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
-   '''
+   #    # if (it < 0.5 and ((prm & 0100) == 0100)):
+   #    if it < 0.5:
+   #       if not alarms[(s.get_pid(), o.get_name())]:
+   #          alarm_sum[1] = alarm_sum[1] + 1
+   #       prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
+   
    
 
    # open(s, _, _, ts) \/ close(s, _, ts) \/ chown_pre(s, _, _, ts) \/
@@ -208,10 +230,10 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, origtags, format = 'cdm
    #       talarms = 0
    #    }
    
-   if 0 <= event_type < len(standard_events):
-      if alarm_sum[0] == 0:
-         alarm_sum[0] = ts
-      elif ts - alarm_sum[0] >= 3600000000:
-         alarm_sum[0] = ts
-         print("Total Alarms: ", alarm_sum[1])
-         alarm_sum[1] = 0
+   # if 0 <= event_type < len(standard_events):
+   #    if alarm_sum[0] == 0:
+   #       alarm_sum[0] = ts
+   #    elif ts - alarm_sum[0] >= 3600000000:
+   #       alarm_sum[0] = ts
+   #       print("Total Alarms: ", alarm_sum[1])
+   #       alarm_sum[1] = 0

@@ -1,7 +1,3 @@
-#include "HostExtes.h"
-#include "float_tags.h"
-#include "propTagsNewTagEng.h"
-#include "alarmNewTagEng.h"
 import re
 
 a = re.match(r'.*com', 'www.runoob.com')
@@ -20,7 +16,7 @@ benign_secret_group = [r'.*passwd',r'.*pwd\.db',r'.*auth\.log.*',r'.*shadow',r'.
 # init_otag("/log/[:any:]*", BENIGN, PUBLIC)
 # init_otag("(/root/|/data/|/dev/|/proc/)[:any:]*", BENIGN, PUBLIC)
 # init_otag("(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/)[:any:]*", BENIGN, PUBLIC)
-benign_public_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*',r'(/lib/|/bin/).*',r'/log/.*',r'(/root/|/data/|/dev/|/proc/).*',r'(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/).*']
+benign_public_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*',r'(/lib64/|/lib/|/bin/).*',r'/log/.*',r'(/root/|/data/|/dev/|/proc/).*',r'(/usr/|/sys/|/run/|/sbin/|/etc/|/var/|stdin|stderr|/home/|/maildrop|/stat/|/active/|/incoming/).*']
 
 # init_otag("/tmp[:any:]*", UNTRUSTED, PUBLIC)
 # init_otag("/media/[:any:]*", UNTRUSTED, PUBLIC)
@@ -51,9 +47,6 @@ def match_path(path):
     return itag, ctag
 
 
-a, b = match_path('/home/dfasdf\dsafs\wlz.pdf')
-
-
 # preExistingObject(o, nm, _) --> initOtag(o, nm, BENIGN, PUBLIC)
 # init_otag("IP:[:any:]*", UNTRUSTED, PUBLIC)
 # init_otag("LOCAL:[:any:]*", BENIGN, PUBLIC)
@@ -75,9 +68,9 @@ def match_ip(ip_address):
 
 
 def initSubjectTags(subject):
-    citag = 0
-    eTag = 0
-    invTag = 0
+    citag = 1
+    eTag = 1
+    invTag = 1
     itag = 1
     ctag = 1
     subject.setSubjTags([citag, eTag, invTag, itag, ctag])
@@ -86,28 +79,25 @@ def initObjectTags(object, format = 'cdm'):
     itag = 0
     ctag = 0
     if format == 'cdm':
-        if object.type in {'NetFlowObject','inet_scoket_file'}:
-            ctag = 0
+        if object.type in 'NetFlowObject':
+            ctag = 1
             itag, ctag = match_ip(object.IP)
         elif object.type == 'SrcSinkObject':
-            b = 0
+            ctag = 1
+            itag = 0
         elif object.type == 'FileObject':
-            if object.subtype == 'FILE_OBJECT_UNIX_SOCKET':
-                b = 0
-            elif object.subtype == 'FILE_OBJECT_FILE' or object.subtype == 'FILE_OBJECT_DIR':
-                path = object.path
-                itag, ctag = match_path(path)
-            elif object.subtype == 'FILE_OBJECT_CHAR':
-                b = 0
-            else:
-                b = 0
-        elif object.type in {'UnnamedPipeObject','pipe_file'}:
-            b = 0
-        elif object.type in {'MemoryObject','share_memory'}:
-            b = 0
+            path = object.path
+            itag, ctag = match_path(path)
+        elif object.type == 'UnnamedPipeObject':
+            ctag = 1
+            itag = 0
+        elif object.type == 'MemoryObject':
+            ctag = 0
+            itag = 0
     elif format == 'lttng':
         if object.type in {'NetFlowObject','inet_scoket_file'}:
             ctag = 0
+            print(object.IP)
             itag, ctag = match_ip(object.IP)
         elif object.type == 'common_file':
             path = object.path
@@ -120,6 +110,8 @@ def initObjectTags(object, format = 'cdm'):
             b = 0
 
     object.setObjTags([itag, ctag])
+    if itag + ctag != 2:
+        a = 0
 
 
 #         init_otag("stderr", BENIGN, PUBLIC)
