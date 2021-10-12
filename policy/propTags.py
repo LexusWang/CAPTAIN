@@ -1,25 +1,22 @@
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2
+from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2, isRoot
 from parse.eventType import lttng_events, cdm_events, standard_events
-
-def isRoot(pric_id):
-   #TODO
-   pass
 
 def propTags_pre():
    pass
 
-def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 'cdm'):
+def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = 'cdm', morse = None):
    if format == 'cdm':
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
+
    intags = None
    newtags = None
    whitelisted = False
    # att = 255 * (floatTags.intToFloat(getEnv("TAG_ATT"))/100)
    ab = att
-   ae = att - (att/2)
+   ae = att/2
    dpPow = decay
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
@@ -28,26 +25,23 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
       intags = o.tags()
       whitelisted = False
 
-   # if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ']}:
-   #    intags = o.tags()
-   #    whitelisted = False
-
-
    if event_type == standard_events['EVENT_READ']:
       if (s.isMatch("sshd")):
          stg = s.tags()
          cit = citag(stg)
          et = etag(stg)
-         if (isRoot(s.owner) and cit == TRUSTED and et == TRUSTED ):
+         if (isRoot(morse.Principals[s.owner]) and cit == TRUSTED and et == TRUSTED ):
             s.setSubjTags(stg)
             whitelisted = True
 
       if (whitelisted == False and o.isMatch("UnknownObject")):
+         if s.pid == 3300:
+            a = 0
          stg = s.tags()
          whitelisted = True
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
 
-      if (whitelisted == False and o.isMatch("/.X11-unix/")) or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
+      if whitelisted == False and o.isMatch("/.X11-unix/") or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
          whitelisted = True
 
       if (whitelisted == False):
@@ -63,6 +57,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
 
    elif event_type == standard_events['EVENT_LOADLIBRARY']:
       if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
+         if (o.iTag+o.cTag) != 2:
+            print(o.path)
          stg = s.tags()
          cit = min(citag(stg), citag(intags))
          et = etag(stg)
@@ -75,6 +71,23 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
          ct = ctag(stg)
 
          s.setSubjTags(alltags(cit, et, inv, it, ct))
+
+   elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
+      intags = s.tags()
+      stg = o.tags()
+      cit = min(citag(stg), citag(intags))
+      if (cit == TRUSTED and itag(intags) < 0.5):
+         cit = UNTRUSTED
+      et = etag(stg)
+      if (et > cit):
+         et = cit
+      inv = invtag(stg)
+      if (cit == UNTRUSTED):
+         inv = UNTRUSTED
+      it = min(itag(stg), itag(intags))
+      ct = min(ctag(stg), ctag(intags))
+       
+      s.setSubjTags(alltags(cit, et, inv, it, ct))
 
    elif event_type == standard_events['EVENT_EXECUTE']:
       if (o.isMatch("/bin/bash")):
@@ -98,16 +111,18 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
                it = min(itag(stg), itag(intags))
                ct = min(ctag(stg), ctag(intags))
          else:
-            cit = UNTRUSTED; et = UNTRUSTED
+            cit = UNTRUSTED
+            et = UNTRUSTED
             it = min(itag(stg), itag(intags))
             ct = min(ctag(stg), ctag(intags))
          inv = UNTRUSTED
          s.setSubjTags(alltags(cit, et, inv, it, ct))
 
-   # elif event_type == standard_events['sys_setuid']:
-   #    st = s.tags()
-   #    if isRoot(p)==False and invtag(st) == TRUSTED:
-   #       s.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)));
+   elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+      st = s.tags()
+      new_owner = morse.Principals[o.owner]
+      if isRoot(new_owner) == False and invtag(st) == TRUSTED:
+         o.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)))
       
    elif event_type == standard_events['EVENT_CREATE_OBJECT']:
       st = s.tags(); 
@@ -145,29 +160,29 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
    if 0 <= event_type < len(standard_events) and s and o:
       diff = 0
       stg = s.tags()
-      fit = itag(stg)
-      fct = ctag(stg)
+      it = itag(stg)
+      ct = ctag(stg)
       et = etag(stg)
       inv = invtag(stg)
       ts = event['timestamp']
       if (s.updateTime == 0):
          s.updateTime = ts
-      elif (et == TRUSTED and fit < 1):
-         diff = ts - s.updateTime / 4000000
+      elif (et == TRUSTED and it < 1):
+         diff = (ts - s.updateTime) / 4000000
          temp = pow(dpi, diff)
-         nit = temp * fit + (1 - temp) * 0.75
+         nit = temp * it + (1 - temp) * 0.75
          temp = pow(dpc, diff)
-         nct = temp * fct + (1 - temp) * 0.75
+         nct = temp * ct + (1 - temp) * 0.75
          it = max(it, nit)
          ct = max(ct, nct)
          s.setSubjTags(alltags(citag(stg), et, inv, it, ct))
       
-      elif (citag(stg) == TRUSTED and et == UNTRUSTED and fit < 0.5):
-         diff = ts - s.updateTime / 4000000
+      elif (citag(stg) == TRUSTED and et == UNTRUSTED and it < 0.5):
+         diff = (ts - s.updateTime) / 4000000
          temp = pow(dpi, diff)
-         nit = temp * fit + (1 - temp) * 0.45
+         nit = temp * it + (1 - temp) * 0.45
          temp = pow(dpc, diff)
-         nct = temp * fct + (1 - temp) * 0.45
+         nct = temp * ct + (1 - temp) * 0.45
          if (nit < 0.5):
             it = max(it, nit)
             ct = max(ct, nct)
@@ -175,7 +190,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.5, decay = 0.5, format = 
          s.setSubjTags(alltags(citag(stg), et, inv, it, ct))
       
       stg = s.tags()
-      if ((itag(stg)> 127 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):
+      if ((itag(stg)> 0.5 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):
          print("DANGER!!!")
 
 

@@ -7,7 +7,7 @@ import re
 
 
 class Subject:
-    def __init__(self, id: int = -1, time: float = -1.0, type: int = -1, subtype: int = -1, pid: int = -1, ppid: int = -1, cmdLine: str = None,
+    def __init__(self, id = -1, time: float = -1.0, type: int = -1, subtype: int = -1, pid: int = -1, ppid: int = -1, cmdLine: str = None,
                  processName: str = None):
         self.id = id
         self.time = time
