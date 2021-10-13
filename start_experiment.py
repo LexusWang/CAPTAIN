@@ -16,16 +16,14 @@ def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
-    parser.add_argument("--sequence_length", nargs='?', default=5, type=int)
     parser.add_argument("--feature_dimension", nargs='?', default=12, type=int)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
     parser.add_argument("--train_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--test_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--validation_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
-    parser.add_argument("--model_save_path", nargs='?', default="trainedModels", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
-    gv.project_path = os.getcwd()
+
 
     args = parser.parse_args()
     if args.mode == "train":
@@ -46,7 +44,6 @@ def start_experiment(config="config.json"):
     mode = args.mode
 
     if (mode == "train"):
-        paths_setting(str(int(time.time())))
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
                             filemode='w+',
@@ -60,6 +57,7 @@ def start_experiment(config="config.json"):
 
 
         trained_model = None
+        pred_result = None
         experiment.save_model(trained_model)
 
     elif (mode == "test"):
@@ -68,8 +66,14 @@ def start_experiment(config="config.json"):
         model = experiment.load_model()
         experiment.save_hyperparameters()
 
-        gold_labels = prepare_gold_labels()
-        precision, recall, accuracy, f1 = evaluate_classification(pred_labels, gold_labels)
+        # pytorch model testing code goes here
+        # ...
+        pred_result = None
+
+
+
+
+        precision, recall, accuracy, f1 = experiment.evaluate_classification(pred_result)
         save_evaluation_results(precision, recall, accuracy, f1)
 
 

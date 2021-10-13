@@ -41,7 +41,8 @@ class Experiment:
             for line in pred_labels:
                 f.write(line+"\n")
 
-    def evaluate_classification(pred_labels, gold_labels):
+    def evaluate_classification(pred_labels):
+        gold_labels = None
         total = len(pred_labels)
         # positive: benign
         tp = 0
