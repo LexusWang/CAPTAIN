@@ -29,10 +29,10 @@ class FileObj_Initializer(nn.Module):
 
     def initialize(self, features):
         features = torch.tensor(features,dtype=torch.int64)
-        dir_emb = self.dir_name_embedding(features[0])
-        extname_emb = self.extension_name_embedding(features[1])
-        type_emb = self.type_embedding(features[2])
-        features = torch.cat((dir_emb, extname_emb, type_emb),dim=0)
+        dir_emb = self.dir_name_embedding(features[:,0])
+        extname_emb = self.extension_name_embedding(features[:,1])
+        type_emb = self.type_embedding(features[:,2])
+        features = torch.cat((dir_emb, extname_emb, type_emb),dim=1)
         tags = torch.sigmoid(self.fc(features))
         return tags
 
