@@ -24,11 +24,14 @@ def start_experiment(config="config.json"):
     parser.add_argument("--validation_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--model_save_path", nargs='?', default="trainedModels", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
-    parser.add_argument("--load_model_from", nargs="?", default=None, type=str)
+    parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     gv.project_path = os.getcwd()
 
     args = parser.parse_args()
-    experiment = Experiment(str(int(time.time())), args)
+    if args.mode == "train":
+        experiment = Experiment(str(int(time.time())), args)
+    else:
+        experiment = Experiment(args.trained_model_timestamp, args)
 
     learning_rate = args.learning_rate
     batch_size = args.batch_size
@@ -43,60 +46,31 @@ def start_experiment(config="config.json"):
     mode = args.mode
 
     if (mode == "train"):
-
         paths_setting(str(int(time.time())))
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
                             filemode='w+',
                             format='%(asctime)s %(levelname)s:%(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p')
-        save_hyperparameters(args, "train")
-        train_model()
-    elif (mode == "test"):
-        if args.load_model_from is None:
-            raise ValueError("A path must be given to load the trained model from")
-        gv.load_model_from = args.load_model_from
-        paths_setting(args.load_model_from)
-        save_hyperparameters(args, "test")
-        out_batches = predict_entry()
-        losses = []
-        for out_batch in out_batches:
-            out_copy = torch.clone(out_batch)  ## m by n by j, where m = # of batches, n = # of sequences in each batch, and j = output_dim
-            batch_avg = torch.mean(out_copy, 1, True)  ## m by 1 by j
-            # print(batch_avg.is_cuda)
-            # print(torch.tensor([out.shape[1]]).is_cuda)
-            tmp = torch.tensor([out_batch.shape[1]])
-            # print(tmp.is_cuda)
-            batch_avg = batch_avg.to(gv.device)
-            tmp = tmp.to(gv.device)
-            target = torch.repeat_interleave(batch_avg, tmp, dim=1)  ## m by n by j
-            loss = (out_batch - target) ** 2
-            losses += torch.mean(loss, dim=1)
+        experiment.save_hyperparameters()
 
-        # calculate the final accuracy of classification using labels from test data
-        pred_labels = []
-        for loss in losses:
-            if loss <= args.classify_boundary_threshold:
-                pred_labels.append("benign")
-            else:
-                pred_labels.append("malicious")
-        print(pred_labels)
-        from utils import evaluate_classification
-        from prepare_gold_labels import prepare_gold_labels
+        # pytorch model training code goes here
+        # ...
+
+
+
+        trained_model = None
+        experiment.save_model(trained_model)
+
+    elif (mode == "test"):
+
+        # load pytorch model
+        model = experiment.load_model()
+        experiment.save_hyperparameters()
+
         gold_labels = prepare_gold_labels()
         precision, recall, accuracy, f1 = evaluate_classification(pred_labels, gold_labels)
         save_evaluation_results(precision, recall, accuracy, f1)
-
-def paths_setting(save_models_dirname):
-    gv.save_models_dirname = save_models_dirname
-    if not os.path.exists(os.path.join(gv.model_save_path, gv.save_models_dirname)):
-        os.makedirs(os.path.join(gv.model_save_path, gv.save_models_dirname))
-    gv.morse_model_path = os.path.join(gv.model_save_path, gv.save_models_dirname, gv.morse_model_filename)
-    gv.benign_thresh_model_path = os.path.join(gv.model_save_path, gv.save_models_dirname,
-                                               gv.benign_thresh_model_filename)
-    gv.suspect_env_model_path = os.path.join(gv.model_save_path, gv.save_models_dirname, gv.suspect_env_model_filename)
-    gv.rnn_model_path = os.path.join(gv.model_save_path, gv.save_models_dirname, gv.rnn_model_filename)
-
 
 
 if __name__ == '__main__':

@@ -31,6 +31,7 @@ class Experiment:
         model = TheModelClass(*args, **kwargs)
         model.load_state_dict(torch.load(os.path.join(self.results_path, "trained_model.pth")))
         model.to(self.device)
+        return model
 
     def save_pred_labels(pred_labels, file_path):
         '''
