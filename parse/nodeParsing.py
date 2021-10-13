@@ -1,6 +1,8 @@
 import numpy as np
 from graph.Object import Object
 from graph.Subject import Subject
+from parse.cdm.FileObjectType import file_object_type as cdm_file_object_type
+from parse.cdm.SRCSINKType import srcsink_type as cdm_srcsink_type
 
 lttng_object_type = ['common_file', 'share_memory', 'unix_socket_file', 'inet_scoket_file', 'pipe_file']
 
@@ -54,8 +56,7 @@ def parse_subject_lttng(datum):
 def parse_object_cdm(datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
     if object_type == 'FileObject':
-        subtype_ = datum['type']
-        object.subtype = subtype_
+        object.subtype = cdm_file_object_type[datum['type']]
         permission = datum['baseObject']['permission']
         object.name = datum['baseObject']['properties']['map']['path']
         object.path = datum['baseObject']['properties']['map']['path']
@@ -73,8 +74,7 @@ def parse_object_cdm(datum, object_type):
         object.name = 'MemoryObject'
         object.path = 'MemoryObject'
     elif object_type == 'SrcSinkObject':
-        subtype_ = datum['type']
-        object.subtype = subtype_
+        object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
         object.name = 'UnknownObject'
         object.path = 'UnknownObject'

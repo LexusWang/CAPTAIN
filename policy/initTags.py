@@ -1,7 +1,5 @@
 import re
 
-a = re.match(r'.*com', 'www.runoob.com')
-
 # init_otag("[:any:]*passwd", BENIGN, SECRET)
 # init_otag("[:any:]*pwd\.db", BENIGN, SECRET)
 # init_otag("[:any:]*auth\.log[:any:]*", BENIGN, SECRET)

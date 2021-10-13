@@ -1,45 +1,68 @@
 import re
 from utils.Initializer import Initializer
+from feature.FileObjFeatures import extentsion_name_type,dir_name_type
 
 def get_subject_feature(subject):
-    feature = []
+    pname = subject.processName
+    pcmd = subject.cmdLine
+    feature = [pname,pcmd]
     return feature
 
 def get_object_feature(object):
     feature = []
-    if object.type in 'NetFlowObject':
-        localAddress = None
-        localPort = None
-        remoteAddress = None
-        remotePort = None
-        ipProtocol = None
+    if object.type == 'NetFlowObject':
+        # remoteAddress = object.IP
+        # remotePort = object.port
+        # ipProtocol = None
+        # feature = [remoteAddress,remotePort,ipProtocol]
+        feature = [0]
     elif object.type == 'SrcSinkObject':
         SrcSinkType = object.subtype
+        feature = [SrcSinkType]
     elif object.type == 'FileObject':
         FileObjectType = object.subtype
         path = object.path
+        dir_name = 0
+        extension_name = 0
+        if path:
+            path_tree = path.split('/')
+            dir_name = dir_name_type.get(path_tree[0],0)
+            file_name = path_tree[-1].split('.')
+            if len(file_name) == 2:
+                extension_name = extentsion_name_type.get(file_name[-1],0)
+        feature = [dir_name, extension_name, FileObjectType]
     elif object.type == 'UnnamedPipeObject':
-        pass
+        feature = [0]
     elif object.type == 'MemoryObject':
-        pass
+        feature = [0]
     elif object.type == 'PacketSocketObject':
-        pass
+        feature = [0]
     elif object.type == 'RegistryKeyObject':
-        pass
+        feature = [0]
 
     return feature
 
 
 def initSubjectTags(subject,sub_init):
-    features = get_subject_feature(subject)
-    [citag, eTag, invTag, itag, ctag] = sub_init.initialize(features)
+    citag = 1
+    eTag = 1
+    invTag = 1
+    itag = 1
+    ctag = 1
+    # features = get_subject_feature(subject)
+    # [citag, eTag, invTag, itag, ctag] = sub_init.initialize(features)
     subject.setSubjTags([citag, eTag, invTag, itag, ctag])
 
 def initObjectTags(object, obj_inits, format = 'cdm'):
+    itag = 0
+    ctag = 0
     if format == 'cdm':
         initializer = obj_inits[object.type]
         features = get_object_feature(object)
-        [itag, ctag] = initializer.initialize(features)
+        tags = initializer.initialize(features).squeeze()
+        itag = tags[0].item()
+        ctag = tags[1].item()
+        # [itag, ctag] = initializer.initialize(features)
         object.setObjTags([itag, ctag])
     # elif format == 'lttng':
     #     if object.type in {'NetFlowObject','inet_scoket_file'}:
