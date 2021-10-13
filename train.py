@@ -1,3 +1,4 @@
+from numpy import record
 from parse.eventParsing import parse_event
 from parse.nodeParsing import parse_subject, parse_object
 from parse.lttng.recordParsing import read_lttng_record
@@ -6,7 +7,8 @@ import sys
 import os
 import tqdm
 import json
-from datetime import *
+import time
+# from datetime import *
 from morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
@@ -29,21 +31,24 @@ def parse_logs(file):
 
     node_inital_tags = {}
     initialized_line = 0
+    node_num = 0
     for i in range(7):
         with open(file+'.'+str(i),'r') as fin:
             for line in fin:
                 initialized_line += 1
                 if initialized_line % 100000 == 0:
-                    print("Morse has initialized {} lines.".format(initialized_line))
+                    print("Morse has initialized {} lines, {} nodes.".format(initialized_line, node_num))
                 record_datum = eval(line)['datum']
                 record_type = list(record_datum.keys())
                 assert len(record_type)==1
                 record_datum = record_datum[record_type[0]]
                 record_type = record_type[0].split('.')[-1]
                 if record_type == 'Subject':
+                    node_num += 1
                     subject_node, subject = parse_subject(record_datum)
                     mo.add_subject(subject_node, subject)
                 elif record_type.endswith('Object'):
+                    node_num += 1
                     object_node, object = parse_object(record_datum, record_type)
                     mo.add_object(object_node, object)
                 elif record_type == 'Principal':
