@@ -47,6 +47,12 @@ class Subject:
         self.iTag_grad: float = 1.0
         self.cTag_grad: float = 1.0
 
+        self.ciTag_initID = id
+        self.eTag_initID = id
+        self.invTag_initID = id
+        self.iTag_initID = id
+        self.cTag_initID = id
+
 
         # if self.ppid == -1:
         #     pass
@@ -122,6 +128,36 @@ class Subject:
         self.invTag_grad *= grads[2]
         self.iTag_grad *= grads[3]
         self.cTag_grad *= grads[4]
+
+    def setciTagInitID(self, id):
+        self.ciTag_initID = id
+
+    def seteTagInitID(self, id):
+        self.eTag_initID = id
+
+    def setinvTagInitID(self, id):
+        self.invTag_initID = id
+
+    def setiTagInitID(self, id):
+        self.iTag_initID = id
+
+    def setcTagInitID(self, id):
+        self.cTag_initID = id
+
+    def getciTagInitID(self):
+        return self.ciTag_initID
+
+    def geteTagInitID(self):
+        return self.eTag_initID
+
+    def getinvTagInitID(self):
+        return self.invTag_initID
+
+    def getiTagInitID(self):
+        return self.iTag_initID
+
+    def getcTagInitID(self):
+        return self.cTag_initID
 
     def isMatch(self, string):
         if self.processName == None:
