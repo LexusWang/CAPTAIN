@@ -122,6 +122,9 @@ class Object:
     def setcTagInitID(self, id):
         self.cTag_initID = id
 
+    def getInitID(self):
+        return [self.ciTag_initID, self.eTag_initID, self.invTag_initID, self.iTag_initID, self.cTag_initID]
+
     def getciTagInitID(self):
         return self.ciTag_initID
 
