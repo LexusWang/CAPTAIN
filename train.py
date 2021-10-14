@@ -16,40 +16,6 @@ import torch
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
-class MORSE(torch.autograd.Function):
-    """
-    We can implement our own custom autograd Functions by subclassing
-    torch.autograd.Function and implementing the forward and backward passes
-    which operate on Tensors.
-    """
-
-    @staticmethod
-    def forward(ctx, input):
-        """
-        In the forward pass we receive a Tensor containing the input and return
-        a Tensor containing the output. ctx is a context object that can be used
-        to stash information for backward computation. You can cache arbitrary
-        objects for use in the backward pass using the ctx.save_for_backward method.
-        """
-        ctx.save_for_backward(input)
-        return 0.5 * (5 * input ** 3 - 3 * input)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        """
-        In the backward pass we receive a Tensor containing the gradient of the loss
-        with respect to the output, and we need to compute the gradient of the loss
-        with respect to the input.
-        """
-        input, = ctx.saved_tensors
-        if condition == True:
-            return grad_output * 1
-        else:
-            return grad_output * -1
-
-
-
-
 def get_node_features(file):
     null = 0
     node_features = {}
@@ -111,42 +77,20 @@ def parse_logs(file):
     for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
         target_features = df[df['type']==node_type]
         feature_array = target_features['features'].values.tolist()
-        feature_array = torch.tensor(feature_array)
-        tags = node_inits[node_type].initialize(feature_array)
-        for node_id in target_features['features'].index.tolist():
-            node_inital_tags[node_id] = tags
+        feature_array = torch.tensor(feature_array, dtype=torch.int64)
+        tags = node_inits[node_type].initialize(feature_array).squeeze()
+        for i, node_id in enumerate(target_features.index.tolist()):
+            node_inital_tags[node_id] = tags[i,:]
 
-    node_type == 'Subject'
+    node_type = 'Subject'
     target_features = df[df['type']==node_type]
     feature_array = [[0] for i in range(len(target_features))]
-    feature_array = torch.tensor(feature_array)
-    tags = node_inits[node_type].initialize(feature_array)
-    for node_id in target_features['features'].index.tolist():
-        node_inital_tags[node_id] = tags
+    feature_array = torch.tensor(feature_array, dtype=torch.int64)
+    tags = node_inits[node_type].initialize(feature_array).squeeze()
+    for i, node_id in enumerate(target_features.index.tolist()):
+        node_inital_tags[node_id] = tags[i,:]
 
-
-    # for i in range(7):
-    #     with open(file+'.'+str(i),'r') as fin:
-    #         for line in fin:
-    #             initialized_line += 1
-    #             if initialized_line % 100000 == 0:
-    #                 print("Morse has initialized {} lines, {} nodes.".format(initialized_line, node_num))
-    #             record_datum = eval(line)['datum']
-    #             record_type = list(record_datum.keys())
-    #             assert len(record_type)==1
-    #             record_datum = record_datum[record_type[0]]
-    #             record_type = record_type[0].split('.')[-1]
-    #             if record_type == 'Subject':
-    #                 node_num += 1
-    #                 subject_node, subject = parse_subject(record_datum)
-    #                 mo.add_subject(subject_node, subject)
-    #             elif record_type.endswith('Object'):
-    #                 node_num += 1
-    #                 object_node, object = parse_object(record_datum, record_type)
-    #                 mo.add_object(object_node, object)
-    #             elif record_type == 'Principal':
-    #                 mo.Principals[record_datum['uuid']] = record_datum
-
+    mo.node_inital_tags = node_inital_tags
 
     # ============= Dectection =================== #
     parsed_line = 0
@@ -185,6 +129,12 @@ def parse_logs(file):
                     pass
 
     # ============= Backward & Update =================== #
+    loss = None
+    optimizer = None
+    loss.backward()
+
+    optimizer.step()
+
 
     
 
