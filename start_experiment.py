@@ -11,10 +11,12 @@ from predict import predict_entry
 from utils import save_hyperparameters
 from utils import save_evaluation_results
 from utils import *
+from model.loss import get_loss
 
 def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
+    parser.add_argument("--epoch", default=100, type=100)
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--feature_dimension", nargs='?', default=12, type=int)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
@@ -41,6 +43,7 @@ def start_experiment(config="config.json"):
     test_data = args.test_data
     validation_data = args.validation_data
     model_save_path = args.model_save_path
+    epoch = args.epoch
     mode = args.mode
 
     if (mode == "train"):
@@ -51,8 +54,18 @@ def start_experiment(config="config.json"):
                             datefmt='%m/%d/%Y %I:%M:%S %p')
         experiment.save_hyperparameters()
 
-        # pytorch model training code goes here
-        # ...
+        for epoch in range(epoch):
+            # pytorch model training code goes here
+            # ...
+
+
+            # morse applied here on all events with initial tags from NN
+            output_events = None
+
+            for event in output_events:
+                gt = ground_truth(event)
+                # decide if event is fn or fp
+                s_loss, o_loss = get_loss(...)
 
 
 
