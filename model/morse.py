@@ -221,7 +221,7 @@ class Morse:
         self.G.add_node(object_node['uuid'])
         # initObjectTags(object, self.obj_inits, format=self.format)
         a = self.node_inital_tags[object_node['uuid']].tolist()
-        object.setObjTags(self.node_inital_tags[object_node['uuid']].tolist()[0])
+        object.setObjTags(self.node_inital_tags[object_node['uuid']].tolist())
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
@@ -231,7 +231,7 @@ class Morse:
         else:
             # initSubjectTags(subject, self.subj_init)
             a = self.node_inital_tags[subject_node['uuid']].tolist()
-            subject.setSubjTags(self.node_inital_tags[subject_node['uuid']].tolist()[0])
+            subject.setSubjTags(self.node_inital_tags[subject_node['uuid']].tolist())
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject_node['uuid']
         self.processes[subject.pid]['alive'] = True

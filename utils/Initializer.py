@@ -10,7 +10,6 @@ class Initializer(nn.Module):
         self.embedding = nn.Embedding(input_dim, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
-        features = torch.tensor(features,dtype=torch.int64)
         tags = torch.sigmoid(self.embedding(features))
         return tags
 
@@ -28,7 +27,6 @@ class FileObj_Initializer(nn.Module):
         self.fc = Linear(15, output_dim,dtype=self.dtype)
 
     def initialize(self, features):
-        features = torch.tensor(features,dtype=torch.int64)
         dir_emb = self.dir_name_embedding(features[:,0])
         extname_emb = self.extension_name_embedding(features[:,1])
         type_emb = self.type_embedding(features[:,2])
@@ -46,6 +44,5 @@ class NetFlowObj_Initializer(nn.Module):
         self.embedding = nn.Embedding(10, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
-        features = torch.tensor(features,dtype=self.dtype)
         tags = torch.sigmoid(self.fc(features))
         return tags

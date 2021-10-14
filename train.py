@@ -77,45 +77,20 @@ def parse_logs(file):
     for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
         target_features = df[df['type']==node_type]
         feature_array = target_features['features'].values.tolist()
-        feature_array = torch.tensor(feature_array)
-        tags = node_inits[node_type].initialize(feature_array)
+        feature_array = torch.tensor(feature_array, dtype=torch.int64)
+        tags = node_inits[node_type].initialize(feature_array).squeeze()
         for i, node_id in enumerate(target_features.index.tolist()):
             node_inital_tags[node_id] = tags[i,:]
 
     node_type = 'Subject'
     target_features = df[df['type']==node_type]
     feature_array = [[0] for i in range(len(target_features))]
-    feature_array = torch.tensor(feature_array)
-    tags = node_inits[node_type].initialize(feature_array)
+    feature_array = torch.tensor(feature_array, dtype=torch.int64)
+    tags = node_inits[node_type].initialize(feature_array).squeeze()
     for i, node_id in enumerate(target_features.index.tolist()):
         node_inital_tags[node_id] = tags[i,:]
 
-
     mo.node_inital_tags = node_inital_tags
-
-
-    # for i in range(7):
-    #     with open(file+'.'+str(i),'r') as fin:
-    #         for line in fin:
-    #             initialized_line += 1
-    #             if initialized_line % 100000 == 0:
-    #                 print("Morse has initialized {} lines, {} nodes.".format(initialized_line, node_num))
-    #             record_datum = eval(line)['datum']
-    #             record_type = list(record_datum.keys())
-    #             assert len(record_type)==1
-    #             record_datum = record_datum[record_type[0]]
-    #             record_type = record_type[0].split('.')[-1]
-    #             if record_type == 'Subject':
-    #                 node_num += 1
-    #                 subject_node, subject = parse_subject(record_datum)
-    #                 mo.add_subject(subject_node, subject)
-    #             elif record_type.endswith('Object'):
-    #                 node_num += 1
-    #                 object_node, object = parse_object(record_datum, record_type)
-    #                 mo.add_object(object_node, object)
-    #             elif record_type == 'Principal':
-    #                 mo.Principals[record_datum['uuid']] = record_datum
-
 
     # ============= Dectection =================== #
     parsed_line = 0
