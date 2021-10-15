@@ -12,7 +12,7 @@ from parse.eventType import lttng_events, cdm_events, standard_events
 import numpy as np
 
 # loss function is called only when false positive or false negative appear
-def get_loss(event_type: int, s: torch.Tensor, o: torch.Tensor, origtags, alarm_name: str, side):
+def get_loss(event_type: int, s: torch.Tensor, o: torch.Tensor, alarm_name: str, side):
     s_loss, o_loss = torch.zeros(5), torch.zeros(5)
 
     if side == "false_positive":

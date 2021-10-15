@@ -12,6 +12,9 @@ from utils import save_hyperparameters
 from utils import save_evaluation_results
 from utils import *
 from model.loss import get_loss
+from utils.eventClassifier import eventClassifier
+from model.morse import Morse
+from collections import defaultdict
 
 def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
@@ -54,18 +57,43 @@ def start_experiment(config="config.json"):
                             datefmt='%m/%d/%Y %I:%M:%S %p')
         experiment.save_hyperparameters()
 
+        ec = eventClassifier('groundTruth.txt')
+        if ec.classify('123'):
+            print("correctly classified")
+        else:
+            print("error")
+
         for epoch in range(epoch):
             # pytorch model training code goes here
             # ...
 
 
             # morse applied here on all events with initial tags from NN
-            output_events = None
+            morse = Morse()
+            loss_for_nodes = defaultdict([0])
+            dataloader = None
+            for event in dataloader:
+                diagnois = morse.add_event(event)
+                gt = ec.classify(event['id'])
+                s = torch.tensor(morse.Nodes[event['src']].tags())
+                o = torch.tensor(morse.Nodes[event['dest']].tags())
+                if diagnois is None:
+                    # check if it's fn
+                    if gt is not None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                        loss_for_nodes[event['src']].append(s_loss)
+                        loss_for_nodes[event['dest']].append(o_loss)
+                else:
+                    # check if it's fp
+                    if gt is None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                        loss_for_nodes[event['src']].append(s_loss)
+                        loss_for_nodes[event['dest']].append(o_loss)
 
-            for event in output_events:
-                gt = ground_truth(event)
-                # decide if event is fn or fp
-                s_loss, o_loss = get_loss(...)
+            # get the final loss of each node by taking the mean of all losses for the same node
+            aggregated_loss = {}
+            for node in loss_for_nodes.keys():
+                aggregated_loss[node] = torch.mean(loss_for_nodes[node])
 
 
 
