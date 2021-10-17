@@ -90,13 +90,6 @@ def start_experiment(config="config.json"):
                         loss_for_nodes[event['src']].append(s_loss)
                         loss_for_nodes[event['dest']].append(o_loss)
 
-            # get the final loss of each node by taking the mean of all losses for the same node
-            aggregated_loss = {}
-            for node in loss_for_nodes.keys():
-                aggregated_loss[node] = torch.mean(loss_for_nodes[node])
-
-
-
         trained_model = None
         pred_result = None
         experiment.save_model(trained_model)
