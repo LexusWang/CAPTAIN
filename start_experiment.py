@@ -1,16 +1,8 @@
-import os
-import fire
-import json
-from globals import GlobalVariable as gv
 import torch
 import logging
 import argparse
-from new_train import train_model
 import time
-from predict import predict_entry
-from utils import save_hyperparameters
-from utils import save_evaluation_results
-from utils import *
+from utils.utils import *
 from model.loss import get_loss
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
@@ -41,7 +33,7 @@ def start_experiment(config="config.json"):
     sequence_size = args.sequence_length
     feature_size = args.feature_dimension
     if torch.cuda.is_available():
-        gv.device = torch.device("cuda:0")
+        device = torch.device("cuda:0")
     train_data = args.train_data
     test_data = args.test_data
     validation_data = args.validation_data
@@ -107,8 +99,8 @@ def start_experiment(config="config.json"):
 
 
 
-        precision, recall, accuracy, f1 = experiment.evaluate_classification(pred_result)
-        save_evaluation_results(precision, recall, accuracy, f1)
+        # precision, recall, accuracy, f1 = experiment.evaluate_classification(pred_result)
+        # save_evaluation_results(precision, recall, accuracy, f1)
 
 
 if __name__ == '__main__':
