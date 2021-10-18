@@ -50,10 +50,6 @@ def start_experiment(config="config.json"):
         experiment.save_hyperparameters()
 
         ec = eventClassifier('groundTruth.txt')
-        if ec.classify('123'):
-            print("correctly classified")
-        else:
-            print("error")
 
         for epoch in range(epoch):
             # pytorch model training code goes here

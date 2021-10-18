@@ -7,5 +7,5 @@ class eventClassifier:
     
     def classify(self, UUID):
         if UUID in self.maliciousUUID:
-            return True
-        return False
+            return "DataLeak"
+        return None
