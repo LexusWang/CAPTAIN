@@ -72,8 +72,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
 
    elif event_type == standard_events['EVENT_LOADLIBRARY']:
       if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
-         if (o.iTag+o.cTag) != 2:
-            print(o.path)
+         # if (o.iTag+o.cTag) != 2:
+         #    print(o.path)
          stg = s.tags()
          citag_grad = s.get_citag_grad()
          etag_grad = s.get_etag_grad()
