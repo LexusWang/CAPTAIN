@@ -107,6 +107,11 @@ def parse_logs(file):
         print("correctly classified")
     else:
         print("error")
+    
+    a = node_inits['FileObject'].parameters()
+    optimizers = {}
+    for key in node_inits.keys():
+        optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=0.001)
 
     parsed_line = 0
     for i in range(7):
@@ -127,28 +132,50 @@ def parse_logs(file):
                     gt = ec.classify(record_datum['uuid'])
                     s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
                     o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
+                    needs_to_update = False
                     if diagnois is None:
                         # check if it's fn
                         if gt is not None:
                             s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                            needs_to_update = True
                     else:
                         # check if it's fp
                         if gt is None:
                             s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                    s_loss.backward()
-                    o_loss.backward()
+                            needs_to_update = True
+                    
+                    if needs_to_update:
+                        s_loss.backward()
+                        o_loss.backward()
 
-                    s_init_id = mo.Nodes[event['src']].getInitID()
-                    o_init_id = mo.Nodes[event['dest']].getInitID()
-                    for node_id in s_init_id:
-                        a = node_inital_tags[node_id]
-                        node_inital_tags[node_id].backward(gradient=s.grad)
-                        b = node_inital_tags[node_id]
+                        for key in optimizers.keys():
+                            optimizers[key].zero_grad()
 
-                    for node_id in o_init_id:
-                        a = node_inital_tags[node_id]
-                        node_inital_tags[node_id].backward()
-                        b = node_inital_tags[node_id]
+                        s_init_id = mo.Nodes[event['src']].getInitID()
+                        s_morse_grads = mo.Nodes[event['src']].get_grad()
+                        o_init_id = mo.Nodes[event['dest']].getInitID()
+                        o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                        nodes_need_updated = {}
+                        if s.grad != None:
+                            for i, node_id in enumerate(s_init_id):
+                                if node_id not in nodes_need_updated:
+                                    nodes_need_updated[node_id] = torch.zeros(5)
+                                nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]
+
+                        if o.grad != None:
+                            for i, node_id in enumerate(o_init_id):
+                                if node_id not in nodes_need_updated:
+                                    nodes_need_updated[node_id] = torch.zeros(5)
+                                nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
+
+                        for nid in nodes_need_updated.keys():
+                            if node_inital_tags[nid].shape[0] == 2:
+                                node_inital_tags[nid].backward(gradient=nodes_need_updated[nid][-2:])
+                            else:
+                                node_inital_tags[nid].backward(gradient=nodes_need_updated[nid])
+
+                        for key in optimizers.keys():
+                            optimizers[key].step()
 
                 elif record_type == 'Subject':
                     subject_node, subject = parse_subject(record_datum)
@@ -167,17 +194,7 @@ def parse_logs(file):
                 elif record_type == 'Host':
                     pass
                 else:
-                    pass
-
-    # ============= Backward & Update =================== #
-    loss = None
-    optimizer = None
-    loss.backward()
-
-    optimizer.step()
-
-
-    
+                    pass    
 
 
 

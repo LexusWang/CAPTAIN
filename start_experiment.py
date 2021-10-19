@@ -1,22 +1,8 @@
-<<<<<<< HEAD
-import os
-import fire
 import json
-# from globals import GlobalVariable as gv
-import torch
-import logging
-import argparse
-# from new_train import train_model
-import time
-# from predict import predict_entry
-# from utils.utils import save_hyperparameters
-# from utils.utils import save_evaluation_results
-=======
 import torch
 import logging
 import argparse
 import time
->>>>>>> 00e1a838b6e506346a3cf9da90e2ebdb373d7ca8
 from utils.utils import *
 from model.loss import get_loss
 from utils.eventClassifier import eventClassifier
@@ -125,9 +111,12 @@ def start_experiment(config="config.json"):
 
             mo.node_inital_tags = node_inital_tags
 
-
-            # morse applied here on all events with initial tags from NN
-<<<<<<< HEAD
+            # ============= Dectection =================== #
+            ec = eventClassifier('groundTruth.txt')
+            
+            optimizers = {}
+            for key in node_inits.keys():
+                optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=0.001)
 
             file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
             parsed_line = 0
@@ -146,19 +135,54 @@ def start_experiment(config="config.json"):
                         if record_type == 'Event':
                             event = parse_event(record_datum)
                             diagnois = mo.add_event(event)
-                            gt = ec.classify(event['id'])
-                            s = torch.tensor(mo.Nodes[event['src']].tags())
-                            o = torch.tensor(mo.Nodes[event['dest']].tags())
+                            gt = ec.classify(record_datum['uuid'])
+                            s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
+                            o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
+                            needs_to_update = False
                             if diagnois is None:
                                 # check if it's fn
                                 if gt is not None:
                                     s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                                    needs_to_update = True
                             else:
                                 # check if it's fp
                                 if gt is None:
                                     s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                            s_loss.backward()
-                            o_loss.backward()
+                                    needs_to_update = True
+                            
+                            if needs_to_update:
+                                s_loss.backward()
+                                o_loss.backward()
+
+                                for key in optimizers.keys():
+                                    optimizers[key].zero_grad()
+
+                                s_init_id = mo.Nodes[event['src']].getInitID()
+                                s_morse_grads = mo.Nodes[event['src']].get_grad()
+                                o_init_id = mo.Nodes[event['dest']].getInitID()
+                                o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                                nodes_need_updated = {}
+                                if s.grad != None:
+                                    for i, node_id in enumerate(s_init_id):
+                                        if node_id not in nodes_need_updated:
+                                            nodes_need_updated[node_id] = torch.zeros(5)
+                                        nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]
+
+                                if o.grad != None:
+                                    for i, node_id in enumerate(o_init_id):
+                                        if node_id not in nodes_need_updated:
+                                            nodes_need_updated[node_id] = torch.zeros(5)
+                                        nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
+
+                                for nid in nodes_need_updated.keys():
+                                    if node_inital_tags[nid].shape[0] == 2:
+                                        node_inital_tags[nid].backward(gradient=nodes_need_updated[nid][-2:])
+                                    else:
+                                        node_inital_tags[nid].backward(gradient=nodes_need_updated[nid])
+
+                                for key in optimizers.keys():
+                                    optimizers[key].step()
+
                         elif record_type == 'Subject':
                             subject_node, subject = parse_subject(record_datum)
                             mo.add_subject(subject_node, subject)
@@ -176,32 +200,10 @@ def start_experiment(config="config.json"):
                         elif record_type == 'Host':
                             pass
                         else:
-                            pass
+                            pass   
 
-=======
-            morse = Morse()
-            loss_for_nodes = defaultdict([0])
-            dataloader = None
-            for event in dataloader:
-                diagnois = morse.add_event(event)
-                gt = ec.classify(event['id'])
-                s = torch.tensor(morse.Nodes[event['src']].tags())
-                o = torch.tensor(morse.Nodes[event['dest']].tags())
-                if diagnois is None:
-                    # check if it's fn
-                    if gt is not None:
-                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                        loss_for_nodes[event['src']].append(s_loss)
-                        loss_for_nodes[event['dest']].append(o_loss)
-                else:
-                    # check if it's fp
-                    if gt is None:
-                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                        loss_for_nodes[event['src']].append(s_loss)
-                        loss_for_nodes[event['dest']].append(o_loss)
->>>>>>> 00e1a838b6e506346a3cf9da90e2ebdb373d7ca8
 
-        trained_model = None
+        trained_model = node_inits
         pred_result = None
         experiment.save_model(trained_model)
 

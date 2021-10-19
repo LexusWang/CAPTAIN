@@ -327,8 +327,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
       stg = s.tags()
-      if ((itag(stg)> 0.5 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):
-         print("DANGER!!!")
+      # if ((itag(stg)> 0.5 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):
+      #    print("DANGER!!!")
 
 
 

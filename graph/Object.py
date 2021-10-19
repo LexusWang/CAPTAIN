@@ -46,10 +46,10 @@ class Object:
 
     def tags(self):
         if self.iTag > 0.5:
-            ciTag = 1
+            ciTag = 1.0
         else:
-            ciTag = 0
-        return [ciTag, ciTag, 0, self.iTag, self.cTag]
+            ciTag = 0.0
+        return [ciTag, ciTag, 0.0, self.iTag, self.cTag]
 
     def setObjTags(self, tags):
         self.iTag = tags[0]
