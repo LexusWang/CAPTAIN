@@ -1,6 +1,7 @@
 import os
 import torch
 from pathlib import Path
+from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
 
 
@@ -26,14 +27,24 @@ class Experiment:
             for arg_item in vars(self.args).items():
                 f.write(f"{arg_item[0]}: {arg_item[1]}\n")
 
-    def save_model(self, model):
-        torch.save(model.state_dict(), os.path.join(self.results_path, "trained_model.pth"))
+    def save_model(self, model_dict):
+        for key in model_dict.keys():
+            torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
 
     def load_model(self):
-        model = TheModelClass(*args, **kwargs)
-        model.load_state_dict(torch.load(os.path.join(self.results_path, "trained_model.pth")))
-        model.to(self.device)
-        return model
+        node_inits = {}
+        node_inits['Subject'] = Initializer(1, 5)
+        node_inits['NetFlowObject'] = Initializer(1, 2)
+        node_inits['SrcSinkObject'] = Initializer(111, 2)
+        node_inits['FileObject'] = FileObj_Initializer(2)
+        node_inits['UnnamedPipeObject'] = Initializer(1, 2)
+        node_inits['MemoryObject'] = Initializer(1, 2)
+        node_inits['PacketSocketObject'] = Initializer(1, 2)
+        node_inits['RegistryKeyObject'] = Initializer(1, 2)
+        for key in node_inits.keys():
+            node_inits[key].load_state_dict(torch.load(os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth")))
+            node_inits[key].to(self.device)
+        return node_inits
 
     def save_pred_labels(pred_labels, file_path):
         '''
@@ -79,12 +90,12 @@ class Experiment:
 
         return precision, recall, accuracy, f1
 
-    def save_evaluation_results(precision, recall, accuracy, f1):
-        filename = "evaluation_results.txt"
-        p = os.path.join(gv.project_path, gv.model_save_path, gv.save_models_dirname, filename)
-        with open(p, 'w+') as f:
-            f.write("======= evaluation results =======\n")
-            f.write(f"precision: {precision}\n")
-            f.write(f"recall: {recall}\n")
-            f.write(f"accuracy: {accuracy}\n")
-            f.write(f"f1: {f1}\n")
+    # def save_evaluation_results(precision, recall, accuracy, f1):
+    #     filename = "evaluation_results.txt"
+    #     p = os.path.join(gv.project_path, gv.model_save_path, gv.save_models_dirname, filename)
+    #     with open(p, 'w+') as f:
+    #         f.write("======= evaluation results =======\n")
+    #         f.write(f"precision: {precision}\n")
+    #         f.write(f"recall: {recall}\n")
+    #         f.write(f"accuracy: {accuracy}\n")
+    #         f.write(f"f1: {f1}\n")

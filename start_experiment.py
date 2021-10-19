@@ -18,8 +18,6 @@ import sys
 import tqdm
 import time
 import pandas as pd
-import numpy as np
-# from datetime import *
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
@@ -202,10 +200,8 @@ def start_experiment(config="config.json"):
                         else:
                             pass   
 
-
-        trained_model = node_inits
         pred_result = None
-        experiment.save_model(trained_model)
+        experiment.save_model(node_inits)
 
     elif (mode == "test"):
 
