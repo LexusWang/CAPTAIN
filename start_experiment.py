@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import fire
 import json
@@ -10,6 +11,12 @@ import time
 # from predict import predict_entry
 # from utils.utils import save_hyperparameters
 # from utils.utils import save_evaluation_results
+=======
+import torch
+import logging
+import argparse
+import time
+>>>>>>> 00e1a838b6e506346a3cf9da90e2ebdb373d7ca8
 from utils.utils import *
 from model.loss import get_loss
 from utils.eventClassifier import eventClassifier
@@ -72,10 +79,6 @@ def start_experiment(config="config.json"):
         experiment.save_hyperparameters()
 
         ec = eventClassifier('groundTruth.txt')
-        if ec.classify('123'):
-            print("correctly classified")
-        else:
-            print("error")
 
         for epoch in range(epoch):
             # pytorch model training code goes here
@@ -124,6 +127,7 @@ def start_experiment(config="config.json"):
 
 
             # morse applied here on all events with initial tags from NN
+<<<<<<< HEAD
 
             file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
             parsed_line = 0
@@ -174,6 +178,28 @@ def start_experiment(config="config.json"):
                         else:
                             pass
 
+=======
+            morse = Morse()
+            loss_for_nodes = defaultdict([0])
+            dataloader = None
+            for event in dataloader:
+                diagnois = morse.add_event(event)
+                gt = ec.classify(event['id'])
+                s = torch.tensor(morse.Nodes[event['src']].tags())
+                o = torch.tensor(morse.Nodes[event['dest']].tags())
+                if diagnois is None:
+                    # check if it's fn
+                    if gt is not None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                        loss_for_nodes[event['src']].append(s_loss)
+                        loss_for_nodes[event['dest']].append(o_loss)
+                else:
+                    # check if it's fp
+                    if gt is None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                        loss_for_nodes[event['src']].append(s_loss)
+                        loss_for_nodes[event['dest']].append(o_loss)
+>>>>>>> 00e1a838b6e506346a3cf9da90e2ebdb373d7ca8
 
         trained_model = None
         pred_result = None
@@ -192,8 +218,8 @@ def start_experiment(config="config.json"):
 
 
 
-        precision, recall, accuracy, f1 = experiment.evaluate_classification(pred_result)
-        save_evaluation_results(precision, recall, accuracy, f1)
+        # precision, recall, accuracy, f1 = experiment.evaluate_classification(pred_result)
+        # save_evaluation_results(precision, recall, accuracy, f1)
 
 
 if __name__ == '__main__':

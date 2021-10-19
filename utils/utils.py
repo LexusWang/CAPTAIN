@@ -1,5 +1,6 @@
 import os
 import torch
+from pathlib import Path
 
 
 
@@ -9,14 +10,15 @@ class Experiment:
         self.timestamp = timestamp
         self.args = args
         self.project_path = os.path.abspath(__file__)
-        self.experiment_path = os.path.join(self.project_path, timestamp)
+        self.project_path = os.path.dirname(os.path.dirname(self.project_path))
+        self.experiment_path = os.path.join(self.project_path, "experiments", timestamp)
+        Path(self.experiment_path).mkdir(parents=True, exist_ok=True)
         if not os.path.exists(self.experiment_path):
             os.mkdir(self.experiment_path)
         if torch.cuda.is_available():
             self.device = torch.device("cuda:0")
         self.results_path = os.path.join(self.experiment_path, self.args.mode)
-        if not os.path.exists(self.results_path):
-            os.mkdir(self.results_path)
+        Path(self.results_path).mkdir(parents=True, exist_ok=True)
 
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
