@@ -213,9 +213,7 @@ class Morse:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
                 self.propagate(event, src, dest)
-                self.detect_alarm(event, src, dest, alarmArg, alarm_file)
-            else:
-                a = 0
+                return self.detect_alarm(event, src, dest, alarmArg, alarm_file)
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
@@ -238,7 +236,7 @@ class Morse:
         self.Nodes[subject_node['uuid']] = subject
 
     def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
-        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
+        return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
 
     def detect_alarm_pre(self,event,s ,o, alarm_file = None):
         return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, self.format, self, alarm_file)

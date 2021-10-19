@@ -13,7 +13,7 @@ import numpy as np
 
 # loss function is called only when false positive or false negative appear
 def get_loss(event_type: int, s: torch.Tensor, o: torch.Tensor, alarm_name: str, side):
-    s_loss, o_loss = torch.zeros(5), torch.zeros(5)
+    s_loss, o_loss = torch.zeros(5, requires_grad=True), torch.zeros(5, requires_grad=True)
 
     if side == "false_positive":
         if event_type == standard_events['EVENT_EXECUTE'] or event_type == standard_events['EVENT_LOADLIBRARY']:

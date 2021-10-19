@@ -13,6 +13,15 @@ import pandas as pd
 import numpy as np
 import torch
 # from datetime import *
+
+import torch
+import time
+from utils.utils import *
+from model.loss import get_loss
+from utils.eventClassifier import eventClassifier
+from model.morse import Morse
+from collections import defaultdict
+
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
@@ -93,6 +102,12 @@ def parse_logs(file):
     mo.node_inital_tags = node_inital_tags
 
     # ============= Dectection =================== #
+    ec = eventClassifier('groundTruth.txt')
+    if ec.classify('123'):
+        print("correctly classified")
+    else:
+        print("error")
+
     parsed_line = 0
     for i in range(7):
         with open(file+'.'+str(i),'r') as fin:
@@ -108,7 +123,33 @@ def parse_logs(file):
                 record_type = record_type[0].split('.')[-1]
                 if record_type == 'Event':
                     event = parse_event(record_datum)
-                    mo.add_event(event)
+                    diagnois = mo.add_event(event)
+                    gt = ec.classify(record_datum['uuid'])
+                    s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
+                    o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
+                    if diagnois is None:
+                        # check if it's fn
+                        if gt is not None:
+                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                    else:
+                        # check if it's fp
+                        if gt is None:
+                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                    s_loss.backward()
+                    o_loss.backward()
+
+                    s_init_id = mo.Nodes[event['src']].getInitID()
+                    o_init_id = mo.Nodes[event['dest']].getInitID()
+                    for node_id in s_init_id:
+                        a = node_inital_tags[node_id]
+                        node_inital_tags[node_id].backward(gradient=s.grad)
+                        b = node_inital_tags[node_id]
+
+                    for node_id in o_init_id:
+                        a = node_inital_tags[node_id]
+                        node_inital_tags[node_id].backward()
+                        b = node_inital_tags[node_id]
+
                 elif record_type == 'Subject':
                     subject_node, subject = parse_subject(record_datum)
                     mo.add_subject(subject_node, subject)
