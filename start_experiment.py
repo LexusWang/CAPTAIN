@@ -9,7 +9,7 @@ from utils.eventClassifier import eventClassifier
 from model.morse import Morse
 from collections import defaultdict
 
-from numpy import record
+from numpy import gradient, record
 from parse.eventParsing import parse_event
 from parse.nodeParsing import parse_subject, parse_object
 from parse.lttng.recordParsing import read_lttng_record
@@ -81,6 +81,22 @@ def start_experiment(config="config.json"):
                             datefmt='%m/%d/%Y %I:%M:%S %p')
         experiment.save_hyperparameters()
 
+        with open('results/features/features.json','r') as fin:
+            node_features = json.load(fin)
+        df = pd.DataFrame.from_dict(node_features,orient='index')
+
+        model_nids = {}
+        model_features = {}
+        for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+            target_features = df[df['type']==node_type]
+            model_nids[node_type] = target_features.index.tolist()
+            if node_type == 'Subject':
+                feature_array = [[0] for i in range(len(target_features))]
+            else:
+                feature_array = target_features['features'].values.tolist()
+            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+
+
         ec = eventClassifier('groundTruth.txt')
 
         for epoch in range(epoch):
@@ -89,28 +105,14 @@ def start_experiment(config="config.json"):
             null = 0
 
             # ============== Initialization ================== #
+            model_tags = {}
             node_inital_tags = {}
 
-            with open('results/features/features.json','r') as fin:
-                node_features = json.load(fin)
-            df = pd.DataFrame.from_dict(node_features,orient='index')
-
-            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-                target_features = df[df['type']==node_type]
-                feature_array = target_features['features'].values.tolist()
-                feature_array = torch.tensor(feature_array, dtype=torch.int64)
-                tags = node_inits[node_type].initialize(feature_array).squeeze()
-                for i, node_id in enumerate(target_features.index.tolist()):
-                    node_inital_tags[node_id] = tags[i,:]
-
-            node_type = 'Subject'
-            target_features = df[df['type']==node_type]
-            feature_array = [[0] for i in range(len(target_features))]
-            feature_array = torch.tensor(feature_array, dtype=torch.int64)
-            tags = node_inits[node_type].initialize(feature_array).squeeze()
-            for i, node_id in enumerate(target_features.index.tolist()):
-                node_inital_tags[node_id] = tags[i,:]
-
+            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+                model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+                for i, node_id in enumerate(model_nids[node_type]):
+                    node_inital_tags[node_id] = model_tags[node_type][i,:]
+            
             mo.node_inital_tags = node_inital_tags
 
             # ============= Dectection =================== #
@@ -199,25 +201,25 @@ def start_experiment(config="config.json"):
                             pass
                                 
             for nid in list(node_gradients.keys()):
-                a = torch.cat(node_gradients[nid],0)
-                b = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
                 node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
             
-            for nid in node_gradients.keys():
-                node_type = node_features[nid]['type']
-                optimizers[node_type].zero_grad()
-                a = node_inital_tags[nid]
-                if node_inital_tags[nid].shape[0] == 2:
-                    with torch.autograd.detect_anomaly():
-                        node_inital_tags[nid].backward(gradient=node_gradients[nid][-2:], retain_graph=True)
-                else:
-                    with torch.autograd.detect_anomaly():
-                        node_inital_tags[nid].backward(gradient=node_gradients[nid], retain_graph=True)
-                optimizers[node_type].step()
+            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+                gradients = []
+                for nid in model_nids[node_type]:
+                    if nid in node_gradients:
+                        gradients.append(node_gradients[nid].unsqueeze(0))
+                    else:
+                        gradients.append(torch.zeros(5).unsqueeze(0))
+                if len(gradients) > 0:
+                    gradients = torch.cat(gradients, 0)
+                    optimizers[node_type].zero_grad()
+                    if node_type == 'Subject':
+                        model_tags[node_type].backward(gradient=gradients, retain_graph=True)
+                    else:
+                        model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
+                    optimizers[node_type].step()
 
-
-                           
-
+            
         pred_result = None
         experiment.save_model(node_inits)
 

@@ -49,7 +49,7 @@ class Object:
             ciTag = 1.0
         else:
             ciTag = 0.0
-        return [ciTag, ciTag, 0.0, self.iTag, self.cTag]
+        return [ciTag, ciTag, 0.0, float(self.iTag), float(self.cTag)]
 
     def setObjTags(self, tags):
         self.iTag = tags[0]

@@ -88,7 +88,7 @@ class Subject:
         return self.cmdLine
 
     def tags(self):
-        return [self.ciTag, self.eTag, self.invTag, self.iTag, self.cTag]
+        return [float(self.ciTag), float(self.eTag), float(self.invTag), float(self.iTag), float(self.cTag)]
 
     def setSubjTags(self,tags):
         self.ciTag = tags[0]
