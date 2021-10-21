@@ -43,16 +43,35 @@ def start_experiment(config="config.json"):
 
     learning_rate = args.learning_rate
     batch_size = args.batch_size
-    sequence_size = args.sequence_length
     feature_size = args.feature_dimension
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
     train_data = args.train_data
     test_data = args.test_data
     validation_data = args.validation_data
-    model_save_path = args.model_save_path
     epoch = args.epoch
     mode = args.mode
+
+    mo = Morse()
+
+    # ============= Tag Initializer =============== #
+    node_inits = {}
+    node_inits['Subject'] = Initializer(1,5)
+    node_inits['NetFlowObject'] = Initializer(1,2)
+    node_inits['SrcSinkObject'] = Initializer(111,2)
+    node_inits['FileObject'] = FileObj_Initializer(2)
+    node_inits['UnnamedPipeObject'] = Initializer(1,2)
+    node_inits['MemoryObject'] = Initializer(1,2)
+    node_inits['PacketSocketObject'] = Initializer(1,2)
+    node_inits['RegistryKeyObject'] = Initializer(1,2)
+    mo.subj_init = node_inits['Subject']
+    mo.obj_inits = node_inits
+
+    # ============= Groud Truth & Optimizers ====================#
+    ec = eventClassifier('groundTruth.txt')
+    optimizers = {}
+    for key in node_inits.keys():
+        optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=learning_rate)
 
     if (mode == "train"):
         logging.basicConfig(level=logging.INFO,
@@ -68,24 +87,9 @@ def start_experiment(config="config.json"):
             # pytorch model training code goes here
             # ...
             null = 0
-            mo = Morse()
-            
-            # ============= Tag Initializer =============== #
-            node_inits = {}
-            node_inits['Subject'] = Initializer(1,5)
-            node_inits['NetFlowObject'] = Initializer(1,2)
-            node_inits['SrcSinkObject'] = Initializer(111,2)
-            node_inits['FileObject'] = FileObj_Initializer(2)
-            node_inits['UnnamedPipeObject'] = Initializer(1,2)
-            node_inits['MemoryObject'] = Initializer(1,2)
-            node_inits['PacketSocketObject'] = Initializer(1,2)
-            node_inits['RegistryKeyObject'] = Initializer(1,2)
-            mo.subj_init = node_inits['Subject']
-            mo.obj_inits = node_inits
 
+            # ============== Initialization ================== #
             node_inital_tags = {}
-            initialized_line = 0
-            node_num = 0
 
             with open('results/features/features.json','r') as fin:
                 node_features = json.load(fin)
@@ -110,21 +114,19 @@ def start_experiment(config="config.json"):
             mo.node_inital_tags = node_inital_tags
 
             # ============= Dectection =================== #
-            ec = eventClassifier('groundTruth.txt')
-            
-            optimizers = {}
-            for key in node_inits.keys():
-                optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=0.001)
-
+            node_gradients = {}
+            mo.alarm_file = './results/alarms-epoch-{}.txt'.format(epoch)
             file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
             parsed_line = 0
-            for i in range(7):
+            for i in range(1):
                 with open(file+'.'+str(i),'r') as fin:
                     # for line in tqdm.tqdm(fin):
                     for line in fin:
                         parsed_line += 1
                         if parsed_line % 100000 == 0:
                             print("Morse has parsed {} lines.".format(parsed_line))
+                        if parsed_line % 500000 == 0:
+                            break
                         record_datum = eval(line)['datum']
                         record_type = list(record_datum.keys())
                         assert len(record_type)==1
@@ -152,8 +154,8 @@ def start_experiment(config="config.json"):
                                 s_loss.backward()
                                 o_loss.backward()
 
-                                for key in optimizers.keys():
-                                    optimizers[key].zero_grad()
+                                # for key in optimizers.keys():
+                                #     optimizers[key].zero_grad()
 
                                 s_init_id = mo.Nodes[event['src']].getInitID()
                                 s_morse_grads = mo.Nodes[event['src']].get_grad()
@@ -173,13 +175,9 @@ def start_experiment(config="config.json"):
                                         nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
 
                                 for nid in nodes_need_updated.keys():
-                                    if node_inital_tags[nid].shape[0] == 2:
-                                        node_inital_tags[nid].backward(gradient=nodes_need_updated[nid][-2:])
-                                    else:
-                                        node_inital_tags[nid].backward(gradient=nodes_need_updated[nid])
-
-                                for key in optimizers.keys():
-                                    optimizers[key].step()
+                                    if nid not in node_gradients:
+                                        node_gradients[nid] = []
+                                    node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
 
                         elif record_type == 'Subject':
                             subject_node, subject = parse_subject(record_datum)
@@ -198,7 +196,27 @@ def start_experiment(config="config.json"):
                         elif record_type == 'Host':
                             pass
                         else:
-                            pass   
+                            pass
+                                
+            for nid in list(node_gradients.keys()):
+                a = torch.cat(node_gradients[nid],0)
+                b = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
+                node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
+            
+            for nid in node_gradients.keys():
+                node_type = node_features[nid]['type']
+                optimizers[node_type].zero_grad()
+                a = node_inital_tags[nid]
+                if node_inital_tags[nid].shape[0] == 2:
+                    with torch.autograd.detect_anomaly():
+                        node_inital_tags[nid].backward(gradient=node_gradients[nid][-2:], retain_graph=True)
+                else:
+                    with torch.autograd.detect_anomaly():
+                        node_inital_tags[nid].backward(gradient=node_gradients[nid], retain_graph=True)
+                optimizers[node_type].step()
+
+
+                           
 
         pred_result = None
         experiment.save_model(node_inits)

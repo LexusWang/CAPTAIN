@@ -31,7 +31,6 @@ class Morse:
         self.a_b = 0.1
         self.a_e = 0.05
 
-
         # init graph
         self.G = nx.DiGraph()
         self.Nodes = {}
