@@ -120,15 +120,13 @@ def start_experiment(config="config.json"):
             mo.alarm_file = './results/alarms-epoch-{}.txt'.format(epoch)
             file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
             parsed_line = 0
-            for i in range(1):
+            for i in range(7):
                 with open(file+'.'+str(i),'r') as fin:
                     # for line in tqdm.tqdm(fin):
                     for line in fin:
                         parsed_line += 1
                         if parsed_line % 100000 == 0:
                             print("Morse has parsed {} lines.".format(parsed_line))
-                        if parsed_line % 500000 == 0:
-                            break
                         record_datum = eval(line)['datum']
                         record_type = list(record_datum.keys())
                         assert len(record_type)==1
