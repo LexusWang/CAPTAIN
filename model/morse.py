@@ -214,25 +214,23 @@ class Morse:
                 self.propagate(event, src, dest)
                 return self.detect_alarm(event, src, dest, alarmArg, alarm_file)
 
-    def add_object(self, object_node, object):
-        self.G.add_node(object_node['uuid'])
+    def add_object(self, object):
+        self.G.add_node(object.id)
         # initObjectTags(object, self.obj_inits, format=self.format)
-        a = self.node_inital_tags[object_node['uuid']].tolist()
-        object.setObjTags(self.node_inital_tags[object_node['uuid']].tolist())
-        self.Nodes[object_node['uuid']] = object
+        object.setObjTags(self.node_inital_tags[object.id].tolist())
+        self.Nodes[object.id] = object
 
-    def add_subject(self, subject_node, subject):
-        self.G.add_node(subject_node['uuid'])
+    def add_subject(self, subject):
+        self.G.add_node(subject.id)
         if subject.pid in self.processes and self.processes[subject.pid]['alive']:
             subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         else:
             # initSubjectTags(subject, self.subj_init)
-            a = self.node_inital_tags[subject_node['uuid']].tolist()
-            subject.setSubjTags(self.node_inital_tags[subject_node['uuid']].tolist())
+            subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
         self.processes[subject.pid] = {}
-        self.processes[subject.pid]['node'] = subject_node['uuid']
+        self.processes[subject.pid]['node'] = subject.id
         self.processes[subject.pid]['alive'] = True
-        self.Nodes[subject_node['uuid']] = subject
+        self.Nodes[subject.id] = subject
 
     def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
         return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
