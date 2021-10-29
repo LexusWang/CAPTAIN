@@ -222,11 +222,12 @@ class Morse:
 
     def add_subject(self, subject):
         self.G.add_node(subject.id)
-        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-            subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
-        else:
-            # initSubjectTags(subject, self.subj_init)
-            subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
+        # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
+        #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
+        # else:
+        #     # initSubjectTags(subject, self.subj_init)
+        #     subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
+        subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject.id
         self.processes[subject.pid]['alive'] = True
@@ -237,4 +238,10 @@ class Morse:
 
     def detect_alarm_pre(self,event,s ,o, alarm_file = None):
         return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, self.format, self, alarm_file)
-        
+    
+    def reset_tags(self):
+        for nid in self.Nodes.keys():
+            if isinstance(self.Nodes[nid],Subject):
+                self.Nodes[nid].setSubjTags(self.node_inital_tags[nid].tolist())
+            else:
+                self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
