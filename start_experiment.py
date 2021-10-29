@@ -138,6 +138,7 @@ def start_experiment(config="config.json"):
         ec = eventClassifier('groundTruth.txt')
 
         for epoch in range(epoch):
+            print('epoch: {}'.format(epoch))
             # ============== Initialization ================== #
             model_tags = {}
             node_inital_tags = {}
@@ -153,73 +154,55 @@ def start_experiment(config="config.json"):
             # ============= Dectection =================== #
             node_gradients = {}
             mo.alarm_file = './results/alarms-epoch-{}.txt'.format(epoch)
-            for event in tqdm.tqdm(events):
-                if record_type == 'Event':
-                    event = parse_event(record_datum)
-                    diagnois = mo.add_event(event)
-                    gt = ec.classify(record_datum['uuid'])
-                    s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
-                    o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
-                    needs_to_update = False
-                    if diagnois is None:
-                        # check if it's fn
-                        if gt is not None:
-                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                            needs_to_update = True
-                    else:
-                        # check if it's fp
-                        if gt is None:
-                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                            needs_to_update = True
-                    
-                    if needs_to_update:
-                        s_loss.backward()
-                        o_loss.backward()
-
-                        # for key in optimizers.keys():
-                        #     optimizers[key].zero_grad()
-
-                        s_init_id = mo.Nodes[event['src']].getInitID()
-                        s_morse_grads = mo.Nodes[event['src']].get_grad()
-                        o_init_id = mo.Nodes[event['dest']].getInitID()
-                        o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                        nodes_need_updated = {}
-                        if s.grad != None:
-                            for i, node_id in enumerate(s_init_id):
-                                if node_id not in nodes_need_updated:
-                                    nodes_need_updated[node_id] = torch.zeros(5)
-                                nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]
-
-                        if o.grad != None:
-                            for i, node_id in enumerate(o_init_id):
-                                if node_id not in nodes_need_updated:
-                                    nodes_need_updated[node_id] = torch.zeros(5)
-                                nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
-
-                        for nid in nodes_need_updated.keys():
-                            if nid not in node_gradients:
-                                node_gradients[nid] = []
-                            node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
-
-                elif record_type == 'Subject':
-                    subject_node, subject = parse_subject(record_datum)
-                    mo.add_subject(subject)
-                elif record_type == 'Principal':
-                    mo.Principals[record_datum['uuid']] = record_datum
-                elif record_type.endswith('Object'):
-                    object_node, object = parse_object(record_datum, record_type)
-                    mo.add_object(object)
-                elif record_type == 'TimeMarker':
-                    pass
-                elif record_type == 'StartMarker':
-                    pass
-                elif record_type == 'UnitDependency':
-                    pass
-                elif record_type == 'Host':
-                    pass
+            for event_info in tqdm.tqdm(events):
+                event_id = event_info[0]
+                event = event_info[1]
+                diagnois = mo.add_event(event)
+                gt = ec.classify(event_id)
+                s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
+                o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
+                needs_to_update = False
+                if diagnois is None:
+                    # check if it's fn
+                    if gt is not None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                        needs_to_update = True
                 else:
-                    pass
+                    # check if it's fp
+                    if gt is None:
+                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                        needs_to_update = True
+                
+                if needs_to_update:
+                    s_loss.backward()
+                    o_loss.backward()
 
+                    # for key in optimizers.keys():
+                    #     optimizers[key].zero_grad()
+
+                    s_init_id = mo.Nodes[event['src']].getInitID()
+                    s_morse_grads = mo.Nodes[event['src']].get_grad()
+                    o_init_id = mo.Nodes[event['dest']].getInitID()
+                    o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                    nodes_need_updated = {}
+                    if s.grad != None:
+                        for i, node_id in enumerate(s_init_id):
+                            if node_id not in nodes_need_updated:
+                                nodes_need_updated[node_id] = torch.zeros(5)
+                            nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]
+
+                    if o.grad != None:
+                        for i, node_id in enumerate(o_init_id):
+                            if node_id not in nodes_need_updated:
+                                nodes_need_updated[node_id] = torch.zeros(5)
+                            nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
+
+                    for nid in nodes_need_updated.keys():
+                        if nid not in node_gradients:
+                            node_gradients[nid] = []
+                        node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+
+            
             '''
             file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
             parsed_line = 0
