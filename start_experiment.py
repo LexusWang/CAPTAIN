@@ -163,11 +163,13 @@ def start_experiment(config="config.json"):
                 s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
                 o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
                 needs_to_update = False
+                is_fp = False
                 if diagnois is None:
                     # check if it's fn
                     if gt is not None:
                         s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                        needs_to_update = True
+                        if np.random.uniform(0, 100, 1) == 1:
+                            needs_to_update = True
                 else:
                     # check if it's fp
                     if gt is None:
@@ -177,6 +179,11 @@ def start_experiment(config="config.json"):
                 if needs_to_update:
                     s_loss.backward()
                     o_loss.backward()
+
+                    if is_fp:
+                        a = 2
+                    else:
+                        a = 1
 
                     # for key in optimizers.keys():
                     #     optimizers[key].zero_grad()
@@ -190,13 +197,13 @@ def start_experiment(config="config.json"):
                         for i, node_id in enumerate(s_init_id):
                             if node_id not in nodes_need_updated:
                                 nodes_need_updated[node_id] = torch.zeros(5)
-                            nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]
+                            nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
 
                     if o.grad != None:
                         for i, node_id in enumerate(o_init_id):
                             if node_id not in nodes_need_updated:
                                 nodes_need_updated[node_id] = torch.zeros(5)
-                            nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]
+                            nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
 
                     for nid in nodes_need_updated.keys():
                         if nid not in node_gradients:
