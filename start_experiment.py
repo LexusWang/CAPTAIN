@@ -32,7 +32,7 @@ def start_experiment(config="config.json"):
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--feature_dimension", nargs='?', default=12, type=int)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--train_data", nargs='?', default='/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json', type=str)
+    parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--test_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--validation_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
