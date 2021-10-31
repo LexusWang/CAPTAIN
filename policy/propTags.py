@@ -229,7 +229,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          o.setcTagInitID(s.getcTagInitID())
       o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
-   elif event_type == standard_events['EVENT_WRITE']:
+   elif event_type in {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG']}:
       stg = s.tags()
       otg = o.tags()
       it = itag(stg)

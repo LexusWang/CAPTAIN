@@ -25,6 +25,39 @@ from collections import defaultdict
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
+def extract_nodes(file):
+    null = 0
+    node_features = {}
+
+    initialized_line = 0
+    node_num = 0
+    for i in range(7):
+        with open(file+'.'+str(i),'r') as fin:
+            for line in fin:
+                initialized_line += 1
+                if initialized_line % 100000 == 0:
+                    print("Morse has initialized {} lines, {} nodes.".format(initialized_line, node_num))
+                record_datum = eval(line)['datum']
+                record_type = list(record_datum.keys())
+                assert len(record_type)==1
+                record_datum = record_datum[record_type[0]]
+                record_type = record_type[0].split('.')[-1]
+                if record_type == 'Subject':
+                    node_num += 1
+                    subject_node, subject = parse_subject(record_datum)
+                    node_features[subject_node['uuid']] = {}
+                    node_features[subject_node['uuid']]['features'] = get_subject_feature(subject)
+                    node_features[subject_node['uuid']]['type'] = 'Subject'
+                elif record_type.endswith('Object'):
+                    node_num += 1
+                    object_node, object = parse_object(record_datum, record_type)
+                    node_features[object_node['uuid']] = {}
+                    node_features[object_node['uuid']]['features'] = get_object_feature(object)
+                    node_features[object_node['uuid']]['type'] = record_type
+    df = pd.DataFrame.from_dict(node_features,orient='index')
+    # print(df)
+    df.to_json('results/features/features.json', orient='index')
+
 def get_node_features(file):
     null = 0
     node_features = {}
@@ -179,12 +212,12 @@ def parse_logs(file):
 
                 elif record_type == 'Subject':
                     subject_node, subject = parse_subject(record_datum)
-                    mo.add_subject(subject_node, subject)
+                    mo.add_subject(subject)
                 elif record_type == 'Principal':
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
                     object_node, object = parse_object(record_datum, record_type)
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -219,15 +252,15 @@ def parse_lttng_logs(file):
                     if len(record.params)>0:
                         subject_node, subject = parse_subject(record, format='lttng')
                         # print(subject.cmdLine)
-                        mo.add_subject(subject_node, subject)
+                        mo.add_subject(subject)
                 elif 0 < record.subtype < 5:
                     # non-common file node
                     object_node, object = parse_object(record, record.subtype, format='lttng')
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
                 elif record.subtype == -1:
                     # common file node
                     object_node, object = parse_object(record, 0, format='lttng')
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
             else:
                 pass
 

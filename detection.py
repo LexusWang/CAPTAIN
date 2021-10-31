@@ -36,7 +36,7 @@ def parse_logs(file):
                     mo.add_event(event)
                 elif record_type == 'Subject':
                     subject_node, subject = parse_subject(record_datum)
-                    mo.add_subject(subject_node, subject)
+                    mo.add_subject(subject)
                 elif record_type == 'TimeMarker':
                     b = 0
                 elif record_type == 'StartMarker':
@@ -49,7 +49,7 @@ def parse_logs(file):
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
                     object_node, object = parse_object(record_datum, record_type)
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
                 else:
                     pass
 
@@ -76,15 +76,15 @@ def parse_lttng_logs(file):
                     if len(record.params)>0:
                         subject_node, subject = parse_subject(record, format='lttng')
                         # print(subject.cmdLine)
-                        mo.add_subject(subject_node, subject)
+                        mo.add_subject(subject)
                 elif 0 < record.subtype < 5:
                     # non-common file node
                     object_node, object = parse_object(record, record.subtype, format='lttng')
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
                 elif record.subtype == -1:
                     # common file node
                     object_node, object = parse_object(record, 0, format='lttng')
-                    mo.add_object(object_node, object)
+                    mo.add_object(object)
             else:
                 pass
 

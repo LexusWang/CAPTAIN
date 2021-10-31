@@ -171,7 +171,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
          alarm_result = "Inject"
          alarm_sum[1] = alarm_sum[1] + 1
    
-   if event_type == standard_events['EVENT_WRITE']:
+   if event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
       if (not o.isIP() and not o.isMatch("UnknownObject") and not o.isMatch("Pipe\[") and not o.isMatch("pipe") and not o.isMatch("null") and itag(alarmarg.origtags) > 0.5 and itag(o.tags()) <= 0.5):
          if not created.get((s.get_pid(), o.get_name()), False):
             if not alarms[(s.get_pid(), o.get_name())]:
