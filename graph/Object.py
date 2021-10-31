@@ -1,10 +1,7 @@
+import json
 from policy.floatTags import citag
 import numpy as np
 import re
-
-
-# from globals import GlobalVariable as gv
-
 
 class Object:
     def __init__(self, id = None, time: int = None, type: str = None, subtype: str = None, pid: int = None, ppid: int = None,
@@ -16,18 +13,8 @@ class Object:
         self.ppid = ppid
         self.name = objName
         self.path = None
-        self.updateTime = 0
-        self.pipe = []
 
-        self.event_list = []
-        self.event_id_list = []
-        self.event_type_list = []
-        self.state_list = []
-        self.morse_grad_list = []
-        self.simple_net_grad_list = []
-        # grad list stores grad of morse
-        self.cur_state = np.zeros([2, 3])
-        self.seq_len = 0
+        self.updateTime = 0
 
         self.iTag: float = 0.0
         self.cTag: float = 0.0
@@ -44,6 +31,17 @@ class Object:
         self.iTag_initID = id
         self.cTag_initID = id
 
+    def dumps(self) -> str:
+        json_dict = {}
+        json_dict['id'] = self.id
+        json_dict['time'] = self.time
+        json_dict['type'] = self.type
+        json_dict['subtype'] = self.subtype
+        json_dict['ppid'] = self.ppid
+        json_dict['name'] = self.name
+        json_dict['path'] = self.path
+        return str(json_dict)
+
     def tags(self):
         if self.iTag > 0.5:
             ciTag = 1.0
@@ -58,7 +56,6 @@ class Object:
     def isMatch(self, string):
         if self.path == None:
             return False
-        # a = re.search(string, self.path)
         return isinstance(re.search(string, self.path), re.Match)
 
     def isIP(self):
