@@ -21,6 +21,9 @@ class Experiment:
         self.results_path = os.path.join(self.experiment_path, self.args.mode)
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
 
+    def get_experiment_output_path(self):
+        return self.results_path
+
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:

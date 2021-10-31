@@ -21,15 +21,19 @@ import pandas as pd
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 import numpy as np
+from pathlib import Path
 
 def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
+    parser.add_argument("--alarm_file_path", default=, type=str)
+    parser.add_argument("--feature_path", default='results/features/features.json', type=str)
+    parser.add_argument("--ground_truth_file", default='groundTruth.txt', type=str)
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
     parser.add_argument("--epoch", default=100, type=int)
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--feature_dimension", nargs='?', default=12, type=int)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--train_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
+    parser.add_argument("--train_data", nargs='?', default='/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json', type=str)
     parser.add_argument("--test_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--validation_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
@@ -37,6 +41,7 @@ def start_experiment(config="config.json"):
 
 
     args = parser.parse_args()
+    experiment = None
     if args.mode == "train":
         experiment = Experiment(str(int(time.time())), args)
     else:
@@ -85,10 +90,9 @@ def start_experiment(config="config.json"):
         # ================= Load all nodes & edges to memory ==================== #
         null = 0
         events = []
-        file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
         loaded_line = 0
         for i in range(7):
-            with open(file+'.'+str(i),'r') as fin:
+            with open(args.train_data+'.'+str(i),'r') as fin:
                 for line in fin:
                     loaded_line += 1
                     if loaded_line % 100000 == 0:
@@ -120,7 +124,7 @@ def start_experiment(config="config.json"):
                     else:
                         pass
 
-        with open('results/features/features.json','r') as fin:
+        with open(args.feature_path,'r') as fin:
             node_features = json.load(fin)
         df = pd.DataFrame.from_dict(node_features,orient='index')
 
@@ -136,7 +140,7 @@ def start_experiment(config="config.json"):
             model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
 
 
-        ec = eventClassifier('groundTruth.txt')
+        ec = eventClassifier(args.ground_truth_file)
 
         for epoch in range(epoch):
             print('epoch: {}'.format(epoch))
@@ -154,7 +158,8 @@ def start_experiment(config="config.json"):
 
             # ============= Dectection =================== #
             node_gradients = {}
-            mo.alarm_file = './results/alarms-epoch-{}.txt'.format(epoch)
+            mo.alarm_file = os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch))
+            Path(mo.alarm_file).mkdir(parents=True, exist_ok=True)
             for event_info in tqdm.tqdm(events):
                 event_id = event_info[0]
                 event = event_info[1]
