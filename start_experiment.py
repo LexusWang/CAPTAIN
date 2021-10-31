@@ -25,7 +25,6 @@ from pathlib import Path
 
 def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--alarm_file_path", default=, type=str)
     parser.add_argument("--feature_path", default='results/features/features.json', type=str)
     parser.add_argument("--ground_truth_file", default='groundTruth.txt', type=str)
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
