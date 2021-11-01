@@ -63,7 +63,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
       alarmarg.origtags = s.tags()
 
    # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
-   if event_type == standard_events['EVENT_WRITE']:
+   if event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
       alarmarg.origtags = o.tags()
 
    # inject_pre(_, s, useful, _)|useful -->  origtags = subjTags(s);
@@ -79,7 +79,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
       if (itag(s.tags()) < 0.5):
          alarmarg.rootprinc = isRoot(morse.Principals[s.owner])
 
-   if event_type == standard_events['EVENT_WRITE']:
+   if event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
       alarmarg.origtags = o.tags()
 
    #    remove_pre(s, o, ts) --> {

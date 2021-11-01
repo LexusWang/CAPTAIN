@@ -27,7 +27,7 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
             o_loss = o - torch.tensor([TRUSTED, 0, 0, 0, 0])
 
-        elif event_type == standard_events['EVENT_WRITE']:
+        elif event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
             # to be discussed: which to be chosen to optimized (one is enough, more is also ok)
             o_loss = o - torch.tensor([0, 0, 0, np.random.normal(0.75, 1), 0])
             if alarm_name == "DataLeak":
@@ -43,7 +43,7 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
             o_loss = o - torch.tensor([UNTRUSTED, 0, 0, 0, 0])
 
-        elif event_type == standard_events['EVENT_WRITE']:
+        elif event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
             o_loss = o - torch.tensor([0, 0, 0, np.random.normal(0.25, 1), 0])
             if alarm_name == "DataLeak":
                 s_loss = s - torch.tensor([0, 0, 0, np.random.normal(0.25, 1), np.random.normal(0.25, 1)])
