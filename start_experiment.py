@@ -158,7 +158,7 @@ def start_experiment(config="config.json"):
             # ============= Dectection =================== #
             node_gradients = {}
             mo.alarm_file = os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch))
-            Path(mo.alarm_file).mkdir(parents=True, exist_ok=True)
+            Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             for event_info in tqdm.tqdm(events):
                 event_id = event_info[0]
                 event = event_info[1]
