@@ -13,6 +13,8 @@ class dataProcessor:
         self.vertexDataFileName = self.dpConfig['VertexDataFileName']
         self.edgeDataFileName = self.dpConfig['EdgeDataFileName']
         self.segSize = int(self.dpConfig['SegmentSize'])
+        self.startTimestamp = int(self.dpConfig['StartTimestamp'])
+        self.endTimestamp = int(self.dpConfig['EndTimestamp'])
 
     def separate(self):
         if not os.path.exists(self.toDir):
@@ -22,7 +24,6 @@ class dataProcessor:
         edgeIndex = 0
         edgePath = os.path.join(self.toDir, self.edgeDataFileName + '.' + str(edgeIndex))
         files = glob.glob(self.fromFormat)
-        print(files)
         e = open(edgePath, 'w+')
         with open(vertexPath, 'w+') as v:
             for file in sorted(files):
@@ -36,6 +37,9 @@ class dataProcessor:
                         'com.bbn.tc.schema.avro.cdm18.UnnamedPipeObject' in tmp['datum']:
                             v.write(line)
                         elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
+                            timestamp = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos']
+                            if timestamp < self.startTimestamp or timestamp > self.endTimestamp:
+                                continue
                             e.write(line)
                             counter += 1
                             if counter == self.segSize:
