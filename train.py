@@ -61,6 +61,8 @@ def extract_nodes(file):
 def get_node_features(file):
     null = 0
     node_features = {}
+    for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+        node_features[node_type] = {}
 
     initialized_line = 0
     node_num = 0
@@ -78,18 +80,36 @@ def get_node_features(file):
                 if record_type == 'Subject':
                     node_num += 1
                     subject_node, subject = parse_subject(record_datum)
-                    node_features[subject_node['uuid']] = {}
-                    node_features[subject_node['uuid']]['features'] = get_subject_feature(subject)
-                    node_features[subject_node['uuid']]['type'] = 'Subject'
+                    features = get_subject_feature(subject)
+                    node_features[record_type][subject_node['uuid']] = {}
+                    node_features[record_type][subject_node['uuid']]['pname'] = features[0]
+                    node_features[record_type][subject_node['uuid']]['cmdl'] = features[1]
+                    node_features[record_type][subject_node['uuid']]['type'] = 'Subject'
                 elif record_type.endswith('Object'):
                     node_num += 1
                     object_node, object = parse_object(record_datum, record_type)
-                    node_features[object_node['uuid']] = {}
-                    node_features[object_node['uuid']]['features'] = get_object_feature(object)
-                    node_features[object_node['uuid']]['type'] = record_type
-    df = pd.DataFrame.from_dict(node_features,orient='index')
-    # print(df)
-    df.to_json('results/features/features.json', orient='index')
+                    features = get_object_feature(object)
+                    node_features[record_type][object_node['uuid']] = {}
+                    node_features[record_type][object_node['uuid']]['type'] = record_type
+                    if record_type == 'NetFlowObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                    if record_type == 'SrcSinkObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                    if record_type == 'FileObject':
+                        node_features[record_type][object_node['uuid']]['path'] = features[0]
+                        node_features[record_type][object_node['uuid']]['FileObjectType'] = features[1]
+                    if record_type == 'UnnamedPipeObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                    if record_type == 'MemoryObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                    if record_type == 'PacketSocketObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                    if record_type == 'RegistryKeyObject':
+                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+    
+    for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+        df = pd.DataFrame.from_dict(node_features[node_type],orient='index')
+        df.to_json('results/features/{}.json'.format(node_type), orient='index')
 
 def parse_logs(file):
     null = 0
@@ -269,7 +289,7 @@ def parse_lttng_logs(file):
 
 if __name__ == '__main__':
     file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
-    # get_node_features(file)
-    parse_logs(file)
+    get_node_features(file)
+    # parse_logs(file)
     # file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
     # parse_lttng_logs(file)

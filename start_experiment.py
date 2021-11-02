@@ -61,7 +61,7 @@ def start_experiment(config="config.json"):
 
     # ============= Tag Initializer =============== #
     node_inits = {}
-    node_inits['Subject'] = Initializer(1,5)
+    node_inits['Subject'] = Initializer(111,5)
     node_inits['NetFlowObject'] = Initializer(1,2)
     node_inits['SrcSinkObject'] = Initializer(111,2)
     node_inits['FileObject'] = FileObj_Initializer(2)
@@ -90,7 +90,7 @@ def start_experiment(config="config.json"):
         null = 0
         events = []
         loaded_line = 0
-        for i in range(7):
+        for i in range(1):
             with open(args.train_data+'.'+str(i),'r') as fin:
                 for line in fin:
                     loaded_line += 1
@@ -123,19 +123,27 @@ def start_experiment(config="config.json"):
                     else:
                         pass
 
-        with open(args.feature_path,'r') as fin:
-            node_features = json.load(fin)
-        df = pd.DataFrame.from_dict(node_features,orient='index')
+        # with open(args.feature_path,'r') as fin:
+        #     node_features = json.load(fin)
+        # df = pd.DataFrame.from_dict(node_features,orient='index')
 
         model_nids = {}
         model_features = {}
         for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
-            target_features = df[df['type']==node_type]
-            model_nids[node_type] = target_features.index.tolist()
-            if node_type == 'Subject':
-                feature_array = [[0] for i in range(len(target_features))]
-            else:
+            with open(os.path.join(args.feature_path,'{}.json'.format(node_type)),'r') as fin:
+                node_features = json.load(fin)
+            if len(node_features) > 0:
+                target_features = pd.DataFrame.from_dict(node_features,orient='index')
+                # target_features = df[df['type']==node_type]
+                model_nids[node_type] = target_features.index.tolist()
+                # if node_type == 'Subject':
+                #     feature_array = [[0] for i in range(len(target_features))]
+                # else:
+                #     feature_array = target_features['features'].values.tolist()
                 feature_array = target_features['features'].values.tolist()
+            else:
+                model_nids[node_type] = []
+                feature_array = []
             model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
 
 
