@@ -29,7 +29,7 @@ import json
 import pandas as pd
 import torch
 
-feature_path = 'results/features/demo/FileObject.json'
+feature_path = 'results/features/FileObject.json'
 
 with open(feature_path,'r') as fin:
     node_features = json.load(fin)
@@ -64,4 +64,4 @@ for i in range(len(old_features)):
 
 df['features'] = new_features
 feature_df = df.drop(columns=['path', 'FileObjectType'])
-feature_df.to_json('results/features/demo/features/{}.json'.format(node_type), orient='index')
+feature_df.to_json('results/features/feature_vectors/{}.json'.format(node_type), orient='index')

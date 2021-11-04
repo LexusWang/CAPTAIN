@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import torch
 
-feature_path = 'results/features/demo/Subject.json'
+feature_path = 'results/features/Subject.json'
 
 with open(feature_path,'r') as fin:
     node_features = json.load(fin)
@@ -23,4 +23,4 @@ for i, pname in enumerate(pname_result):
 
 df['features'] = df['pname'].map(pname_index)
 feature_df = df.drop(columns=['pname', 'cmdl'])
-feature_df.to_json('results/features/demo/features/{}.json'.format(node_type), orient='index')
+feature_df.to_json('results/features/feature_vectors/{}.json'.format(node_type), orient='index')

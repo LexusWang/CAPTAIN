@@ -5,7 +5,7 @@ import torch
 
 
 for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-    feature_path = 'results/features/demo/{}.json'.format(node_type)
+    feature_path = 'results/features/{}.json'.format(node_type)
     with open(feature_path,'r') as fin:
         node_features = json.load(fin)
 
@@ -15,4 +15,4 @@ for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObj
         feature_df = df.drop(columns=['subtype'])
         feature_df.to_json('results/features/demo/features/{}.json'.format(node_type), orient='index')
     else:
-        df.to_json('results/features/demo/features/{}.json'.format(node_type), orient='index')
+        df.to_json('results/features/feature_vectors/{}.json'.format(node_type), orient='index')
