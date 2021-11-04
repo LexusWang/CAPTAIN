@@ -13,6 +13,6 @@ for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObj
     if len(node_features) > 0:
         df['features'] = df['subtype'].map(lambda x: [x])
         feature_df = df.drop(columns=['subtype'])
-        feature_df.to_json('results/features/demo/features/{}.json'.format(node_type), orient='index')
+        feature_df.to_json('results/features/feature_vectors/{}.json'.format(node_type), orient='index')
     else:
         df.to_json('results/features/feature_vectors/{}.json'.format(node_type), orient='index')
