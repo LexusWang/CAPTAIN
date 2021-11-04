@@ -25,7 +25,7 @@ from pathlib import Path
 
 def start_experiment(config="config.json"):
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--feature_path", default='results/features/features.json', type=str)
+    parser.add_argument("--feature_path", default='results/features/feature_vectors', type=str)
     parser.add_argument("--ground_truth_file", default='groundTruth.txt', type=str)
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
     parser.add_argument("--epoch", default=100, type=int)
@@ -61,7 +61,7 @@ def start_experiment(config="config.json"):
 
     # ============= Tag Initializer =============== #
     node_inits = {}
-    node_inits['Subject'] = Initializer(111,5)
+    node_inits['Subject'] = Initializer(150,5)
     node_inits['NetFlowObject'] = Initializer(1,2)
     node_inits['SrcSinkObject'] = Initializer(111,2)
     node_inits['FileObject'] = FileObj_Initializer(2)
@@ -90,7 +90,7 @@ def start_experiment(config="config.json"):
         null = 0
         events = []
         loaded_line = 0
-        for i in range(1):
+        for i in range(7):
             with open(args.train_data+'.'+str(i),'r') as fin:
                 for line in fin:
                     loaded_line += 1
