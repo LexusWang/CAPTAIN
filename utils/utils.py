@@ -18,16 +18,52 @@ class Experiment:
             os.mkdir(self.experiment_path)
         if torch.cuda.is_available():
             self.device = torch.device("cuda:0")
-        self.results_path = os.path.join(self.experiment_path, self.args.mode)
+        self.results_path = os.path.join(self.experiment_path, self.args['mode'])
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
+        self.pre_load_morses_repo = os.path.join(self.project_path, "pre_load_morses")
+        Path(self.pre_load_morses_repo).mkdir(parents=True, exist_ok=True)
+
+        # final metrics
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
 
     def get_experiment_output_path(self):
         return self.results_path
 
+    def get_pre_load_morse(self, data_name):
+        pre_load_morse_dir = os.path.join(self.pre_load_morses_repo, data_name)
+        pre_load_morse_path = os.path.join(pre_load_morse_dir, 'morse.pkl')
+        if Path(pre_load_morse_path).is_file():
+            return pre_load_morse_path
+        else:
+            Path(pre_load_morse_dir).mkdir(parents=True, exist_ok=True)
+            return pre_load_morse_dir
+
+    def update_metrics(self, pred, gt):
+        if pred is None:
+            self.fn += 1
+        else:
+            if pred == gt:
+                self.tp += 1
+            else:
+                self.fp += 1
+
+    def get_precision(self):
+        return self.tp / (self.tp + self.fp)
+
+    def get_recall(self):
+        return self.tp / (self.tp + self.fn)
+
+    def get_f1_score(self):
+        p = self.get_precision()
+        r = self.get_recall()
+        return 2 * (p * r / (p + r))
+
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:
-            for arg_item in vars(self.args).items():
+            for arg_item in self.args.items():
                 f.write(f"{arg_item[0]}: {arg_item[1]}\n")
 
     def save_model(self, model_dict):
