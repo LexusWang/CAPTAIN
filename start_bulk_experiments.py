@@ -358,8 +358,19 @@ if __name__ == '__main__':
 
     def training_function(config):
         for step in range(60):
+            experiment_args = {
+                "learning_rate": config['learning_rate'],
+                "epoch": config['epoch'],
+                "lr_imb": config['lr_imb'],
+                "train_data": config['train_data'],
+                "mode": config['mode'],
+                "device": config['device'],
+                "ground_truth_file": config['ground_truth_file'],
+                "feature_path": config['feature_path'],
+                "data_tag": config['data_tag']
+            }
             # Iterative training function - can be any arbitrary training procedure.
-            intermediate_score = start_experiment(config)
+            intermediate_score = start_experiment(experiment_args)
             # Feed the score back back to Tune.
             tune.report(mean_loss=intermediate_score)
 
