@@ -82,6 +82,7 @@ def start_experiment(config):
                         loaded_line += 1
                         if loaded_line % 100000 == 0:
                             print("Morse has loaded {} lines.".format(loaded_line))
+                        print(line)
                         record_datum = eval(line)['datum']
                         record_type = list(record_datum.keys())
                         assert len(record_type)==1
