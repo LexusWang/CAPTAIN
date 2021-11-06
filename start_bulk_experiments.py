@@ -379,7 +379,7 @@ if __name__ == '__main__':
     analysis = tune.run(
         training_function,
         config={
-            "learning_rate": [0.1, 0.01, 0.001, 0.0001],
+            "learning_rate": tune.grid_search([0.1, 0.01, 0.001, 0.0001]),
             "epoch": tune.grid_search([5, 10, 20]),
             "lr_imb": tune.grid_search([1, 2, 4, 8, 16]),
             "train_data": args.train_data,
