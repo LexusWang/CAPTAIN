@@ -56,7 +56,6 @@ def start_experiment(config):
     mo.obj_inits = node_inits
 
     # ============= Groud Truth & Optimizers ====================#
-    ec = eventClassifier('groundTruth.txt')
     optimizers = {}
     for key in node_inits.keys():
         optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=learning_rate)
