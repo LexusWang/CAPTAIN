@@ -385,4 +385,4 @@ if __name__ == '__main__':
 
     # Get a dataframe for analyzing trial results.
     df = analysis.results_df
-    start_experiment()
+    print(df)
