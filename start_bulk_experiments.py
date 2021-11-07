@@ -22,8 +22,9 @@ from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 import numpy as np
 from pathlib import Path
-from ray import tune
 import pickle
+import ray
+from ray import tune
 
 
 def start_experiment(config):
@@ -377,6 +378,7 @@ if __name__ == '__main__':
             tune.report(mean_loss=intermediate_score)
 
 
+    ray.init(configure_logging=False)
     np.random.seed(1234)
     analysis = tune.run(
         training_function,
