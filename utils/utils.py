@@ -77,6 +77,7 @@ class Experiment:
                 f.write(f"{arg_item[0]}: {arg_item[1]}\n")
 
     def save_model(self, model_dict):
+        Path(os.path.join(self.results_path, "train_models")).mkdir(parents=True, exist_ok=True)
         for key in model_dict.keys():
             torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
 
