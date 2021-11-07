@@ -7,12 +7,12 @@ from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initi
 
 class Experiment:
 
-    def __init__(self, timestamp: str, args):
+    def __init__(self, timestamp: str, args, train_name=""):
         self.timestamp = timestamp
         self.args = args
         self.project_path = os.path.abspath(__file__)
         self.project_path = os.path.dirname(os.path.dirname(self.project_path))
-        self.experiment_path = os.path.join(self.project_path, "experiments", timestamp)
+        self.experiment_path = os.path.join(self.project_path, "experiments", train_name+timestamp)
         Path(self.experiment_path).mkdir(parents=True, exist_ok=True)
         if not os.path.exists(self.experiment_path):
             os.mkdir(self.experiment_path)

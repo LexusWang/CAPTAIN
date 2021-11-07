@@ -31,9 +31,9 @@ def start_experiment(config):
     args = config
     experiment = None
     if args['mode'] == "train":
-        experiment = Experiment(str(int(time.time())), args)
+        experiment = Experiment(str(int(time.time())), args, args['experiment_prefix'])
     else:
-        experiment = Experiment(args['trained_model_timestamp'], args)
+        experiment = Experiment(args['trained_model_timestamp'], args, args['experiment_prefix'])
 
     learning_rate = args['learning_rate']
     if torch.cuda.is_available():
@@ -390,7 +390,8 @@ if __name__ == '__main__':
             "device": args.device,
             "ground_truth_file": args.ground_truth_file,
             "feature_path": args.feature_path,
-            "data_tag": "traindata1"
+            "data_tag": "traindata1",
+            "experiment_prefix": "groupA"
         },
         resources_per_trial={"cpu": 1})
 
