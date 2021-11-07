@@ -389,7 +389,8 @@ if __name__ == '__main__':
             "ground_truth_file": args.ground_truth_file,
             "feature_path": args.feature_path,
             "data_tag": "traindata1"
-        })
+        },
+        resources_per_trial={"cpu": 1})
 
     print("Best config: ", analysis.get_best_config(
         metric="mean_loss", mode="min"))
