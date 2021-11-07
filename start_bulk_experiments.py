@@ -109,7 +109,8 @@ def start_experiment(config):
                         else:
                             pass
             # cache the loaded morse and events for next run
-            pickle.dump([events, mo], os.path.join(pre_loaded_path, 'morse.pkl'))
+            with open(os.path.join(pre_loaded_path, 'morse.pkl'), "wb") as f:
+                pickle.dump([events, mo], f)
 
         with open(args['feature_path'],'r') as fin:
             node_features = json.load(fin)
