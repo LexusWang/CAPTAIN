@@ -72,7 +72,8 @@ def start_experiment(config):
         pre_loaded_path = experiment.get_pre_load_morse(args['data_tag'])
 
         if pre_loaded_path.endswith('.pkl'):
-            events, mo = pickle.load(pre_loaded_path)
+            with open(pre_loaded_path, 'rb') as f:
+                events, mo = pickle.load(f)
         else:
             events = []
             loaded_line = 0
