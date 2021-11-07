@@ -342,7 +342,7 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--feature_path", default='results/features/features.json', type=str)
+    parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/features.json', type=str)
     parser.add_argument("--ground_truth_file", default='groundTruth.txt', type=str)
     parser.add_argument("--batch_size", nargs='?', default=5, type=int)
     parser.add_argument("--epoch", default=100, type=int)
