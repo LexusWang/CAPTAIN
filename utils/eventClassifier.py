@@ -11,9 +11,6 @@ class eventClassifier:
                     curr_alarm = clean_line
                 else:
                     self.addAlarmUUID(curr_alarm, clean_line)
-            print(len(self.dataLeakUUID))
-            print(self.fileExecUUID)
-            print(self.chPermUUID)
     
     def classify(self, UUID):
         if UUID in self.dataLeakUUID:
