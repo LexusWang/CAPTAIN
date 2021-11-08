@@ -160,6 +160,7 @@ def start_experiment(config):
                 needs_to_update = False
                 is_fp = False
 
+                print("updating metrics")
                 if epoch == epochs - 1:
                     experiment.update_metrics(diagnois, gt)
                 if diagnois is None:
@@ -229,10 +230,10 @@ def start_experiment(config):
                     optimizers[node_type].step()
 
         experiment.save_model(node_inits)
-        final_metrics = experiment.get_f1_score()
+        # final_metrics = experiment.get_f1_score()
         experiment.save_metrics()
 
-        return final_metrics
+        return None
 
     elif (mode == "test"):
 
@@ -281,5 +282,5 @@ if __name__ == '__main__':
         "experiment_prefix": "groupA"
     }
 
-    intermediate_score = start_experiment(config)
+    start_experiment(config)
 
