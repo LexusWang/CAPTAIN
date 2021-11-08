@@ -62,13 +62,14 @@ class Experiment:
 
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
+        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
         with open(filename, 'w') as f:
             f.write(f"tp: {self.tp}")
             f.write(f"fp: {self.fp}")
             f.write(f"fn: {self.fn}")
-            f.write(f"precision: {self.get_precision()}")
-            f.write(f"recall: {self.get_recall()}")
-            f.write(f"f1: {self.get_f1_score()}")
+            # f.write(f"precision: {self.get_precision()}")
+            # f.write(f"recall: {self.get_recall()}")
+            # f.write(f"f1: {self.get_f1_score()}")
 
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
