@@ -10,3 +10,7 @@ This is the code repository of our project Auto Tuning Parameter Graph
 #### datProcessor class
 1. dataProcessor(configFile): constructor of dataProcessor. The configFile should be the path to the .ini file.
 2. dataProcessor.separate(): read from and write to files specified in config, as well as applying filtering conditions in the config file if applicable. 
+
+Notes on config.ini:
+1. To disable segmentation, set segSize to 0.
+2. To disable timestamp filtering, set endTimestamp to 0.
