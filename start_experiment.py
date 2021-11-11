@@ -118,7 +118,7 @@ def start_experiment(config):
         model_nids = {}
         model_features = {}
         for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
-            with open(os.path.join(args.feature_path,'{}.json'.format(node_type)),'r') as fin:
+            with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
                 target_features = pd.DataFrame.from_dict(node_features,orient='index')
