@@ -160,7 +160,6 @@ def start_experiment(config):
                 needs_to_update = False
                 is_fp = False
 
-                print("updating metrics")
                 if epoch == epochs - 1:
                     experiment.update_metrics(diagnois, gt)
                 if diagnois is None:
