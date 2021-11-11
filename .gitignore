@@ -3,5 +3,6 @@
 *.DS_Store
 .vscode*
 results*
-experiments/*
 debug.log
+experiments/*
+local_data
