@@ -57,6 +57,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
 
    alarmarg = AlarmArguments()
    alarmarg.origtags = None
+   alarmarg.pre_alarm = None
 
    if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
       alarmarg.origtags = s.tags()
@@ -135,6 +136,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
+
+   if alarmarg.pre_alarm != None:
+      alarm_result = alarmarg.pre_alarm
    
    if event_type == standard_events['EVENT_CREATE_OBJECT']:
       created[(s.get_pid(), o.get_name())] = True  
