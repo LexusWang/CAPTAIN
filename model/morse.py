@@ -208,8 +208,6 @@ class Morse:
             if src and dest:
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                else:
-                    self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
                 self.propagate(event, src, dest)
                 return self.detect_alarm(event, src, dest, alarmArg, alarm_file)
@@ -245,3 +243,6 @@ class Morse:
                 self.Nodes[nid].setSubjTags(self.node_inital_tags[nid].tolist())
             else:
                 self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
+
+    def reset_alarms(self):
+        self.alarm = {}

@@ -144,6 +144,7 @@ def start_experiment(config):
             
             mo.node_inital_tags = node_inital_tags
             mo.reset_tags()
+            mo.reset_alarms()
 
             # ============= Dectection =================== #
             node_gradients = {}

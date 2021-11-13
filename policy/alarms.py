@@ -103,6 +103,8 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
          prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
+         alarmarg.pre_alarm = "FileCorruption"
+
 
    #    chmod_pre(s, o, p, ts) --> {
    #       unsigned ositag = itag(objTags(o))
