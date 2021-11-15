@@ -2,6 +2,7 @@
 *__pycache__*
 *.DS_Store
 .vscode*
-results/*
+results*
+debug.log
 experiments/*
 local_data
