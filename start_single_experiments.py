@@ -265,7 +265,7 @@ if __name__ == '__main__':
     parser.add_argument("--validation_data", nargs='?', default="EventData/north_korea_apt_attack_data_debug.out", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
-    parser.add_argument("--lr_imb", type=int)
+    parser.add_argument("--lr_imb", type=float)
 
     args = parser.parse_args()
 
