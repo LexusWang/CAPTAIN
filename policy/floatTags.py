@@ -35,3 +35,6 @@ def isRoot(principal):
       return True
    else:
       return False
+
+def permbits(event):
+   pass

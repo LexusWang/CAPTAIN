@@ -28,10 +28,10 @@ for i, event in enumerate(cdm_events_list):
 
 lttng_common_events = {'sys_open':29,'sys_close':8,'sys_read':31,'sys_write': 48,'sys_clone':7,'sys_fork':17,
     'sys_execve':13,'sys_accept':0,'sys_connect':9,'sys_recvfrom':33,'sys_recvmsg':34,'sys_sendto':36,'sys_sendmsg':37,
-    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45, 'sys_setuid':5}
+    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45, 'sys_setuid':5, 'sys_chmod':25}
 
 lttng_special_events = ['sys_openat', 'sys_readv','sys_pread', 'sys_preadv', 'sys_writev','sys_pwrite','sys_pwritev',
-'sys_socket', 'sys_renameat', 'sys_chmod','sys_chown','sys_pipe','sys_pipe2','sys_setgid',
+'sys_socket', 'sys_renameat','sys_chown','sys_pipe','sys_pipe2','sys_setgid',
 'sys_unlinkat','sys_unknow','sys_imageload','ipaddr_info','dns_info']
 
 lttng_special_events.extend(lttng_sched_event)

@@ -13,7 +13,7 @@ from numpy import gradient, record
 from parse.eventParsing import parse_event
 from parse.nodeParsing import parse_subject, parse_object
 from parse.lttng.recordParsing import read_lttng_record
-from policy.initTagsAT import get_object_feature, get_subject_feature
+# from policy.initTagsAT import get_object_feature, get_subject_feature
 import sys
 import tqdm
 import time
@@ -78,7 +78,7 @@ def start_experiment(config):
         else:
             events = []
             loaded_line = 0
-            for i in range(7):
+            for i in range(1):
                 with open(args['train_data']+'.'+str(i),'r') as fin:
                     for line in fin:
                         loaded_line += 1

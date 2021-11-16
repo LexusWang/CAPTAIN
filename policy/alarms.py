@@ -4,7 +4,7 @@ sys.path.extend(['.','..','...'])
 
 # import floatTags
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot
+from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import lttng_events, cdm_events, standard_events
 
 class AlarmArguments():
@@ -117,16 +117,17 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    #          prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
    #       }
    #    }
-   '''
-   if event_type == standard_events['sys_chmod']:
-      ositag = itag(objTags(o))
-      prm = permbits(p)
+
+   if event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+      ositag = itag(o.tags())
+      prm = permbits(event)
       
-      if (ositag < 128 && ((prm & 0111) != 0)):
-         if (!alarms[(pid(s), name(o))]):
-            talarms = talarms + 1
-         prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
-   '''
+      # if (ositag < 0.5 and ((prm & 0111) != 0)):
+      if True:
+         if (alarms[(s.get_pid(), o.get_name())] == False):
+            alarm_sum[1] = alarm_sum[1] + 1
+         alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, alarm_file)
+   
 
    return alarmarg
 

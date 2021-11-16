@@ -5,7 +5,7 @@ import sys
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
-from policy.initTagsAT import initObjectTags, initSubjectTags
+# from policy.initTagsAT import initObjectTags, initSubjectTags
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre, printTime
 
