@@ -181,8 +181,8 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
          if not created.get((s.get_pid(), o.get_name()), False):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
-               alarm_result = "FileCorruption"
+            prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
+            alarm_result = "FileCorruption"
 
       if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
          if (o.isIP() and itag(o.tags()) < 0.5):
