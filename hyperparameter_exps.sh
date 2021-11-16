@@ -4,8 +4,8 @@ do
   do
     for LR_IMB in 0.5 1 2 4 
     do
-        python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
-        echo "running python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
+        python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
+        echo "running python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
         sleep 2s
     done
   done
@@ -17,8 +17,8 @@ done
 #  do
 #    for LR_IMB in 2 4 16
 #    do
-#        python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
-#        echo "running python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
+#        python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
+#        echo "running python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
 #        sleep 1s
 #    done
 #  done
@@ -30,8 +30,8 @@ done
 #  do
 #    for LR_IMB in 2 4 16
 #    do
-#        python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
-#        echo "running python start_single_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
+#        python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
+#        echo "running python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
 #        sleep 1s
 #    done
 #  done
