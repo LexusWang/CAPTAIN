@@ -213,16 +213,15 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #       }
    #    }
    
-   # if event_type == standard_events['EVENT_MPROTECT']:
-   #    it = itag(s.tags())
-   #    # print(event['properties']['map']['protection'])
-   #    # prm = permbits(p)
+   if event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+      it = itag(s.tags())
+      # prm = permbits(event)
+      prm = event['properties']['map']['protection']
       
-   #    # if (it < 0.5 and ((prm & 0100) == 0100)):
-   #    if it < 0.5:
-   #       if not alarms[(s.get_pid(), o.get_name())]:
-   #          alarm_sum[1] = alarm_sum[1] + 1
-   #       prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
+      if (it < 0.5 and ((prm & int('0100',8)) == int('0100',8))):
+         if not alarms[(s.get_pid(), o.get_name())]:
+            alarm_sum[1] = alarm_sum[1] + 1
+         alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, alarm_file)
    
    
 
