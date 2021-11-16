@@ -121,9 +121,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    if event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
       ositag = itag(o.tags())
       prm = permbits(event)
-      
-      # if (ositag < 0.5 and ((prm & 0111) != 0)):
-      if True:
+      if (ositag < 0.5 and ((prm & int('0111',8)) != 0)):
          if (alarms[(s.get_pid(), o.get_name())] == False):
             alarm_sum[1] = alarm_sum[1] + 1
          alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, alarm_file)
