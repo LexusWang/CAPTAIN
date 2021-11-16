@@ -6,3 +6,4 @@ results*
 debug.log
 experiments/*
 local_data
+pre_load_morses/*

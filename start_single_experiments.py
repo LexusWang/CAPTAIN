@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
-    parser.add_argument("--lr_imb", type=int)
+    parser.add_argument("--lr_imb", type=float)
 
     args = parser.parse_args()
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         "ground_truth_file": args.ground_truth_file,
         "feature_path": args.feature_path,
         "data_tag": "traindata1",
-        "experiment_prefix": "groupA"
+        "experiment_prefix": "groupC"
     }
 
     start_experiment(config)
