@@ -31,6 +31,7 @@ def prtSOAlarm(ts, an, s, o, alarms, alarmfile= None):
          with open(alarmfile, 'a') as fout:
             print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Object ", o.get_id(), " (", o.get_name(), 
                ") Subject ", s.get_id(), " pid=", s.get_pid(), " ", s.get_cmdln(), " AlarmE", file = fout)
+      return an
    
 
 def prtSSAlarm(ts, an, s, ss, alarmfile= None):
@@ -41,12 +42,14 @@ def prtSSAlarm(ts, an, s, ss, alarmfile= None):
       with open(alarmfile, 'a') as fout:
          print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid(),
             " ", s.get_cmdln(), " Subject ", ss.get_id(), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", file = fout)
+   return an
 
 
 def prtSAlarm(ts, an, s, alarmfile= None):
    if alarmfile:
       with open(alarmfile, 'a') as fout:
          print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid()," ", s.get_cmdln(), " AlarmE", file = fout)
+   return an
 
 def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', morse = None, alarm_file = None):
    ts = event['timestamp']
@@ -102,8 +105,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
       if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null")==False:
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
-         alarmarg.pre_alarm = "FileCorruption"
+         alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
 
 
    #    chmod_pre(s, o, p, ts) --> {
@@ -149,8 +151,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
-         alarm_result = "FileExec"
+         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
          
 
    #    load(s, o, useful, _, ts)|useful --> 
@@ -162,8 +163,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
-         alarm_result = "FileExec"
+         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
 
    #    inject(s, ss, useful, ts)|useful --> 
    #       if (citag(origtags) == TRUSTED && citag(subjTags(ss)) == UNTRUSTED) {
@@ -172,8 +172,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #       }
    if event_type == standard_events['EVENT_MODIFY_PROCESS']:
       if (citag(alarmarg.origtags) == TRUSTED and citag(o.tags()) == UNTRUSTED):
-         prtSSAlarm(ts,"Inject", s, o, alarm_file)
-         alarm_result = "Inject"
+         alarm_result = prtSSAlarm(ts,"Inject", s, o, alarm_file)
          alarm_sum[1] = alarm_sum[1] + 1
    
    if event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
@@ -181,15 +180,13 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
          if not created.get((s.get_pid(), o.get_name()), False):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
-               alarm_result = "FileCorruption"
+            alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
 
       if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
          if (o.isIP() and itag(o.tags()) < 0.5):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-            prtSOAlarm(ts, "DataLeak", s, o, alarms, alarm_file)
-            alarm_result = "DataLeak"
+            alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, alarm_file)
    
    
    #    setuid(s, _, ts) --> {
@@ -203,8 +200,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    if event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
       if itag(s.tags()) < 0.5 and alarmarg.rootprinc == False:
          if isRoot(morse.Principals[o.owner]):
-            prtSAlarm(ts, "PrivilegeEscalation", s, alarm_file)
-            alarm_result = "PrivilegeEscalation"
+            alarm_result = prtSAlarm(ts, "PrivilegeEscalation", s, alarm_file)
             alarm_sum[1] = alarm_sum[1] + 1
    
 
