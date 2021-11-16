@@ -216,7 +216,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    if event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
       it = itag(s.tags())
       # prm = permbits(event)
-      prm = event['properties']['map']['protection']
+      prm = int(event['properties']['map']['protection'])
       
       if (it < 0.5 and ((prm & int('0100',8)) == int('0100',8))):
          if not alarms[(s.get_pid(), o.get_name())]:
