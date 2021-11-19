@@ -259,7 +259,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
-    parser.add_argument("--lr_imb", type=float)
+    parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupC", type=str)
 
