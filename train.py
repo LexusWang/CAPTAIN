@@ -85,14 +85,16 @@ def get_node_features(file):
                     node_features[record_type][subject_node['uuid']]['pname'] = features[0]
                     node_features[record_type][subject_node['uuid']]['cmdl'] = features[1]
                     node_features[record_type][subject_node['uuid']]['type'] = 'Subject'
-                elif record_type.endswith('Object'):
+                if record_type.endswith('Object'):
                     node_num += 1
                     object_node, object = parse_object(record_datum, record_type)
                     features = get_object_feature(object)
                     node_features[record_type][object_node['uuid']] = {}
                     node_features[record_type][object_node['uuid']]['type'] = record_type
                     if record_type == 'NetFlowObject':
-                        node_features[record_type][object_node['uuid']]['subtype'] = features[0]
+                        node_features[record_type][object_node['uuid']]['remoteAddress'] = features[0]
+                        node_features[record_type][object_node['uuid']]['remotePort'] = features[1]
+                        node_features[record_type][object_node['uuid']]['ipProtocol'] = features[2]
                     if record_type == 'SrcSinkObject':
                         node_features[record_type][object_node['uuid']]['subtype'] = features[0]
                     if record_type == 'FileObject':

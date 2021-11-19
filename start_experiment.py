@@ -46,7 +46,8 @@ def start_experiment(config):
     # ============= Tag Initializer =============== #
     node_inits = {}
     node_inits['Subject'] = Initializer(150,5)
-    node_inits['NetFlowObject'] = Initializer(1,2)
+    # node_inits['NetFlowObject'] = Initializer(1,2)
+    node_inits['NetFlowObject'] = NetFlowObj_Initializer(2)
     node_inits['SrcSinkObject'] = Initializer(111,2)
     node_inits['FileObject'] = FileObj_Initializer(2)
     node_inits['UnnamedPipeObject'] = Initializer(1,2)

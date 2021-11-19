@@ -41,7 +41,7 @@ def parse_object_cdm(datum, object_type):
     elif object_type == 'PacketSocketObject':
         pass
     elif object_type == 'NetFlowObject':
-        object.set_IP(datum['remoteAddress'], datum['remotePort'])
+        object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
         pass
     elif object_type == 'SrcSinkObject':

@@ -1,6 +1,4 @@
 import re
-from utils.Initializer import Initializer
-from feature.FileObjFeatures import extentsion_name_type,dir_name_type
 
 def get_subject_feature(subject):
     pname = subject.processName
@@ -11,11 +9,10 @@ def get_subject_feature(subject):
 def get_object_feature(object):
     feature = []
     if object.type == 'NetFlowObject':
-        # remoteAddress = object.IP
-        # remotePort = object.port
-        # ipProtocol = None
-        # feature = [remoteAddress,remotePort,ipProtocol]
-        feature = [0]
+        remoteAddress = object.IP
+        remotePort = object.port
+        ipProtocol = object.Protocol
+        feature = [remoteAddress,remotePort,ipProtocol]
     elif object.type == 'SrcSinkObject':
         SrcSinkType = object.subtype
         feature = [SrcSinkType]

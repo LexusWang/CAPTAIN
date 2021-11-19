@@ -61,10 +61,11 @@ class Object:
     def isIP(self):
         return self.type in {'NetFlowObject','inet_scoket_file'}
 
-    def set_IP(self, ip, port):
+    def set_IP(self, ip, port, protocol):
         assert self.type in {'NetFlowObject','inet_scoket_file'}
         self.IP = ip
         self.port = port
+        self.Protocol = protocol
 
     def get_name(self):
         return self.name

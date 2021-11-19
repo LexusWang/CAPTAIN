@@ -69,7 +69,7 @@ def parse_object_cdm(datum, object_type):
     elif object_type == 'PacketSocketObject':
         pass
     elif object_type == 'NetFlowObject':
-        object.set_IP(datum['remoteAddress'], datum['remotePort'])
+        object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
         object.name = 'MemoryObject'
         object.path = 'MemoryObject'
@@ -94,7 +94,8 @@ def parse_object_lttng(datum, object_type):
         object.path = datum.params[0]
     elif object_type == 3:
         object.path = datum.params[0]
-        object.set_IP(datum.params[1], datum.params[2])
+        # ip Protocol is set to -1
+        object.set_IP(datum.params[1], datum.params[2], -1)
     elif object_type == 4:
         object.pipe = [datum.params[0], datum.params[1]]
     else:
