@@ -41,15 +41,15 @@ class NetFlowObj_Initializer(nn.Module):
     def __init__(self, output_dim):
         super().__init__()
         self.dtype = torch.float64
-        self.ip_layer = nn.Linear(160, 6, dtype=self.dtype)
+        self.ip_layer = nn.Linear(32, 6, dtype=self.dtype)
         self.port_embedding = nn.Embedding(11, 6, dtype=self.dtype)
         self.protocol_embedding = nn.Embedding(2, 2, dtype=self.dtype)
         self.fc = Linear(14, output_dim,dtype=self.dtype)
 
     def initialize(self, features):
         proto_vec = self.protocol_embedding(features[:,0])
-        ip_vec = torch.sigmoid(self.ip_layer(features[:,1:161].double()))
-        port_vec = self.port_embedding(features[:,161:]).squeeze()
+        ip_vec = torch.sigmoid(self.ip_layer(features[:,1:33].double()))
+        port_vec = self.port_embedding(features[:,33:]).squeeze()
         features = torch.cat((proto_vec, ip_vec, port_vec),dim=1)
         tags = torch.sigmoid(self.fc(features))
         return tags
