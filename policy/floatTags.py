@@ -35,3 +35,8 @@ def isRoot(principal):
       return True
    else:
       return False
+
+def permbits(event):
+   permstr = event['properties']['map']['mode']
+   perm = int(permstr,8)
+   return perm

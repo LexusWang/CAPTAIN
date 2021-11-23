@@ -5,7 +5,7 @@ import sys
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
-from policy.initTagsAT import initObjectTags, initSubjectTags
+# from policy.initTagsAT import initObjectTags, initSubjectTags
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre, printTime
 
@@ -206,8 +206,6 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
-                # if src.pid == 3300:
-                #     print("Time: {} Event type:{} SubjectName: {} Tags: {} ObjectName: {} Tags: {}".format(printTime(event['timestamp']), event['type'], src.get_name(), src.tags(), dest.get_name(), dest.tags()))
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
@@ -245,3 +243,6 @@ class Morse:
                 self.Nodes[nid].setSubjTags(self.node_inital_tags[nid].tolist())
             else:
                 self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
+
+    def reset_alarms(self):
+        self.alarm = {}

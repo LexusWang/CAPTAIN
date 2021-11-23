@@ -1,6 +1,4 @@
 import re
-from utils.Initializer import Initializer
-from feature.FileObjFeatures import extentsion_name_type,dir_name_type
 
 def get_subject_feature(subject):
     pname = subject.processName
@@ -11,26 +9,20 @@ def get_subject_feature(subject):
 def get_object_feature(object):
     feature = []
     if object.type == 'NetFlowObject':
-        # remoteAddress = object.IP
-        # remotePort = object.port
-        # ipProtocol = None
-        # feature = [remoteAddress,remotePort,ipProtocol]
-        feature = [0]
+        remoteAddress = object.IP
+        remotePort = object.port
+        ipProtocol = object.Protocol
+        feature = [remoteAddress,remotePort,ipProtocol]
     elif object.type == 'SrcSinkObject':
         SrcSinkType = object.subtype
         feature = [SrcSinkType]
     elif object.type == 'FileObject':
         FileObjectType = object.subtype
         path = object.path
-        dir_name = 0
-        extension_name = 0
         if path:
-            path_tree = path.split('/')
-            dir_name = dir_name_type.get(path_tree[0],0)
-            file_name = path_tree[-1].split('.')
-            if len(file_name) == 2:
-                extension_name = extentsion_name_type.get(file_name[-1],0)
-        feature = [dir_name, extension_name, FileObjectType]
+            feature = [path, FileObjectType]
+        else:
+            feature = [None, FileObjectType]
     elif object.type == 'UnnamedPipeObject':
         feature = [0]
     elif object.type == 'MemoryObject':

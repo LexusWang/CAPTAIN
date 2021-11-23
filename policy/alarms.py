@@ -4,7 +4,7 @@ sys.path.extend(['.','..','...'])
 
 # import floatTags
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot
+from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import lttng_events, cdm_events, standard_events
 
 class AlarmArguments():
@@ -31,7 +31,7 @@ def prtSOAlarm(ts, an, s, o, alarms, alarmfile= None):
          with open(alarmfile, 'a') as fout:
             print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Object ", o.get_id(), " (", o.get_name(), 
                ") Subject ", s.get_id(), " pid=", s.get_pid(), " ", s.get_cmdln(), " AlarmE", file = fout)
-      # setAlarm(s, o, an, ts)
+      return an
    
 
 def prtSSAlarm(ts, an, s, ss, alarmfile= None):
@@ -42,12 +42,14 @@ def prtSSAlarm(ts, an, s, ss, alarmfile= None):
       with open(alarmfile, 'a') as fout:
          print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid(),
             " ", s.get_cmdln(), " Subject ", ss.get_id(), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", file = fout)
+   return an
 
 
 def prtSAlarm(ts, an, s, alarmfile= None):
    if alarmfile:
       with open(alarmfile, 'a') as fout:
          print("AlarmS ", getTime(ts), ": Alarm: ", an, ": Subject ", s.get_id(), " pid=", s.get_pid()," ", s.get_cmdln(), " AlarmE", file = fout)
+   return an
 
 def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', morse = None, alarm_file = None):
    ts = event['timestamp']
@@ -58,6 +60,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
 
    alarmarg = AlarmArguments()
    alarmarg.origtags = None
+   alarmarg.pre_alarm = None
 
    if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
       alarmarg.origtags = s.tags()
@@ -102,7 +105,8 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
       if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null")==False:
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
+         alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
+
 
    #    chmod_pre(s, o, p, ts) --> {
    #       unsigned ositag = itag(objTags(o))
@@ -113,16 +117,15 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    #          prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
    #       }
    #    }
-   '''
-   if event_type == standard_events['sys_chmod']:
-      ositag = itag(objTags(o))
-      prm = permbits(p)
-      
-      if (ositag < 128 && ((prm & 0111) != 0)):
-         if (!alarms[(pid(s), name(o))]):
-            talarms = talarms + 1
-         prtSOAlarm(ts, "MkFileExecutable", s, o, alarms)
-   '''
+
+   if event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+      ositag = itag(o.tags())
+      prm = permbits(event)
+      if (ositag < 0.5 and ((prm & int('0111',8)) != 0)):
+         if (alarms[(s.get_pid(), o.get_name())] == False):
+            alarm_sum[1] = alarm_sum[1] + 1
+         alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, alarm_file)
+   
 
    return alarmarg
 
@@ -136,6 +139,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
       event_type = lttng_events[event['type']]
+
+   if alarmarg.pre_alarm != None:
+      alarm_result = alarmarg.pre_alarm
    
    if event_type == standard_events['EVENT_CREATE_OBJECT']:
       created[(s.get_pid(), o.get_name())] = True  
@@ -144,8 +150,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
-         alarm_result = "FileExec"
+         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
          
 
    #    load(s, o, useful, _, ts)|useful --> 
@@ -157,8 +162,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
-         prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
-         alarm_result = "FileExec"
+         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, alarm_file)
 
    #    inject(s, ss, useful, ts)|useful --> 
    #       if (citag(origtags) == TRUSTED && citag(subjTags(ss)) == UNTRUSTED) {
@@ -167,8 +171,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #       }
    if event_type == standard_events['EVENT_MODIFY_PROCESS']:
       if (citag(alarmarg.origtags) == TRUSTED and citag(o.tags()) == UNTRUSTED):
-         prtSSAlarm(ts,"Inject", s, o, alarm_file)
-         alarm_result = "Inject"
+         alarm_result = prtSSAlarm(ts,"Inject", s, o, alarm_file)
          alarm_sum[1] = alarm_sum[1] + 1
    
    if event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
@@ -176,15 +179,13 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
          if not created.get((s.get_pid(), o.get_name()), False):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
-               alarm_result = "FileCorruption"
+            alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, alarm_file)
 
-         if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
-            if (o.isIP() and itag(o.tags()) < 0.5):
-               if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
-               prtSOAlarm(ts, "DataLeak", s, o, alarms, alarm_file)
-               alarm_result = "DataLeak"
+      if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
+         if (o.isIP() and itag(o.tags()) < 0.5):
+            if not alarms[(s.get_pid(), o.get_name())]:
+               alarm_sum[1] = alarm_sum[1] + 1
+            alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, alarm_file)
    
    
    #    setuid(s, _, ts) --> {
@@ -198,8 +199,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    if event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
       if itag(s.tags()) < 0.5 and alarmarg.rootprinc == False:
          if isRoot(morse.Principals[o.owner]):
-            prtSAlarm(ts, "PrivilegeEscalation", s, alarm_file)
-            alarm_result = "PrivilegeEscalation"
+            alarm_result = prtSAlarm(ts, "PrivilegeEscalation", s, alarm_file)
             alarm_sum[1] = alarm_sum[1] + 1
    
 
@@ -213,16 +213,15 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #       }
    #    }
    
-   # if event_type == standard_events['EVENT_MPROTECT']:
-   #    it = itag(s.tags())
-   #    # print(event['properties']['map']['protection'])
-   #    # prm = permbits(p)
+   if event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+      it = itag(s.tags())
+      # prm = permbits(event)
+      prm = int(event['properties']['map']['protection'])
       
-   #    # if (it < 0.5 and ((prm & 0100) == 0100)):
-   #    if it < 0.5:
-   #       if not alarms[(s.get_pid(), o.get_name())]:
-   #          alarm_sum[1] = alarm_sum[1] + 1
-   #       prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
+      if (it < 0.5 and ((prm & int('0100',8)) == int('0100',8))):
+         if not alarms[(s.get_pid(), o.get_name())]:
+            alarm_sum[1] = alarm_sum[1] + 1
+         alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, alarm_file)
    
    
 

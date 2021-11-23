@@ -7,30 +7,78 @@ from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initi
 
 class Experiment:
 
-    def __init__(self, timestamp: str, args):
+    def __init__(self, timestamp: str, args, train_name=""):
         self.timestamp = timestamp
         self.args = args
         self.project_path = os.path.abspath(__file__)
         self.project_path = os.path.dirname(os.path.dirname(self.project_path))
-        self.experiment_path = os.path.join(self.project_path, "experiments", timestamp)
+        self.experiment_path = os.path.join(self.project_path, "experiments", train_name+timestamp)
         Path(self.experiment_path).mkdir(parents=True, exist_ok=True)
         if not os.path.exists(self.experiment_path):
             os.mkdir(self.experiment_path)
         if torch.cuda.is_available():
             self.device = torch.device("cuda:0")
-        self.results_path = os.path.join(self.experiment_path, self.args.mode)
+        self.results_path = os.path.join(self.experiment_path, self.args['mode'])
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
+        self.pre_load_morses_repo = os.path.join(self.project_path, "pre_load_morses")
+        Path(self.pre_load_morses_repo).mkdir(parents=True, exist_ok=True)
+
+        # final metrics
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
 
     def get_experiment_output_path(self):
         return self.results_path
 
+    def get_pre_load_morse(self, data_name):
+        pre_load_morse_dir = os.path.join(self.pre_load_morses_repo, data_name)
+        pre_load_morse_path = os.path.join(pre_load_morse_dir, 'morse.pkl')
+        if Path(pre_load_morse_path).is_file():
+            return pre_load_morse_path
+        else:
+            Path(pre_load_morse_dir).mkdir(parents=True, exist_ok=True)
+            return pre_load_morse_dir
+
+    def update_metrics(self, pred, gt):
+        if pred is None:
+            self.fn += 1
+        else:
+            if pred == gt:
+                self.tp += 1
+            else:
+                self.fp += 1
+
+    def get_precision(self):
+        return self.tp / (self.tp + self.fp)
+
+    def get_recall(self):
+        return self.tp / (self.tp + self.fn)
+
+    def get_f1_score(self):
+        p = self.get_precision()
+        r = self.get_recall()
+        return 2 * (p * r / (p + r))
+
+    def save_metrics(self):
+        filename = os.path.join(self.results_path, "metrics.txt")
+        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+        with open(filename, 'w') as f:
+            f.write(f"tp: {self.tp}")
+            f.write(f"fp: {self.fp}")
+            f.write(f"fn: {self.fn}")
+            # f.write(f"precision: {self.get_precision()}")
+            # f.write(f"recall: {self.get_recall()}")
+            # f.write(f"f1: {self.get_f1_score()}")
+
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:
-            for arg_item in vars(self.args).items():
+            for arg_item in self.args.items():
                 f.write(f"{arg_item[0]}: {arg_item[1]}\n")
 
     def save_model(self, model_dict):
+        Path(os.path.join(self.results_path, "train_models")).mkdir(parents=True, exist_ok=True)
         for key in model_dict.keys():
             torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
 
