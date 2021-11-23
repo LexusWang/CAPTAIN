@@ -11,7 +11,12 @@ if ec.classify('DEE900D6-80D1-662E-402E-1137BDF25420') == "FileExec":
 else:
     print("error")
 
-if ec.classify('A5DA3328-1DB8-EDDD-4637-60CCE0FEFE3E') == "ChPerm":
-    print("correctly classified ChPerm Alarm")
+if ec.classify('A5DA3328-1DB8-EDDD-4637-60CCE0FEFE3E') == "MkFileExecutable":
+    print("correctly classified MkFileExecutable Alarm")
+else:
+    print("error")
+
+if ec.classify('60C3AC79-466B-5C25-B2AF-AEC19A5CFC77') == "MkMemExecutable":
+    print("correctly classified MkMemExecutable Alarm")
 else:
     print("error")
