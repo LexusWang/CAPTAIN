@@ -23,10 +23,10 @@ def ipaddr_to_list(ipaddr):
     return_res = []
     if ipaddr.version == 4:
         return_res.extend(result)
-        return_res.extend(default_ipv6)
+        # return_res.extend(default_ipv6)
     elif ipaddr.version == 6:
         return_res.extend(default_ipv4)
-        return_res.extend(result)
+        # return_res.extend(result)
     
     return return_res
 
@@ -45,7 +45,7 @@ node_type = 'NetFlowObject'
 protocol_map = {17:0,6:1}
 
 # Unknown IP
-unknownip = [-1 for i in range(32+128)]
+unknownip = [-1 for i in range(32)]
 
 # Port type
 '''

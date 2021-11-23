@@ -79,7 +79,7 @@ def start_experiment(config):
         else:
             events = []
             loaded_line = 0
-            for i in range(1):
+            for i in range(7):
                 with open(args['train_data']+'.'+str(i),'r') as fin:
                     for line in fin:
                         loaded_line += 1
