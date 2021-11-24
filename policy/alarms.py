@@ -62,7 +62,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    alarmarg.origtags = None
    alarmarg.pre_alarm = None
 
-   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
+   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_LOADLIBRARY']}:
       alarmarg.origtags = s.tags()
 
    # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
@@ -217,8 +217,12 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       it = itag(s.tags())
       # prm = permbits(event)
       prm = int(event['properties']['map']['protection'])
+      # print(event['properties']['map']['protection'])
+
+      # if it < 0.5:
+      #    a = 0
       
-      if (it < 0.5 and ((prm & int('0100',8)) == int('0100',8))):
+      if (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, alarm_file)

@@ -76,7 +76,7 @@ def start_detection(config):
     else:
         events = []
         loaded_line = 0
-        for i in range(7):
+        for i in range(1):
             with open(args['detection_data']+'.'+str(i),'r') as fin:
                 for line in fin:
                     loaded_line += 1
@@ -168,6 +168,8 @@ def start_detection(config):
         #         s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
         #         is_fp = True
 
+    experiment.save_metrics()
+
     return None
 
 
@@ -255,6 +257,7 @@ def parse_lttng_logs(file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run MORSE")
+    parser.add_argument("--mode", nargs="?", default="detection", type=str)
     # parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
     parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth.txt', type=str)
     parser.add_argument("--detection_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
@@ -264,6 +267,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = {
+        "mode": args.mode,
         "detection_data": args.detection_data,
         "ground_truth_file": args.ground_truth_file,
         # "feature_path": args.feature_path,

@@ -21,11 +21,11 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
 
-   if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ']}:
+   if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG']}:
       intags = o.tags()
       whitelisted = False
 
-   if event_type == standard_events['EVENT_READ']:
+   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG']}:
       if (s.isMatch("sshd")):
          stg = s.tags()
          cit = citag(stg)
@@ -208,7 +208,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       new_owner = morse.Principals[o.owner]
       if isRoot(new_owner) == False and invtag(st) == TRUSTED:
          o.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)))
-         o.update_grad(1, 1, 0, 1, 1)
+         o.update_grad([1, 1, 0, 1, 1])
       
    elif event_type == standard_events['EVENT_CREATE_OBJECT']:
       st = s.tags(); 
