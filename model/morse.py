@@ -199,7 +199,8 @@ class Morse:
             if src and dest:
                 if isinstance(src,Subject) and isinstance(dest,Subject):
                     if src.pid == dest.pid:
-                        print(event)
+                        if src.id != dest.id:
+                            print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
