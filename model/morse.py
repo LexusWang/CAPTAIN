@@ -23,10 +23,6 @@ class Morse:
         self.subj_init = None
         self.obj_inits = None
 
-        # threshold
-        self.benign = 0.5
-        self.suspect_env = 0.25
-
         # decay and attenuation
         self.a_b = 0.1
         self.a_e = 0.05
@@ -45,11 +41,6 @@ class Morse:
 
         # alarm file
         self.alarm_file = alarm_file
-
-        # # scaler w and b
-        # self.benign_thresh_model = simple_net.SimpleNet()
-        # # scaler w and b
-        # self.suspect_env_model = simple_net.SimpleNet()
 
         self.pos = 0
 
@@ -206,6 +197,9 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
+                if isinstance(src,Subject) and isinstance(dest,Subject):
+                    if src.pid == dest.pid:
+                        print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
@@ -220,8 +214,8 @@ class Morse:
 
     def add_subject(self, subject):
         self.G.add_node(subject.id)
-        # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-        #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
+        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
+            subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         # else:
         #     # initSubjectTags(subject, self.subj_init)
         #     subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
