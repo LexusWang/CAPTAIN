@@ -8,6 +8,7 @@ lttng_object_type = ['common_file', 'share_memory', 'unix_socket_file', 'inet_sc
 
 def parse_subject_cdm(datum):
     subject_type = datum['type']
+    subject = None
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
         pid_ = datum['cid']
@@ -23,16 +24,17 @@ def parse_subject_cdm(datum):
     elif subject_type == 'SUBJECT_THREAD':
         pass
     elif subject_type == 'SUBJECT_UNIT':
-        type_ = datum['type']
-        pid_ = datum['cid']
-        pname_ = datum['properties']['map']['name']
-        ppid_ = datum['properties']['map']['ppid']
-        seen_time_ = float(datum['startTimestampNanos'])
-        if isinstance(datum['cmdLine'], dict):
-            cmdLine_ = datum['cmdLine'].get('string')
-        else:
-            cmdLine_ = None
-        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
+        pass
+        # type_ = datum['type']
+        # pid_ = datum['cid']
+        # pname_ = datum['properties']['map']['name']
+        # ppid_ = datum['properties']['map']['ppid']
+        # seen_time_ = float(datum['startTimestampNanos'])
+        # if isinstance(datum['cmdLine'], dict):
+        #     cmdLine_ = datum['cmdLine'].get('string')
+        # else:
+        #     cmdLine_ = None
+        # subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
     elif subject_type == 'SUBJECT_BASIC_BLOCK':
         pass
     else:

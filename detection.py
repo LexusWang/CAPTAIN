@@ -49,9 +49,10 @@ def start_detection(config):
                         event = parse_event(record_datum)
                         events.append((record_datum['uuid'],event))
                     elif record_type == 'Subject':
-                        subject_node, subject = parse_subject(record_datum)
-                        initSubjectTags(subject)
-                        mo.add_subject(subject)
+                        if record_datum['type'] in {'SUBJECT_PROCESS'}:
+                            subject_node, subject = parse_subject(record_datum)
+                            initSubjectTags(subject)
+                            mo.add_subject(subject)
                     elif record_type == 'Principal':
                         mo.Principals[record_datum['uuid']] = record_datum
                     elif record_type.endswith('Object'):
