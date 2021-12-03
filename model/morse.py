@@ -197,10 +197,10 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
-                if isinstance(src,Subject) and isinstance(dest,Subject):
-                    if src.pid == dest.pid:
-                        if src.id != dest.id:
-                            print(event)
+                # if isinstance(src,Subject) and isinstance(dest,Subject):
+                #     if src.pid == dest.pid:
+                #         if src.id != dest.id:
+                #             print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
@@ -215,8 +215,8 @@ class Morse:
 
     def add_subject(self, subject):
         self.G.add_node(subject.id)
-        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-            subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
+        # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
+        #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         # else:
         #     # initSubjectTags(subject, self.subj_init)
         #     subject.setSubjTags(self.node_inital_tags[subject.id].tolist())

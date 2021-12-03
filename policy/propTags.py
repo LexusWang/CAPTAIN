@@ -32,11 +32,9 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          et = etag(stg)
          if (isRoot(morse.Principals[s.owner]) and cit == TRUSTED and et == TRUSTED ):
             s.setSubjTags(stg) # is this doing anything?
-            whitelisted = True
+            # whitelisted = True
 
       if (whitelisted == False and o.isMatch("UnknownObject")):
-         if s.pid == 3300:
-            a = 0
          stg = s.tags()
          whitelisted = True
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
