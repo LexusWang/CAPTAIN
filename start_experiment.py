@@ -262,7 +262,7 @@ def start_experiment(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth.txt', type=str)
+    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
     parser.add_argument("--epoch", default=100, type=int)
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
