@@ -51,23 +51,25 @@ class eventClassifier:
         #     return "MkMemExecutable"
         return None
 
-    def summary(self):
-        for sublst in self.dataLeakUUID.keys():
-            if not self.dataLeakUUID[sublst]:
-                print("missing DataLeak TP from at least one of the following eventids:")
-                print(sublst)
-        for sublst in self.mkFileExecutableUUID.keys():
-            if not self.mkFileExecutableUUID[sublst]:
-                print("missing MkFileExecutable TP from following eventids:")
-                print(sublst)
-        for sublst in self.fileExecUUID.keys():
-            if not self.fileExecUUID[sublst]:
-                print("missing FileExec TP from following eventids:")
-                print(sublst)
-        for sublst in self.mkMemExecutableUUID.keys():
-            if not self.mkMemExecutableUUID[sublst]:
-                print("missing MkMemExecutable TP from following eventids:")
-                print(sublst)
+    def summary(self, outFile=None):
+        if outFile:
+            with open(outFile, 'a') as fout:
+                for sublst in self.dataLeakUUID.keys():
+                    if not self.dataLeakUUID[sublst]:
+                        print("missing DataLeak TP from at least one of the following eventids:", file = fout)
+                        print(sublst, file = fout)
+                for sublst in self.mkFileExecutableUUID.keys():
+                    if not self.mkFileExecutableUUID[sublst]:
+                        print("missing MkFileExecutable TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
+                for sublst in self.fileExecUUID.keys():
+                    if not self.fileExecUUID[sublst]:
+                        print("missing FileExec TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
+                for sublst in self.mkMemExecutableUUID.keys():
+                    if not self.mkMemExecutableUUID[sublst]:
+                        print("missing MkMemExecutable TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
     
     def __addAlarmUUID(self, alarm, lst):
         assert alarm != None

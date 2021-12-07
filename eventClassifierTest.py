@@ -20,4 +20,4 @@ else:
 #     print("correctly classified MkMemExecutable Alarm")
 # else:
 #     print("error")
-ec.summary()
+ec.summary("missingTP.txt")
