@@ -57,4 +57,54 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
             s_loss = s - torch.tensor([0, 0, 0, 0, 0])
 
+        elif event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+            o_loss = o - torch.tensor([0, 0, 0, 0, 0])
+
+        elif event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+            s_loss = o - torch.tensor([0, 0, 0, 0, 0])
+
+    if side == "true_positive":
+        if event_type == standard_events['EVENT_EXECUTE'] or event_type == standard_events['EVENT_LOADLIBRARY']:
+            s_loss = s - torch.tensor([UNTRUSTED, 0, 0, 0, 0])
+
+        elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
+            o_loss = o - torch.tensor([UNTRUSTED, 0, 0, 0, 0])
+
+        elif event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
+            # to be discussed: which to be chosen to optimized (one is enough, more is also ok)
+            o_loss = o - torch.tensor([0, 0, 0, 0, 0])
+            if alarm_name == "DataLeak":
+                s_loss = s - torch.tensor([0, 0, 0, 0, 0])
+
+        elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+            s_loss = s - torch.tensor([0, 0, 0, 0, 0])
+
+        elif event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+            o_loss = o - torch.tensor([0, 0, 0, 0, 0])
+
+        elif event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+            s_loss = o - torch.tensor([0, 0, 0, 0, 0])
+
+    elif side == "true_negative":
+        if event_type == standard_events['EVENT_EXECUTE'] or event_type == standard_events['EVENT_LOADLIBRARY']:
+            s_loss = s - torch.tensor([TRUSTED, 0, 0, 0, 0])
+
+        elif event_type == standard_events['EVENT_MODIFY_PROCESS']:
+            o_loss = o - torch.tensor([TRUSTED, 0, 0, 0, 0])
+
+        elif event_type in {standard_events['EVENT_WRITE'],standard_events['EVENT_SENDMSG']}:
+            # to be discussed: which to be chosen to optimized (one is enough, more is also ok)
+            o_loss = o - torch.tensor([0, 0, 0, 1, 0])
+            if alarm_name == "DataLeak":
+                s_loss = s - torch.tensor([0, 0, 0, 1, 1])
+
+        elif event_type == standard_events['EVENT_CHANGE_PRINCIPAL']:
+            s_loss = s - torch.tensor([0, 0, 0, 1, 0])
+
+        elif event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+            o_loss = o - torch.tensor([0, 0, 0, 1, 0])
+
+        elif event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+            s_loss = o - torch.tensor([0, 0, 0, 1, 0])
+
     return torch.mean(s_loss), torch.mean(o_loss)
