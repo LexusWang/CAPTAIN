@@ -26,6 +26,16 @@ class eventClassifier:
             # print(self.mkMemExecutableUUID)
             # print(self.fileExecUUID)
     
+    def reset(self):
+        for sublst in self.dataLeakUUID.keys():
+            self.dataLeakUUID[sublst] = False
+        for sublst in self.mkFileExecutableUUID.keys():
+            self.mkFileExecutableUUID[sublst] = False
+        for sublst in self.fileExecUUID.keys():
+            self.fileExecUUID[sublst] = False
+        for sublst in self.mkMemExecutableUUID.keys():
+            self.mkMemExecutableUUID[sublst] = False
+
     def classify(self, UUID):
         for sublst in self.dataLeakUUID.keys():
             if UUID in sublst:
