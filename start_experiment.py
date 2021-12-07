@@ -233,6 +233,9 @@ def start_experiment(config):
                         model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
                     optimizers[node_type].step()
 
+            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            ec.reset()
+
         experiment.save_model(node_inits)
         # final_metrics = experiment.get_f1_score()
         experiment.save_metrics()
