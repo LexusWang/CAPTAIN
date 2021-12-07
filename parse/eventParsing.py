@@ -27,6 +27,7 @@ def parse_event_lttng(datum):
 
 def parse_event_cdm(datum):
     event = {}
+    event['uuid'] = datum['uuid']
     event['type'] = datum['type']
     event['properties'] = datum['properties']
     event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
