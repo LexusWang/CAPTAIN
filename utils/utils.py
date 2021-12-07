@@ -20,6 +20,8 @@ class Experiment:
             self.device = torch.device("cuda:0")
         self.results_path = os.path.join(self.experiment_path, self.args['mode'])
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
+        self.metric_path = os.path.join(self.results_path, "metric")
+        Path(self.metric_path).mkdir(parents=True, exist_ok=True)
         self.pre_load_morses_repo = os.path.join(self.project_path, "pre_load_morses")
         Path(self.pre_load_morses_repo).mkdir(parents=True, exist_ok=True)
 
