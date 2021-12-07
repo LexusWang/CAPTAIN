@@ -6,7 +6,7 @@ class eventClassifier:
         self.mkFileExecutableUUID = {}
         self.mkMemExecutableUUID = {}
         self.fileExecUUID = {}
-        with open(filePath) as f:
+        with open(filePath, 'r') as f:
             curr_alarm = None
             curr_list = []
             for line in f:
@@ -62,6 +62,13 @@ class eventClassifier:
         # elif UUID in [i for sublst in self.mkMemExecutableUUID.keys() for i in sublst]:
         #     return "MkMemExecutable"
         return None
+
+    def analyzeFile(self, filePath):
+        with open(filePath, 'r') as f:
+            for line in f:
+                l = line.split()
+                if(self.classify(l[0])):
+                    print(self.classify(l[0]), "alarm detected")
 
     def summary(self, outFile=None):
         if outFile:
