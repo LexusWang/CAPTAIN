@@ -1,3 +1,5 @@
+from datetime import datetime
+
 class eventClassifier:
     def __init__(self, filePath):
         self.dataLeakUUID = {}
@@ -54,6 +56,11 @@ class eventClassifier:
     def summary(self, outFile=None):
         if outFile:
             with open(outFile, 'a') as fout:
+                now = datetime.now()
+                current_time = now.strftime("%H:%M:%S")
+                print("---------------------------------------------------------------", file = fout)
+                print("Current Time =", current_time, file = fout)
+                print("---------------------------------------------------------------", file = fout)
                 for sublst in self.dataLeakUUID.keys():
                     if not self.dataLeakUUID[sublst]:
                         print("missing DataLeak TP from at least one of the following eventids:", file = fout)
@@ -70,6 +77,7 @@ class eventClassifier:
                     if not self.mkMemExecutableUUID[sublst]:
                         print("missing MkMemExecutable TP from following eventids:", file = fout)
                         print(sublst, file = fout)
+                print("---------------------------------------------------------------", file = fout)
     
     def __addAlarmUUID(self, alarm, lst):
         assert alarm != None
