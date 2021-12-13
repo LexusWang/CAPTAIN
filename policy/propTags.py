@@ -1,6 +1,7 @@
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2, isRoot
-from parse.eventType import lttng_events, cdm_events, standard_events
+from parse.eventType import EXECVE_SET, lttng_events, cdm_events, standard_events
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET
 
 def propTags_pre():
    pass
@@ -21,11 +22,11 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
 
-   if event_type in {standard_events['EVENT_LOADLIBRARY'],standard_events['EVENT_EXECUTE'],standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG']}:
+   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET:
       intags = o.tags()
       whitelisted = False
 
-   if event_type in {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG']}:
+   if event_type in READ_SET:
       if (s.isMatch("sshd")):
          stg = s.tags()
          cit = citag(stg)
@@ -70,7 +71,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), it, ct))
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
-   elif event_type == standard_events['EVENT_LOADLIBRARY']:
+   elif event_type in LOAD_SET:
       if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
          # if (o.iTag+o.cTag) != 2:
          #    print(o.path)
@@ -141,7 +142,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       s.setSubjTags(alltags(cit, et, inv, it, ct))
       s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
-   elif event_type == standard_events['EVENT_EXECUTE']:
+   elif event_type in EXECVE_SET:
       if (o.isMatch("/bin/bash")):
          whitelisted = True
 
@@ -229,7 +230,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          o.setcTagInitID(s.getcTagInitID())
       o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
-   elif event_type in {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG']}:
+   elif event_type in WRITE_SET:
       stg = s.tags()
       otg = o.tags()
       it = itag(stg)
