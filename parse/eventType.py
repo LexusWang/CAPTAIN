@@ -42,13 +42,14 @@ for i, event in enumerate(lttng_special_events):
     lttng_events[event] = 50 + i
     standard_events[event] = 50 + i
 
-READ_SET = {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG']}
-WRITE_SET = {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG']}
-INJECT_SET = {}
+READ_SET = {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG'], standard_events['EVENT_READ_SOCKET_PARAMS'],standard_events['EVENT_RECVFROM']}
+WRITE_SET = {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG'],standard_events['EVENT_SENDTO'],standard_events['EVENT_WRITE_SOCKET_PARAMS']}
+INJECT_SET = {standard_events['EVENT_MODIFY_PROCESS']}
 SET_UID_SET = {standard_events['EVENT_CHANGE_PRINCIPAL']}
 EXECVE_SET = {standard_events['EVENT_EXECUTE']}
 LOAD_SET = {standard_events['EVENT_LOADLIBRARY']}
-CREATE_SET = {}
+CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
+RENAME_SET = {standard_events['EVENT_RENAME']}
 
 
 # for key, value in standard_events.items():
