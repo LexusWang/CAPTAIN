@@ -169,12 +169,19 @@ def start_experiment(config):
                         s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
                         # if np.random.uniform(0, 100, 1) == 1:
                         needs_to_update = True
+                    else:
+                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                        # if np.random.uniform(0, 100, 1) == 1:
+                        needs_to_update = True
                 else:
                     # check if it's fp
                     if gt is None:
                         s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
                         needs_to_update = True
                         is_fp = True
+                    else:
+                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                        needs_to_update = True
                 
                 if needs_to_update:
                     s_loss.backward()
@@ -226,6 +233,9 @@ def start_experiment(config):
                         model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
                     optimizers[node_type].step()
 
+            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            ec.reset()
+
         experiment.save_model(node_inits)
         # final_metrics = experiment.get_f1_score()
         experiment.save_metrics()
@@ -252,7 +262,7 @@ def start_experiment(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth.txt', type=str)
+    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
     parser.add_argument("--epoch", default=100, type=int)
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
@@ -261,7 +271,7 @@ if __name__ == '__main__':
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
-    parser.add_argument("--experiment_prefix", default="groupC", type=str)
+    parser.add_argument("--experiment_prefix", default="groupD", type=str)
 
     args = parser.parse_args()
 
