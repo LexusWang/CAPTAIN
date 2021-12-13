@@ -171,14 +171,15 @@ def start_experiment(config):
                         needs_to_update = True
                     else:
                         s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                        # if np.random.uniform(0, 100, 1) == 1:
-                        needs_to_update = True
+                        if np.random.uniform(0, 100, 1) == 1:
+                            needs_to_update = True
                 else:
                     # check if it's fp
                     if gt is None:
                         s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                        needs_to_update = True
-                        is_fp = True
+                        if np.random.uniform(0, 100, 1) == 1:
+                            needs_to_update = True
+                            is_fp = True
                     else:
                         s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
                         needs_to_update = True
