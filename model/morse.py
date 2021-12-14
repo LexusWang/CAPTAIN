@@ -185,8 +185,8 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        # alarm_file = open(self.alarm_file,'a')
-        alarm_file = self.alarm_file
+        alarm_file = open(self.alarm_file,'a')
+        # alarm_file = self.alarm_file
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
