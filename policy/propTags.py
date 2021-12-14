@@ -1,7 +1,8 @@
+from graph.Subject import Subject
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2, isRoot
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET
 
 def propTags_pre():
    pass
@@ -277,6 +278,19 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
             o.setiTagInitID(s.getiTagInitID())
          if iscTagChanged:
             o.setcTagInitID(s.getcTagInitID())
+   
+   elif event_type in CLONE_SET:
+      assert isinstance(o,Subject)
+      stg = s.tags()
+      citag_grad = s.get_citag_grad()
+      etag_grad = s.get_etag_grad()
+      invtag_grad = s.get_invtag_grad()
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
+      o.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), itag(stg), ctag(stg)))
+      o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+      o.setInitID(s.getInitID())
+
    
    if 0 <= event_type < len(standard_events) and s and o:
       diff = 0
