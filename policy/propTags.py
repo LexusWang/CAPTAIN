@@ -293,7 +293,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       ts = event['timestamp']
       if (s.updateTime == 0):
          s.updateTime = ts
-      elif (et == TRUSTED and it < 1):
+      elif (et > 0.5 and it < 1):
          diff = (ts - s.updateTime) / 4000000
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.75
@@ -308,7 +308,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.setSubjTags(alltags(citag(stg), et, inv, it, ct))
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
-      elif (citag(stg) == TRUSTED and et == UNTRUSTED and it < 0.5):
+      elif (citag(stg) > 0.5 and et < 0.5 and it < 0.5):
          diff = (ts - s.updateTime) / 4000000
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.45
