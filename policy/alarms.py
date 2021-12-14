@@ -4,6 +4,7 @@ sys.path.extend(['.','..','...'])
 
 # import floatTags
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
+from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET
@@ -148,7 +149,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       created[(s.get_pid(), o.get_name())] = True  
 
    if event_type in EXECVE_SET:
-      if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
+      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
@@ -160,7 +161,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #          prtSOAlarm(ts,"FileExec", s, o, alarms)
    #       }
    if event_type in LOAD_SET:
-      if (citag(alarmarg.origtags) == TRUSTED and citag(s.tags()) == UNTRUSTED):
+      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
@@ -171,7 +172,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #          talarms = talarms + 1
    #       }
    if event_type in INJECT_SET:
-      if (citag(alarmarg.origtags) == TRUSTED and citag(o.tags()) == UNTRUSTED):
+      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
          alarm_result = prtSSAlarm(ts,"Inject", s, o,event['uuid'], alarm_file)
          alarm_sum[1] = alarm_sum[1] + 1
    

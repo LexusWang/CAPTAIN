@@ -1,5 +1,6 @@
 from graph.Subject import Subject
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
+from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag, ctag, invtag, itag, etag, alltags, alltags2, isRoot
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET
@@ -32,7 +33,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          stg = s.tags()
          cit = citag(stg)
          et = etag(stg)
-         if (isRoot(morse.Principals[s.owner]) and cit == TRUSTED and et == TRUSTED ):
+         if (isRoot(morse.Principals[s.owner]) and isTRUSTED(cit) and isTRUSTED(et) ):
             s.setSubjTags(stg) # is this doing anything?
             # whitelisted = True
 
@@ -57,7 +58,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          itag_grad = s.get_itag_grad()
          ctag_grad = s.get_ctag_grad()
 
-         if (invtag(stg) !=  TRUSTED):
+         if (isTRUSTED(invtag(stg)) == False):
             if it > oit:
                itag_grad = o.get_itag_grad()
                s.setiTagInitID(o.getiTagInitID())
@@ -92,7 +93,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
             etag_grad = citag_grad
             s.seteTagInitID(s.getciTagInitID())
          inv = invtag(stg)
-         if (cit == UNTRUSTED):
+         if (isUNTRUSTED(cit)):
             inv = UNTRUSTED
             invtag_grad = 0
          if itag(stg) > itag(intags):
@@ -117,7 +118,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          citag_grad = o.get_citag_grad()
          s.setciTagInitID(o.getciTagInitID())
       cit = min(citag(stg), citag(intags))
-      if (cit == TRUSTED and itag(intags) < 0.5):
+      if (isTRUSTED(cit) and itag(intags) < 0.5):
          cit = UNTRUSTED
          citag_grad = 0
       et = etag(stg)
@@ -126,7 +127,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          etag_grad = citag_grad
          s.seteTagInitID(s.getciTagInitID())
       inv = invtag(stg)
-      if (cit == UNTRUSTED):
+      if (isUNTRUSTED(cit)):
          inv = UNTRUSTED
          invtag_grad = 0
       if itag(stg) < itag(intags):
@@ -155,13 +156,13 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          itag_grad = s.get_itag_grad()
          ctag_grad = s.get_ctag_grad()
 
-         if (citag(intags) == TRUSTED):
-            if (cit == TRUSTED and et == TRUSTED):
+         if isTRUSTED(citag(intags)):
+            if (isTRUSTED(cit) and isTRUSTED(et)):
                it = BENIGN
                itag_grad = 0
                ct = PUBLIC
                ctag_grad = 0
-            elif (cit == TRUSTED and et == UNTRUSTED):
+            elif (isTRUSTED(cit) and isUNTRUSTED(et)):
                et = TRUSTED
                etag_grad = 0
                if itag(stg) > itag(intags):
@@ -206,7 +207,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
    elif event_type in SET_UID_SET :
       st = s.tags()
       new_owner = morse.Principals[o.owner]
-      if isRoot(new_owner) == False and invtag(st) == TRUSTED:
+      if isRoot(new_owner) == False and isTRUSTED(invtag(st)):
          o.setSubjTags(alltags(citag(st), etag(st), 0, itag(st), ctag(st)))
          o.update_grad([1, 1, 0, 1, 1])
       
@@ -219,7 +220,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       invtag_grad = o.get_invtag_grad()
       itag_grad = s.get_itag_grad()
       ctag_grad = s.get_ctag_grad()
-      if (citag(st) == TRUSTED and etag(st) == TRUSTED):
+      if (isTRUSTED(citag(st)) and isTRUSTED(etag(st))):
          o.setObjTags(alltags2(BENIGN, PUBLIC))
          itag_grad = 0
          ctag_grad = 0
@@ -242,7 +243,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       isiTagChanged = False
       iscTagChanged = False
 
-      if (citag(stg) == TRUSTED and etag(stg) == TRUSTED):
+      if (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
          it = it + ab
          ct = ct + ab
          if it > 1:
@@ -251,7 +252,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          if ct > 1:
             ctag_grad = 0
          ct = min(1, ct)
-      elif (citag(stg) == TRUSTED and etag(stg) == UNTRUSTED): 
+      elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))): 
          it = it + ae
          ct = ct + ae
          if it > 1:
@@ -340,6 +341,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
       stg = s.tags()
-      # if ((itag(stg)> 0.5 and etag(stg)==UNTRUSTED) or etag(stg)>citag(stg)):
+      # if ((itag(stg)> 0.5 and isUNTRUSTED(etag(stg))) or etag(stg)>citag(stg)):
       #    print("DANGER!!!")
 
