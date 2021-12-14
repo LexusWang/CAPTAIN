@@ -78,8 +78,8 @@ def start_detection(config):
     mo.reset_alarms()
 
     # ============= Dectection =================== #
-    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms.txt'),'a')
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms.txt'),'a')
     for event_info in tqdm.tqdm(events):
         event_id = event_info[0]
         event = event_info[1]
