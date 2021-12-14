@@ -34,7 +34,7 @@ def start_detection(config):
     else:
         events = []
         loaded_line = 0
-        for i in range(1):
+        for i in range(7):
             with open(args['detection_data']+'.'+str(i),'r') as fin:
                 for line in fin:
                     loaded_line += 1
@@ -78,7 +78,7 @@ def start_detection(config):
     mo.reset_alarms()
 
     # ============= Dectection =================== #
-    mo.alarm_file = os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms.txt')
+    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms.txt'),'a')
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
     for event_info in tqdm.tqdm(events):
         event_id = event_info[0]

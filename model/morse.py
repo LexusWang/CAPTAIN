@@ -185,8 +185,9 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        alarm_file = open(self.alarm_file,'a')
-        # alarm_file = self.alarm_file
+        target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
+        if event['src'] == target or event['dest'] == target:
+            stop = 1
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
@@ -203,9 +204,9 @@ class Morse:
                 #             print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
+                alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
                 self.propagate(event, src, dest)
-                return self.detect_alarm(event, src, dest, alarmArg, alarm_file)
+                return self.detect_alarm(event, src, dest, alarmArg, self.alarm_file)
 
     def add_object(self, object):
         self.G.add_node(object.id)
