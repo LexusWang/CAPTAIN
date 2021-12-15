@@ -50,7 +50,7 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
 def prtSAlarm(ts, an, s, event_id, alarmfile= None):
    if alarmfile:
       # with open(alarmfile, 'a') as fout:
-      alarm_string = "{} AlarmS {} : Alarm: {} : Subject pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln())
+      alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln())
       alarmfile.write(alarm_string)
    return an
 
