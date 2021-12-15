@@ -228,7 +228,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
                alarm_sum[1] = alarm_sum[1] + 1
             alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
 
-      if (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
+      elif (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event['uuid'], alarm_file)
