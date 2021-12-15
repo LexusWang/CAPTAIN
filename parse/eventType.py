@@ -51,6 +51,7 @@ LOAD_SET = {standard_events['EVENT_LOADLIBRARY']}
 CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
 CLONE_SET = {standard_events['EVENT_CLONE']}
+MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
 
 
 # for key, value in standard_events.items():

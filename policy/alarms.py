@@ -7,7 +7,7 @@ from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET
 
 class AlarmArguments():
    
@@ -65,7 +65,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    alarmarg.origtags = None
    alarmarg.pre_alarm = None
 
-   if event_type in READ_SET or event_type in LOAD_SET or event_type in EXECVE_SET or event_type in INJECT_SET:
+   if event_type in READ_SET or event_type in LOAD_SET or event_type in EXECVE_SET or event_type in INJECT_SET or event_type in MPROTECT_SET:
       alarmarg.origtags = s.tags()
 
    # write_pre(_, o, useful, _, _)|useful --> origtags = o.tags()
@@ -216,15 +216,18 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
    #       }
    #    }
    
-   if event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
+   if event_type in MPROTECT_SET:
       it = itag(s.tags())
       # prm = permbits(event)
       prm = int(event['properties']['map']['protection'])
       # print(event['properties']['map']['protection'])
 
-      # if it < 0.5:
-      #    a = 0
-      
+      if o.isFile():
+         if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
+            if not alarms[(s.get_pid(), o.get_name())]:
+               alarm_sum[1] = alarm_sum[1] + 1
+            alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
+
       if (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1

@@ -67,6 +67,9 @@ class Object:
         self.port = port
         self.Protocol = protocol
 
+    def isFile(self):
+        return self.type in {'FileObject'}
+
     def get_name(self):
         return self.name
 
