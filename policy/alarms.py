@@ -32,7 +32,7 @@ def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
       if alarmfile:
          # with open(alarmfile, 'a') as fout:
          alarm_string = "{} AlarmS {} : Alarm: {} : Object {} ({}) Subject {}  pid={} {}  AlarmE\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_cmdln())
-         alarmfile.writeline(alarm_string)
+         alarmfile.write(alarm_string)
       return an
    
 
@@ -43,7 +43,7 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
    if alarmfile:
       # with open(alarmfile, 'a') as fout:
       alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_cmdln())
-      alarmfile.writeline(alarm_string)
+      alarmfile.write(alarm_string)
    return an
 
 
@@ -51,7 +51,7 @@ def prtSAlarm(ts, an, s, event_id, alarmfile= None):
    if alarmfile:
       # with open(alarmfile, 'a') as fout:
       alarm_string = "{} AlarmS {} : Alarm: {} : Subject pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln())
-      alarmfile.writeline(alarm_string)
+      alarmfile.write(alarm_string)
    return an
 
 def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', morse = None, alarm_file = None):
