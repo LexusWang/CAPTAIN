@@ -24,7 +24,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
 
-   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET:
+   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET or event_type in {standard_events['EVENT_MMAP']}:
       intags = o.tags()
       whitelisted = False
 
