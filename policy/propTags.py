@@ -143,6 +143,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type in EXECVE_SET:
+      assert isinstance(o,Subject) and isinstance(s,Subject)
       if (o.isMatch("/bin/bash")):
          whitelisted = True
 
@@ -293,6 +294,40 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       o.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), itag(stg), ctag(stg)))
       o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       o.setInitID(s.getInitID())
+
+   
+   elif event_type in {standard_events['EVENT_MMAP']}:
+      if o.isFile():
+         if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
+            stg = s.tags()
+            citag_grad = s.get_citag_grad()
+            etag_grad = s.get_etag_grad()
+            invtag_grad = s.get_invtag_grad()
+            itag_grad = s.get_itag_grad()
+            ctag_grad = s.get_ctag_grad()
+
+            if citag(stg) > citag(intags):
+               citag_grad = o.get_citag_grad()
+               s.setciTagInitID(o.getciTagInitID())
+            cit = min(citag(stg), citag(intags))
+
+            et = etag(stg)
+            if (et > cit):
+               et = cit
+               etag_grad = citag_grad
+               s.seteTagInitID(s.getciTagInitID())
+            inv = invtag(stg)
+            if (isUNTRUSTED(cit)):
+               inv = UNTRUSTED
+               invtag_grad = 0
+            if itag(stg) > itag(intags):
+               itag_grad = o.get_itag_grad()
+               s.setiTagInitID(o.getiTagInitID())
+            it = min(itag(stg), itag(intags))
+            ct = ctag(stg)
+
+            s.setSubjTags(alltags(cit, et, inv, it, ct))
+            s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    
    if 0 <= event_type < len(standard_events) and s and o:
