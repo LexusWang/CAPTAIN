@@ -203,6 +203,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          invtag_grad = 0
          s.setSubjTags(alltags(cit, et, inv, it, ct))
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+         o.setSubjTags(alltags(cit, et, inv, it, ct))
+         o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type in SET_UID_SET :
       st = s.tags()

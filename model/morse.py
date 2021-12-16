@@ -185,9 +185,11 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
-        if event['src'] == target or event['dest'] == target:
+        if event['uuid'] in {'28AE8E83-B8D2-4BF2-A662-E6836D45C0D6','07572653-5D4D-C16F-7828-10F27CC36EBA'}:
             stop = 1
+        # target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
+        # if event['src'] == target or event['dest'] == target:
+        #     stop = 1
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
