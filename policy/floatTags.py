@@ -40,3 +40,9 @@ def permbits(event):
    permstr = event['properties']['map']['mode']
    perm = int(permstr,8)
    return perm
+
+def isTRUSTED(tag):
+   return tag > 0.5
+
+def isUNTRUSTED(tag):
+   return tag <= 0.5

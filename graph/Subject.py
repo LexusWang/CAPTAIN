@@ -105,6 +105,13 @@ class Subject:
         self.invTag_grad *= grads[2]
         self.iTag_grad *= grads[3]
         self.cTag_grad *= grads[4]
+    
+    def setInitID(self, InitID):
+        self.ciTag_initID = InitID[0]
+        self.eTag_initID = InitID[1]
+        self.invTag_initID = InitID[2]
+        self.iTag_initID = InitID[3]
+        self.cTag_initID = InitID[4]
 
     def setciTagInitID(self, id):
         self.ciTag_initID = id

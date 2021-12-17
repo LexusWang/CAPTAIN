@@ -23,10 +23,6 @@ class Morse:
         self.subj_init = None
         self.obj_inits = None
 
-        # threshold
-        self.benign = 0.5
-        self.suspect_env = 0.25
-
         # decay and attenuation
         self.a_b = 0.1
         self.a_e = 0.05
@@ -45,11 +41,6 @@ class Morse:
 
         # alarm file
         self.alarm_file = alarm_file
-
-        # # scaler w and b
-        # self.benign_thresh_model = simple_net.SimpleNet()
-        # # scaler w and b
-        # self.suspect_env_model = simple_net.SimpleNet()
 
         self.pos = 0
 
@@ -194,8 +185,11 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        # alarm_file = open(self.alarm_file,'a')
-        alarm_file = self.alarm_file
+        # if event['uuid'] in {'28AE8E83-B8D2-4BF2-A662-E6836D45C0D6','07572653-5D4D-C16F-7828-10F27CC36EBA'}:
+        #     stop = 1
+        # target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
+        # if event['src'] == target or event['dest'] == target:
+        #     stop = 1
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
@@ -206,11 +200,15 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
+                # if isinstance(src,Subject) and isinstance(dest,Subject):
+                #     if src.pid == dest.pid:
+                #         if src.id != dest.id:
+                #             print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
+                alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
                 self.propagate(event, src, dest)
-                return self.detect_alarm(event, src, dest, alarmArg, alarm_file)
+                return self.detect_alarm(event, src, dest, alarmArg, self.alarm_file)
 
     def add_object(self, object):
         self.G.add_node(object.id)

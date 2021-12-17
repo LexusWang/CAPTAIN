@@ -67,6 +67,9 @@ class Object:
         self.port = port
         self.Protocol = protocol
 
+    def isFile(self):
+        return self.type in {'FileObject'}
+
     def get_name(self):
         return self.name
 
@@ -104,6 +107,13 @@ class Object:
         self.invTag_grad *= grads[2]
         self.iTag_grad *= grads[3]
         self.cTag_grad *= grads[4]
+
+    def setInitID(self, InitID):
+        self.ciTag_initID = InitID[0]
+        self.eTag_initID = InitID[1]
+        self.invTag_initID = InitID[2]
+        self.iTag_initID = InitID[3]
+        self.cTag_initID = InitID[4]
 
     def setciTagInitID(self, id):
         self.ciTag_initID = id
