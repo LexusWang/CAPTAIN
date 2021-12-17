@@ -38,7 +38,7 @@ class FileObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = hl(self.fc(features))
+                hidden_result = hl((self.fc(features)).float())
             else:
                 hidden_result = hl(hidden_result)
         tags = torch.sigmoid(hidden_result)
@@ -68,7 +68,7 @@ class NetFlowObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = hl(self.fc(features))
+                hidden_result = hl((self.fc(features).float()))
             else:
                 hidden_result = hl(hidden_result)
         tags = torch.sigmoid(hidden_result)
