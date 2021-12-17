@@ -40,20 +40,21 @@ def start_experiment(config):
         device = torch.device("cuda:0")
     epochs = args['epoch']
     mode = args['mode']
+    no_hidden_layers = args['no_hidden_layers']
 
     mo = Morse()
 
     # ============= Tag Initializer =============== #
     node_inits = {}
-    node_inits['Subject'] = Initializer(150,5)
+    node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
     # node_inits['NetFlowObject'] = Initializer(1,2)
-    node_inits['NetFlowObject'] = NetFlowObj_Initializer(2)
-    node_inits['SrcSinkObject'] = Initializer(111,2)
-    node_inits['FileObject'] = FileObj_Initializer(2)
-    node_inits['UnnamedPipeObject'] = Initializer(1,2)
-    node_inits['MemoryObject'] = Initializer(1,2)
-    node_inits['PacketSocketObject'] = Initializer(1,2)
-    node_inits['RegistryKeyObject'] = Initializer(1,2)
+    node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers)
+    node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers)
+    node_inits['FileObject'] = FileObj_Initializer(2,no_hidden_layers)
+    node_inits['UnnamedPipeObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
     mo.subj_init = node_inits['Subject']
     mo.obj_inits = node_inits
 
@@ -273,6 +274,7 @@ if __name__ == '__main__':
     parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupD", type=str)
+    parser.add_argument("--no_hidden_layers", default=3, type=int)
 
     args = parser.parse_args()
 
@@ -286,6 +288,7 @@ if __name__ == '__main__':
         "ground_truth_file": args.ground_truth_file,
         "feature_path": args.feature_path,
         "data_tag": args.data_tag,
+        "no_hidden_layers": args.no_hidden_layers,
         "experiment_prefix": args.experiment_prefix
     }
 
