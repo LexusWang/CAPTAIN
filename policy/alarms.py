@@ -150,28 +150,17 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       created[(s.get_pid(), o.get_name())] = True  
 
    if event_type in EXECVE_SET:
-      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
+      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
-         
 
-   #    load(s, o, useful, _, ts)|useful --> 
-   #       if (citag(origtags) == TRUSTED && citag(subjTags(s)) == UNTRUSTED) {
-   #    if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
-   #          prtSOAlarm(ts,"FileExec", s, o, alarms)
-   #       }
    if event_type in LOAD_SET:
       if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
          if not alarms[(s.get_pid(), o.get_name())]:
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
 
-   #    inject(s, ss, useful, ts)|useful --> 
-   #       if (citag(origtags) == TRUSTED && citag(subjTags(ss)) == UNTRUSTED) {
-   #          prtSSAlarm(ts,"Inject", s, ss)
-   #          talarms = talarms + 1
-   #       }
    if event_type in INJECT_SET:
       if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
          alarm_result = prtSSAlarm(ts,"Inject", s, o,event['uuid'], alarm_file)

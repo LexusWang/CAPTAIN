@@ -169,10 +169,16 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
                if itag(stg) > itag(intags):
                   itag_grad = o.get_itag_grad()
                   s.setiTagInitID(o.getiTagInitID())
+               elif itag(stg) > itag(intags):
+                  itag_grad = s.get_itag_grad()
+                  o.setiTagInitID(s.getiTagInitID())
                it = min(itag(stg), itag(intags))
                if ctag(stg) > ctag(intags):
                   ctag_grad = o.get_ctag_grad()
                   s.setcTagInitID(o.getcTagInitID())
+               elif ctag(stg) < ctag(intags):
+                  ctag_grad = s.get_ctag_grad()
+                  o.setcTagInitID(s.getcTagInitID())
                ct = min(ctag(stg), ctag(intags))
             else:
                cit = TRUSTED
@@ -182,10 +188,16 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
                if itag(stg) > itag(intags):
                   itag_grad = o.get_itag_grad()
                   s.setiTagInitID(o.getiTagInitID())
+               elif itag(stg) < itag(intags):
+                  itag_grad = s.get_itag_grad()
+                  o.setiTagInitID(s.getiTagInitID())
                it = min(itag(stg), itag(intags))
                if ctag(stg) > ctag(intags):
                   ctag_grad = o.get_ctag_grad()
                   s.setcTagInitID(o.getcTagInitID())
+               elif ctag(stg) < ctag(intags):
+                  ctag_grad = s.get_ctag_grad()
+                  o.setcTagInitID(s.getcTagInitID())
                ct = min(ctag(stg), ctag(intags))
          else:
             cit = UNTRUSTED
@@ -193,12 +205,18 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
             et = UNTRUSTED
             etag_grad = 0
             if itag(stg) > itag(intags):
-                  itag_grad = o.get_itag_grad()
-                  s.setiTagInitID(o.getiTagInitID())
+               itag_grad = o.get_itag_grad()
+               s.setiTagInitID(o.getiTagInitID())
+            elif itag(stg) < itag(intags):
+               itag_grad = s.get_itag_grad()
+               o.setiTagInitID(s.getiTagInitID())
             it = min(itag(stg), itag(intags))
             if ctag(stg) > ctag(intags):
-                  ctag_grad = o.get_ctag_grad()
-                  s.setcTagInitID(o.getcTagInitID())
+               ctag_grad = o.get_ctag_grad()
+               s.setcTagInitID(o.getcTagInitID())
+            elif ctag(stg) < ctag(intags):
+               ctag_grad = s.get_ctag_grad()
+               o.setcTagInitID(s.getcTagInitID())
             ct = min(ctag(stg), ctag(intags))
          inv = UNTRUSTED
          invtag_grad = 0

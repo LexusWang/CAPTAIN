@@ -8,6 +8,7 @@ from graph.Object import Object
 # from policy.initTagsAT import initObjectTags, initSubjectTags
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre, printTime
+from parse.eventType import UNUSED_SET
 
 
 class Morse:
@@ -190,11 +191,14 @@ class Morse:
         # target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
         # if event['src'] == target or event['dest'] == target:
         #     stop = 1
+        if event['type'] in UNUSED_SET:
+            return
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
             except KeyError:
-                print('Oops! Cannot find Node!')
+                # print('Oops! Cannot find Node!')
+                return
         if event['src'] != -1 and event['dest'] != -1:
             self.G.add_edge(event['src'], event['dest'])
             src = self.Nodes.get(event['src'], None)

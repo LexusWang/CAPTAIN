@@ -147,9 +147,9 @@ class Subject:
         return self.cTag_initID
 
     def isMatch(self, string):
-        if self.processName == None:
+        if self.cmdLine == None:
             return False
-        return isinstance(re.search(string, self.processName), re.Match)
+        return isinstance(re.search(string, self.cmdLine), re.Match)
 
     def get_matrix_array(self, padding: 4):
         if padding < 4:
