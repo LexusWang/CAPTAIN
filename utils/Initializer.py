@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn import Linear
+from torch.nn import Linear, ReLU
 
 class Initializer(nn.Module):
 
@@ -25,6 +25,7 @@ class FileObj_Initializer(nn.Module):
         self.extension_name_embedding = nn.Embedding(7, 5, dtype=self.dtype)
         self.type_embedding = nn.Embedding(8, 5, dtype=self.dtype)
         self.fc = Linear(15, 512, dtype=self.dtype)
+        self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
             self.hidden_layers.append(Linear(512, 512))
@@ -38,9 +39,10 @@ class FileObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = hl((self.fc(features)).float())
+                hidden_result = self.relu(hl((self.fc(features)).float()))
             else:
-                hidden_result = hl(hidden_result)
+                hidden_result = self.relu(hl(hidden_result))
+        hidden_result = self.output_layers(hidden_result)
         tags = torch.sigmoid(hidden_result)
         return tags
 
@@ -55,6 +57,7 @@ class NetFlowObj_Initializer(nn.Module):
         self.port_embedding = nn.Embedding(11, 6, dtype=self.dtype)
         self.protocol_embedding = nn.Embedding(2, 2, dtype=self.dtype)
         self.fc = Linear(14, 512,dtype=self.dtype)
+        self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
             self.hidden_layers.append(Linear(512, 512))
@@ -68,8 +71,9 @@ class NetFlowObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = hl((self.fc(features).float()))
+                hidden_result = self.relu(hl((self.fc(features).float())))
             else:
-                hidden_result = hl(hidden_result)
+                hidden_result = self.relu(hl(hidden_result))
+        hidden_result = self.output_layers(hidden_result)
         tags = torch.sigmoid(hidden_result)
         return tags
