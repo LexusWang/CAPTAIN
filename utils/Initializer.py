@@ -42,7 +42,7 @@ class FileObj_Initializer(nn.Module):
                 hidden_result = self.relu(hl((self.fc(features)).float()))
             else:
                 hidden_result = self.relu(hl(hidden_result))
-        hidden_result = self.output_layers(hidden_result)
+        hidden_result = self.output_layers(hidden_result.double())
         tags = torch.sigmoid(hidden_result)
         return tags
 
@@ -74,6 +74,6 @@ class NetFlowObj_Initializer(nn.Module):
                 hidden_result = self.relu(hl((self.fc(features).float())))
             else:
                 hidden_result = self.relu(hl(hidden_result))
-        hidden_result = self.output_layers(hidden_result)
+        hidden_result = self.output_layers(hidden_result.doulbe())
         tags = torch.sigmoid(hidden_result)
         return tags
