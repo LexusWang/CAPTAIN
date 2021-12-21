@@ -21,6 +21,6 @@ ec = eventClassifier('groundTruth32.txt')
 # else:
 #     print("error")
 
-ec.analyzeFile('alarms-pymorse_new.txt')
+ec.analyzeFile('../alarms-epoch-28.txt')
 
-ec.summary("missingTP.txt")
+ec.summary("../missingTP.txt")
