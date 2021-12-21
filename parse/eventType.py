@@ -52,8 +52,11 @@ CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
 CLONE_SET = {standard_events['EVENT_CLONE']}
 MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
-# UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],standard_events['EVENT_BOOT'],standard_events['EVENT_TRUNCATE'], standard_events['EVENT_UNIT']}
-UNUSED_SET = {}
+UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],
+    standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],standard_events['EVENT_BOOT'],
+    standard_events['EVENT_LOGCLEAR'],standard_events['EVENT_LOGIN'],standard_events['EVENT_LOGOUT'],
+    standard_events['EVENT_LSEEK'],standard_events['EVENT_TRUNCATE'], standard_events['EVENT_UNIT']}
+# UNUSED_SET = {}
 
 # for key, value in standard_events.items():
 #     print(key+': '+str(value))

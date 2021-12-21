@@ -242,7 +242,9 @@ class Morse:
     def reset_tags(self):
         for nid in self.Nodes.keys():
             if isinstance(self.Nodes[nid],Subject):
-                self.Nodes[nid].setSubjTags(self.node_inital_tags[nid].tolist())
+                # sub_tag = self.node_inital_tags[nid].tolist()
+                sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
+                self.Nodes[nid].setSubjTags(sub_tag)
             else:
                 self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
 
