@@ -46,7 +46,7 @@ def start_experiment(config):
 
     # ============= Tag Initializer =============== #
     node_inits = {}
-    node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
+    # node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
     # node_inits['NetFlowObject'] = Initializer(1,2)
     node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers)
     node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers)
@@ -55,7 +55,7 @@ def start_experiment(config):
     node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
-    mo.subj_init = node_inits['Subject']
+    # mo.subj_init = node_inits['Subject']
     mo.obj_inits = node_inits
 
     # ============= Groud Truth & Optimizers ====================#
@@ -119,7 +119,7 @@ def start_experiment(config):
 
         model_nids = {}
         model_features = {}
-        for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+        for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
             with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
@@ -139,7 +139,7 @@ def start_experiment(config):
             model_tags = {}
             node_inital_tags = {}
 
-            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
                 model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
                 for i, node_id in enumerate(model_nids[node_type]):
                     node_inital_tags[node_id] = model_tags[node_type][i,:]
@@ -186,35 +186,36 @@ def start_experiment(config):
                         needs_to_update = True
                 
                 if needs_to_update:
-                    s_loss.backward()
-                    o_loss.backward()
+                    if s_loss != 0.0 or o_loss != 0.0:
+                        s_loss.backward()
+                        o_loss.backward()
 
-                    if is_fp:
-                        a = args['lr_imb']
-                    else:
-                        a = 1
+                        if is_fp:
+                            a = args['lr_imb']
+                        else:
+                            a = 1
 
-                    s_init_id = mo.Nodes[event['src']].getInitID()
-                    s_morse_grads = mo.Nodes[event['src']].get_grad()
-                    o_init_id = mo.Nodes[event['dest']].getInitID()
-                    o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                    nodes_need_updated = {}
-                    if s.grad != None:
-                        for i, node_id in enumerate(s_init_id):
-                            if node_id not in nodes_need_updated:
-                                nodes_need_updated[node_id] = torch.zeros(5)
-                            nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
+                        s_init_id = mo.Nodes[event['src']].getInitID()
+                        s_morse_grads = mo.Nodes[event['src']].get_grad()
+                        o_init_id = mo.Nodes[event['dest']].getInitID()
+                        o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                        nodes_need_updated = {}
+                        if s.grad != None:
+                            for i, node_id in enumerate(s_init_id):
+                                if node_id not in nodes_need_updated:
+                                    nodes_need_updated[node_id] = torch.zeros(5)
+                                nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
 
-                    if o.grad != None:
-                        for i, node_id in enumerate(o_init_id):
-                            if node_id not in nodes_need_updated:
-                                nodes_need_updated[node_id] = torch.zeros(5)
-                            nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
+                        if o.grad != None:
+                            for i, node_id in enumerate(o_init_id):
+                                if node_id not in nodes_need_updated:
+                                    nodes_need_updated[node_id] = torch.zeros(5)
+                                nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
 
-                    for nid in nodes_need_updated.keys():
-                        if nid not in node_gradients:
-                            node_gradients[nid] = []
-                        node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                        for nid in nodes_need_updated.keys():
+                            if nid not in node_gradients:
+                                node_gradients[nid] = []
+                            node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
 
             for nid in list(node_gradients.keys()):
                 node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
