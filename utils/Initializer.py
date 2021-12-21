@@ -28,7 +28,7 @@ class FileObj_Initializer(nn.Module):
         self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
-            self.hidden_layers.append(Linear(512, 512))
+            self.hidden_layers.append(Linear(512, 512, dtype=self.dtype))
         self.output_layers = Linear(512, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
@@ -39,10 +39,10 @@ class FileObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = self.relu(hl((self.fc(features)).float()))
+                hidden_result = self.relu(hl((self.fc(features))))
             else:
                 hidden_result = self.relu(hl(hidden_result))
-        hidden_result = self.output_layers(hidden_result.double())
+        hidden_result = self.output_layers(hidden_result)
         tags = torch.sigmoid(hidden_result)
         return tags
 
@@ -60,7 +60,7 @@ class NetFlowObj_Initializer(nn.Module):
         self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
-            self.hidden_layers.append(Linear(512, 512))
+            self.hidden_layers.append(Linear(512, 512, dtype=self.dtype))
         self.output_layers = Linear(512, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
@@ -71,9 +71,9 @@ class NetFlowObj_Initializer(nn.Module):
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
             if i == 0:
-                hidden_result = self.relu(hl((self.fc(features).float())))
+                hidden_result = self.relu(hl((self.fc(features))))
             else:
                 hidden_result = self.relu(hl(hidden_result))
-        hidden_result = self.output_layers(hidden_result.doulbe())
+        hidden_result = self.output_layers(hidden_result)
         tags = torch.sigmoid(hidden_result)
         return tags
