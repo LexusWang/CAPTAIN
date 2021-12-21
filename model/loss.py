@@ -40,6 +40,7 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
             o_loss = o - torch.tensor([o[0], o[1], o[2], 1, o[4]])
 
+
         elif event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
             s_loss = s - torch.tensor([s[0], s[1], s[2], 1, s[4]])
 
@@ -107,4 +108,4 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type in {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}:
             s_loss = s - torch.tensor([s[0], s[1], s[2], 1, s[4]])
 
-    return torch.mean(s_loss), torch.mean(o_loss)
+    return torch.mean(s_loss ** 2), torch.mean(o_loss ** 2)
