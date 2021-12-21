@@ -168,17 +168,17 @@ def start_experiment(config):
                     # check if it's fn
                     if gt is not None:
                         s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                        # if np.random.uniform(0, 100, 1) == 1:
+                        # if np.random.randint(0, 100, 1) == 1:
                         needs_to_update = True
                     else:
                         s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                        if np.random.uniform(0, 100, 1) == 1:
+                        if np.random.randint(0, 100, 1) == 1:
                             needs_to_update = True
                 else:
                     # check if it's fp
                     if gt is None:
                         s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                        if np.random.uniform(0, 100, 1) == 1:
+                        if np.random.randint(0, 100, 1) == 1:
                             needs_to_update = True
                             is_fp = True
                     else:
