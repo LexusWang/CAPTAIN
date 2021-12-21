@@ -273,7 +273,7 @@ if __name__ == '__main__':
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
-    parser.add_argument("--experiment_prefix", default="groupD", type=str)
+    parser.add_argument("--experiment_prefix", default="groupF", type=str)
     parser.add_argument("--no_hidden_layers", default=3, type=int)
 
     args = parser.parse_args()
