@@ -220,7 +220,7 @@ def start_experiment(config):
             for nid in list(node_gradients.keys()):
                 node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
             
-            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
                 gradients = []
                 for nid in model_nids[node_type]:
                     if nid in node_gradients:
