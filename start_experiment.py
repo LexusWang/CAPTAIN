@@ -119,13 +119,32 @@ def start_experiment(config):
 
         model_nids = {}
         model_features = {}
-        for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
+        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
             with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
                 target_features = pd.DataFrame.from_dict(node_features,orient='index')
                 model_nids[node_type] = target_features.index.tolist()
                 feature_array = target_features['features'].values.tolist()
+            else:
+                model_nids[node_type] = []
+                feature_array = []
+            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+
+        for node_type in ['FileObject']:
+            with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
+                node_features = json.load(fin)
+            if len(node_features) > 0:
+                target_features = pd.DataFrame.from_dict(node_features,orient='index')
+                model_nids[node_type] = target_features.index.tolist()
+                ori_feature_array = target_features['features'].values.tolist()
+                oh_index = [item[0] for item in ori_feature_array]
+                feature_array = []
+                for i, item in enumerate(ori_feature_array):
+                    feature_array.append(np.zeros(2002))
+                    feature_array[-1][oh_index[i]] = 1
+                    feature_array[-1][2000] = item[1]
+                    feature_array[-1][2001] = item[2]
             else:
                 model_nids[node_type] = []
                 feature_array = []
