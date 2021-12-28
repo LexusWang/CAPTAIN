@@ -222,6 +222,7 @@ class Morse:
 
     def add_subject(self, subject):
         self.G.add_node(subject.id)
+        self.Nodes[subject.id] = subject
         # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
         #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         # else:
@@ -231,7 +232,6 @@ class Morse:
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject.id
         self.processes[subject.pid]['alive'] = True
-        self.Nodes[subject.id] = subject
 
     def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
         return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)

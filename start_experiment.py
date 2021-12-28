@@ -178,33 +178,36 @@ def start_experiment(config):
                 event = event_info[1]
                 diagnois = mo.add_event(event)
                 gt = ec.classify(event_id)
-                s = torch.tensor(mo.Nodes[event['src']].tags(),requires_grad=True)
-                o = torch.tensor(mo.Nodes[event['dest']].tags(),requires_grad=True)
                 needs_to_update = False
                 is_fp = False
+                src = mo.Nodes.get(event['src'], None)
+                dest = mo.Nodes.get(event['dest'], None)
+                if src and dest:
+                    s = torch.tensor(src.tags(),requires_grad=True)
+                    o = torch.tensor(dest.tags(),requires_grad=True)
 
-                if epoch == epochs - 1:
-                    experiment.update_metrics(diagnois, gt)
-                if diagnois is None:
-                    # check if it's fn
-                    if gt is not None:
-                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                        # if np.random.randint(0, 100, 1) == 1:
-                        needs_to_update = True
-                    else:
-                        s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                        if np.random.randint(0, 100, 1) == 1:
+                    if epoch == epochs - 1:
+                        experiment.update_metrics(diagnois, gt)
+                    if diagnois is None:
+                        # check if it's fn
+                        if gt is not None:
+                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                            # if np.random.randint(0, 100, 1) == 1:
                             needs_to_update = True
-                else:
-                    # check if it's fp
-                    if gt is None:
-                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                        if np.random.randint(0, 100, 1) == 1:
-                            needs_to_update = True
-                            is_fp = True
+                        else:
+                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                            if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
                     else:
-                        s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
-                        needs_to_update = True
+                        # check if it's fp
+                        if gt is None:
+                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                            if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                                is_fp = True
+                        else:
+                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                            needs_to_update = True
                 
                 if needs_to_update:
                     if s_loss != 0.0 or o_loss != 0.0:
