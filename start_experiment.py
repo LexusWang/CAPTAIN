@@ -96,12 +96,14 @@ def start_experiment(config):
                             events.append((record_datum['uuid'],event))
                         elif record_type == 'Subject':
                             subject_node, subject = parse_subject(record_datum)
-                            mo.add_subject(subject)
+                            if subject != None:
+                                mo.add_subject(subject)
                         elif record_type == 'Principal':
                             mo.Principals[record_datum['uuid']] = record_datum
                         elif record_type.endswith('Object'):
                             object_node, object = parse_object(record_datum, record_type)
-                            mo.add_object(object)
+                            if object != None:
+                                mo.add_object(object)
                         elif record_type == 'TimeMarker':
                             pass
                         elif record_type == 'StartMarker':
