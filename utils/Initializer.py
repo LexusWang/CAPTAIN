@@ -33,7 +33,7 @@ class FileObj_Initializer(nn.Module):
         self.output_layers = Linear(512, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
-        dir_emb = self.dir_name_embedding(features[:,:2000])
+        dir_emb = self.dir_name_embedding(features[:,:2000].to(torch.float64))
         extname_emb = self.extension_name_embedding(features[:,2000])
         type_emb = self.type_embedding(features[:,2001])
         features = torch.cat((dir_emb, extname_emb, type_emb),dim=1)
