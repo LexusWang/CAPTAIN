@@ -38,9 +38,9 @@ class FileObj_Initializer(nn.Module):
         extname_emb = self.extension_name_embedding(features[:,2000])
         type_emb = self.type_embedding(features[:,2001])
         features = torch.cat((dir_emb, extname_emb, type_emb),dim=1)
-        features.to(self.device)
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
+            hl.to(features.device)
             if i == 0:
                 hidden_result = self.relu(hl((self.fc(features))))
             else:
@@ -71,9 +71,9 @@ class NetFlowObj_Initializer(nn.Module):
         ip_vec = torch.sigmoid(self.ip_layer(features[:,1:33].double()))
         port_vec = self.port_embedding(features[:,33:]).squeeze()
         features = torch.cat((proto_vec, ip_vec, port_vec),dim=1)
-        features.to(self.device)
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):
+            hl.to(features.device)
             if i == 0:
                 hidden_result = self.relu(hl((self.fc(features))))
             else:
