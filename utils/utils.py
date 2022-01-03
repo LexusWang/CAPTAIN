@@ -18,6 +18,8 @@ class Experiment:
             os.mkdir(self.experiment_path)
         if torch.cuda.is_available():
             self.device = torch.device("cuda:0")
+        else:
+            self.device = torch.device("cpu")
         self.results_path = os.path.join(self.experiment_path, self.args['mode'])
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
         self.metric_path = os.path.join(self.results_path, "metric")
@@ -84,20 +86,11 @@ class Experiment:
         for key in model_dict.keys():
             torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
 
-    def load_model(self):
-        node_inits = {}
-        node_inits['Subject'] = Initializer(1, 5)
-        node_inits['NetFlowObject'] = Initializer(1, 2)
-        node_inits['SrcSinkObject'] = Initializer(111, 2)
-        node_inits['FileObject'] = FileObj_Initializer(2)
-        node_inits['UnnamedPipeObject'] = Initializer(1, 2)
-        node_inits['MemoryObject'] = Initializer(1, 2)
-        node_inits['PacketSocketObject'] = Initializer(1, 2)
-        node_inits['RegistryKeyObject'] = Initializer(1, 2)
-        for key in node_inits.keys():
+    def load_model(self, node_inits):
+        key_list = list(node_inits.keys())
+        for key in key_list:
             node_inits[key].load_state_dict(torch.load(os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth")))
             node_inits[key].to(self.device)
-        return node_inits
 
     def save_pred_labels(pred_labels, file_path):
         '''

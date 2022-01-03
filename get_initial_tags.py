@@ -29,10 +29,20 @@ def start_experiment(config):
     args = config
     experiment = None
     experiment = Experiment(args['trained_model_timestamp'], args, args['experiment_prefix'])
-    experiment.results_path = args['result_path']
+    no_hidden_layers = args['no_hidden_layers']
 
     # ============= Tag Initializer =============== #
-    node_inits = experiment.load_model()
+    node_inits = {}
+    # node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
+    # node_inits['NetFlowObject'] = Initializer(1,2)
+    node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers)
+    node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers)
+    node_inits['FileObject'] = FileObj_Initializer(2,no_hidden_layers)
+    node_inits['UnnamedPipeObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
+    node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
+    experiment.load_model(node_inits)
 
     model_nids = {}
     model_tags = {}
@@ -76,26 +86,27 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
+    parser.add_argument("--feature_path", default='./results/features/feature_vectors', type=str)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
     # parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
-    parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
+    parser.add_argument("--trained_model_timestamp", nargs="?", default='1640732454', type=str)
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
-    parser.add_argument("--result_path", default="groupF", type=str)
+    parser.add_argument("--no_hidden_layers", default=3, type=int)
 
     args = parser.parse_args()
 
     config = {
-        "learning_rate": args.learning_rate,
+        # "learning_rate": args.learning_rate,
         # "train_data": args.train_data,
         "mode": args.mode,
         "device": args.device,
         "feature_path": args.feature_path,
         "data_tag": args.data_tag,
         "experiment_prefix": args.experiment_prefix,
-        "result_path": args.result_path
+        "trained_model_timestamp": args.trained_model_timestamp,
+        "no_hidden_layers": args.no_hidden_layers
     }
 
     start_experiment(config)
