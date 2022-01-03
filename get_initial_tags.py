@@ -76,12 +76,10 @@ def start_experiment(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
+    # parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
-    parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
 
@@ -89,10 +87,9 @@ if __name__ == '__main__':
 
     config = {
         "learning_rate": args.learning_rate,
-        "train_data": args.train_data,
+        # "train_data": args.train_data,
         "mode": args.mode,
         "device": args.device,
-        "ground_truth_file": args.ground_truth_file,
         "feature_path": args.feature_path,
         "data_tag": args.data_tag,
         "experiment_prefix": args.experiment_prefix
