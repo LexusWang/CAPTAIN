@@ -31,6 +31,11 @@ def start_experiment(config):
     experiment = Experiment(args['trained_model_timestamp'], args, args['experiment_prefix'])
     no_hidden_layers = args['no_hidden_layers']
 
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
+
     # ============= Tag Initializer =============== #
     node_inits = {}
     # node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
@@ -57,7 +62,7 @@ def start_experiment(config):
         else:
             model_nids[node_type] = []
             feature_array = []
-        model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+        model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64).to(device)
         model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
 
     for node_type in ['FileObject']:
@@ -77,7 +82,7 @@ def start_experiment(config):
         else:
             model_nids[node_type] = []
             feature_array = []
-        model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+        model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64).to(device)
         model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
 
     return None
