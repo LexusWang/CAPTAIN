@@ -29,6 +29,7 @@ def start_experiment(config):
     args = config
     experiment = None
     experiment = Experiment(args['trained_model_timestamp'], args, args['experiment_prefix'])
+    experiment.results_path = args['result_path']
 
     # ============= Tag Initializer =============== #
     node_inits = experiment.load_model()
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
+    parser.add_argument("--result_path", default="groupF", type=str)
 
     args = parser.parse_args()
 
@@ -92,7 +94,8 @@ if __name__ == '__main__':
         "device": args.device,
         "feature_path": args.feature_path,
         "data_tag": args.data_tag,
-        "experiment_prefix": args.experiment_prefix
+        "experiment_prefix": args.experiment_prefix,
+        "result_path": args.result_path
     }
 
     start_experiment(config)
