@@ -64,7 +64,27 @@ def start_experiment(config):
             feature_array = []
         model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64).to(device)
         model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
-
+        
+        tags = model_tags[node_type].tolist()
+        itags = []
+        ctags = []
+        for i in tags:
+            itags.append(i[0])
+            ctags.append(i[1])
+        target_features['itags'] = itags
+        target_features['ctags'] = ctags
+        print(target_features.columns)
+        print(target_features.info())
+        with open(os.path.join('./results/features','{}.json'.format(node_type)),'r') as fin:
+            node_features = json.load(fin)
+        if len(node_features) > 0:
+            data = pd.DataFrame.from_dict(node_features,orient='index')
+        df = pd.merge(data,target_features)
+        print(data.columns)
+        print(data.info())
+        print(df.columns)
+        print(df.info())
+        
     for node_type in ['FileObject']:
         with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
             node_features = json.load(fin)
