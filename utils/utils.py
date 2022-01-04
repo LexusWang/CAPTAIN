@@ -21,6 +21,8 @@ class Experiment:
         else:
             self.device = torch.device("cpu")
         self.results_path = os.path.join(self.experiment_path, self.args['mode'])
+        if self.args['mode'] == 'test':
+            self.train_results_path = os.path.join(self.experiment_path, 'train')
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
         self.metric_path = os.path.join(self.results_path, "metric")
         Path(self.metric_path).mkdir(parents=True, exist_ok=True)
@@ -89,7 +91,7 @@ class Experiment:
     def load_model(self, node_inits):
         key_list = list(node_inits.keys())
         for key in key_list:
-            node_inits[key].load_state_dict(torch.load(os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth")))
+            node_inits[key].load_state_dict(torch.load(os.path.join(self.train_results_path, "train_models", f"trained_model_{key}.pth")))
             node_inits[key].to(self.device)
         return node_inits
 
