@@ -1,4 +1,4 @@
-python start_experiments.py \
+python start_experiment.py \
   --mode test \
   --trained_model_timestamp 1640732454 \
   --experiment_prefix groupF \
