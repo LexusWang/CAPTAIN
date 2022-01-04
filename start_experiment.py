@@ -410,6 +410,7 @@ if __name__ == '__main__':
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
     parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--test_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--lr_imb", default=2.0, type=float)
@@ -424,6 +425,7 @@ if __name__ == '__main__':
         "epoch": args.epoch,
         "lr_imb": args.lr_imb,
         "train_data": args.train_data,
+        "test_data": args.test_data,
         "mode": args.mode,
         "device": args.device,
         "ground_truth_file": args.ground_truth_file,
