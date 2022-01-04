@@ -272,12 +272,127 @@ def start_experiment(config):
     elif (mode == "test"):
 
         # load pytorch model
-        model = experiment.load_model()
+        node_inits = experiment.load_model(node_inits)
+        logging.basicConfig(level=logging.INFO,
+                            filename='debug.log',
+                            filemode='w+',
+                            format='%(asctime)s %(levelname)s:%(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p')
         experiment.save_hyperparameters()
+        ec = eventClassifier(args['ground_truth_file'])
+
+        # ================= Load all nodes & edges to memory ==================== #
+        pre_loaded_path = experiment.get_pre_load_morse(args['data_tag'])
+
+        if pre_loaded_path.endswith('.pkl'):
+            with open(pre_loaded_path, 'rb') as f:
+                events, mo = pickle.load(f)
+        else:
+            events = []
+            loaded_line = 0
+            for i in range(7):
+                with open(args['test_data'] + '.' + str(i), 'r') as fin:
+                    for line in fin:
+                        loaded_line += 1
+                        if loaded_line % 100000 == 0:
+                            print("Morse has loaded {} lines.".format(loaded_line))
+                        record_datum = json.loads(line)['datum']
+                        record_type = list(record_datum.keys())
+                        assert len(record_type) == 1
+                        record_datum = record_datum[record_type[0]]
+                        record_type = record_type[0].split('.')[-1]
+                        if record_type == 'Event':
+                            event = parse_event(record_datum)
+                            events.append((record_datum['uuid'], event))
+                        elif record_type == 'Subject':
+                            subject_node, subject = parse_subject(record_datum)
+                            if subject != None:
+                                mo.add_subject(subject)
+                        elif record_type == 'Principal':
+                            mo.Principals[record_datum['uuid']] = record_datum
+                        elif record_type.endswith('Object'):
+                            object_node, object = parse_object(record_datum, record_type)
+                            if object != None:
+                                mo.add_object(object)
+                        elif record_type == 'TimeMarker':
+                            pass
+                        elif record_type == 'StartMarker':
+                            pass
+                        elif record_type == 'UnitDependency':
+                            pass
+                        elif record_type == 'Host':
+                            pass
+                        else:
+                            pass
+            # cache the loaded morse and events for next run
+            with open(os.path.join(pre_loaded_path, 'morse.pkl'), "wb") as f:
+                pickle.dump([events, mo], f)
+
+        model_nids = {}
+        model_features = {}
+        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
+            with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
+                node_features = json.load(fin)
+            if len(node_features) > 0:
+                target_features = pd.DataFrame.from_dict(node_features,orient='index')
+                model_nids[node_type] = target_features.index.tolist()
+                feature_array = target_features['features'].values.tolist()
+            else:
+                model_nids[node_type] = []
+                feature_array = []
+            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+
+        for node_type in ['FileObject']:
+            with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
+                node_features = json.load(fin)
+            if len(node_features) > 0:
+                target_features = pd.DataFrame.from_dict(node_features,orient='index')
+                model_nids[node_type] = target_features.index.tolist()
+                ori_feature_array = target_features['features'].values.tolist()
+                oh_index = [item[0] for item in ori_feature_array]
+                feature_array = []
+                for i, item in enumerate(ori_feature_array):
+                    feature_array.append(np.zeros(2002))
+                    feature_array[-1][oh_index[i]] = 1
+                    feature_array[-1][2000] = item[1]
+                    feature_array[-1][2001] = item[2]
+            else:
+                model_nids[node_type] = []
+                feature_array = []
+            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
+
+        print('testing mode')
+        # ============== Initialization ================== #
+        model_tags = {}
+        node_inital_tags = {}
+
+        for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject',
+                          'PacketSocketObject', 'RegistryKeyObject']:
+            model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+            for i, node_id in enumerate(model_nids[node_type]):
+                node_inital_tags[node_id] = model_tags[node_type][i, :]
+
+        mo.node_inital_tags = node_inital_tags
+
+        Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+        mo.alarm_file = open(
+            os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)), 'a')
+        for event_info in tqdm.tqdm(events):
+            event_id = event_info[0]
+            event = event_info[1]
+            diagnois = mo.add_event(event)
+            gt = ec.classify(event_id)
+            src = mo.Nodes.get(event['src'], None)
+            dest = mo.Nodes.get(event['dest'], None)
+            if src and dest:
+                experiment.update_metrics(diagnois, gt)
 
         # pytorch model testing code goes here
         # ...
-        pred_result = None
+        ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
+        ec.reset()
+
+        experiment.save_metrics()
 
 
 
@@ -314,7 +429,8 @@ if __name__ == '__main__':
         "feature_path": args.feature_path,
         "data_tag": args.data_tag,
         "no_hidden_layers": args.no_hidden_layers,
-        "experiment_prefix": args.experiment_prefix
+        "experiment_prefix": args.experiment_prefix,
+        "trained_model_timestamp": args.trained_model_timestamp
     }
 
     start_experiment(config)

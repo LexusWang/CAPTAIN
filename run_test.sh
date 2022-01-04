@@ -1,0 +1,1 @@
+python start_experiments.py --mode test --trained_model_timestamp 1640732454 --experiment_prefix groupF

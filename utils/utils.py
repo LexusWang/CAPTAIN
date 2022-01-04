@@ -91,6 +91,7 @@ class Experiment:
         for key in key_list:
             node_inits[key].load_state_dict(torch.load(os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth")))
             node_inits[key].to(self.device)
+        return node_inits
 
     def save_pred_labels(pred_labels, file_path):
         '''
