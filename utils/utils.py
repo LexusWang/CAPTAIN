@@ -20,6 +20,7 @@ class Experiment:
             self.device = torch.device("cuda:0")
         else:
             self.device = torch.device("cpu")
+        self.device = torch.device("cpu")
         self.results_path = os.path.join(self.experiment_path, self.args['mode'])
         if self.args['mode'] == 'test':
             self.train_results_path = os.path.join(self.experiment_path, 'train')
