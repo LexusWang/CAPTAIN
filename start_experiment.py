@@ -291,6 +291,7 @@ def start_experiment(config):
             events = []
             loaded_line = 0
             for i in range(7):
+                print(f"loading test data {args['test_data'] + '.' + str(i)}")
                 with open(args['test_data'] + '.' + str(i), 'r') as fin:
                     for line in fin:
                         loaded_line += 1
