@@ -4,7 +4,7 @@ do
   do
     for LR_IMB in 0.5 1 2 4 
     do
-        python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
+        python start_experiment.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB} &
         echo "running python start_experiments.py --learning_rate ${LR} --epoch ${EPOCH} --lr_imb ${LR_IMB}"
         sleep 2s
     done
