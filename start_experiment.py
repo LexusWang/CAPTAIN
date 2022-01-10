@@ -55,6 +55,12 @@ def start_experiment(config):
     node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
+
+    # load the checkpoint if it is given
+    if args['from_checkpoint'] is not None:
+        checkpoint_epoch_path = args['from_checkpoint']
+        node_inits = experiment.load_checkpoint(node_inits, checkpoint_epoch_path)
+
     # mo.subj_init = node_inits['Subject']
     mo.obj_inits = node_inits
 
@@ -153,6 +159,8 @@ def start_experiment(config):
             model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
 
         ec = eventClassifier(args['ground_truth_file'])
+
+
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
@@ -262,6 +270,9 @@ def start_experiment(config):
 
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             ec.reset()
+
+            # save checkpoint
+            experiment.save_checkpoint(node_inits, epoch)
 
         experiment.save_model(node_inits)
         # final_metrics = experiment.get_f1_score()
@@ -417,6 +428,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
     parser.add_argument("--no_hidden_layers", default=3, type=int)
+    parser.add_argument("--from_checkpoint", type=str)
 
     args = parser.parse_args()
 
@@ -433,7 +445,8 @@ if __name__ == '__main__':
         "data_tag": args.data_tag,
         "no_hidden_layers": args.no_hidden_layers,
         "experiment_prefix": args.experiment_prefix,
-        "trained_model_timestamp": args.trained_model_timestamp
+        "trained_model_timestamp": args.trained_model_timestamp,
+        "from_checkpoint": args.from_checkpoint
     }
 
     start_experiment(config)

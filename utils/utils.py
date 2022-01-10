@@ -22,6 +22,8 @@ class Experiment:
             self.device = torch.device("cpu")
         self.device = torch.device("cpu")
         self.results_path = os.path.join(self.experiment_path, self.args['mode'])
+        self.checkpoint_path = os.path.join(self.results_path, 'checkpoints')
+        Path(self.checkpoint_path).mkdir(parents=True, exist_ok=True)
         if self.args['mode'] == 'test':
             self.train_results_path = os.path.join(self.experiment_path, 'train')
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
@@ -88,6 +90,17 @@ class Experiment:
         Path(os.path.join(self.results_path, "train_models")).mkdir(parents=True, exist_ok=True)
         for key in model_dict.keys():
             torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
+
+    def save_checkpoint(self, model_dict, epoch):
+        for key in model_dict.keys():
+            torch.save(model_dict[key].state_dict(), os.path.join(self.checkpoint_path, f"epoch-{epoch}", f"{key}.pth"))
+
+    def load_checkpoint(self, node_inits, epoch_path):
+        key_list = list(node_inits.keys())
+        for key in key_list:
+            node_inits[key].load_state_dict(torch.load(os.path.join(epoch_path, f"{key}.pth")))
+            node_inits[key].to(self.device)
+        return node_inits
 
     def load_model(self, node_inits):
         key_list = list(node_inits.keys())
