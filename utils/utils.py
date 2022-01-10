@@ -92,6 +92,7 @@ class Experiment:
             torch.save(model_dict[key].state_dict(), os.path.join(self.results_path, "train_models", f"trained_model_{key}.pth"))
 
     def save_checkpoint(self, model_dict, epoch):
+        Path(os.path.join(self.checkpoint_path, f"epoch-{epoch}")).mkdir(parents=True, exist_ok=True)
         for key in model_dict.keys():
             torch.save(model_dict[key].state_dict(), os.path.join(self.checkpoint_path, f"epoch-{epoch}", f"{key}.pth"))
 
