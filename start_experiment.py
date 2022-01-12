@@ -67,7 +67,7 @@ def start_experiment(config):
     # ============= Groud Truth & Optimizers ====================#
     optimizers = {}
     for key in node_inits.keys():
-        optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=learning_rate)
+        optimizers[key] = torch.optim.AdamW(node_inits[key].parameters(), lr=learning_rate)
 
     if (mode == "train"):
         logging.basicConfig(level=logging.INFO,
