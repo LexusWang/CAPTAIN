@@ -51,7 +51,7 @@ def initObjectTags(object, obj_inits, format = 'cdm'):
     if format == 'cdm':
         initializer = obj_inits[object.type]
         features = get_object_feature(object)
-        tags = initializer.initialize(features).squeeze()
+        tags = initializer.forward(features).squeeze()
         itag = tags[0].item()
         ctag = tags[1].item()
         # [itag, ctag] = initializer.initialize(features)
