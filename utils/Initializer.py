@@ -66,7 +66,7 @@ class NetFlowObj_Initializer(nn.Module):
             self.hidden_layers.append(Linear(512, 512, dtype=self.dtype))
         self.output_layers = Linear(512, output_dim, dtype=self.dtype)
 
-    def initialize(self, features):
+    def forward(self, features):
         proto_vec = self.protocol_embedding(features[:,0])
         ip_vec = torch.sigmoid(self.ip_layer(features[:,1:33].double()))
         port_vec = self.port_embedding(features[:,33:]).squeeze()

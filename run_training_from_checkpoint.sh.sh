@@ -1,0 +1,1 @@
+python start_experiment.py --learning_rate 0.01 --epoch 10 --lr_imb 2 --from_checkpoint '/home/weijian/weijian/projects/ATPG/experiments/groupF1641851474/train/checkpoints/epoch-0'

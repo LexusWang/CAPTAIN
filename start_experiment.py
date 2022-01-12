@@ -23,11 +23,45 @@ from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initi
 import numpy as np
 from pathlib import Path
 import pickle
-# import ray
-# from ray import tune
+from torch.utils.tensorboard import SummaryWriter
+
+
+def log_model_weights(model, name, ep, writer):
+    if isinstance(model, FileObj_Initializer):
+        writer.add_histogram(f"{name}.dir_name_embedding.weights", model.dir_name_embedding.weight, ep)
+        writer.add_histogram(f"{name}.dir_name_embedding.bias", model.dir_name_embedding.bias, ep)
+        writer.add_histogram(f"{name}.extension_name_embedding.weights", model.extension_name_embedding.weight, ep)
+        writer.add_histogram(f"{name}.extension_name_embedding.bias", model.extension_name_embedding.bias, ep)
+        writer.add_histogram(f"{name}.type_embedding.weights", model.type_embedding.weight, ep)
+        writer.add_histogram(f"{name}.type_embedding.bias", model.type_embedding.bias, ep)
+        writer.add_histogram(f"{name}.fc.weights", model.fc.weight, ep)
+        writer.add_histogram(f"{name}.fc.bias", model.fc.bias, ep)
+        for i, layer in enumerate(model.hidden_layers):
+            writer.add_histogram(f"{name}.hidden_{i}.weights", model.hidden_layers[i].weight, ep)
+            writer.add_histogram(f"{name}.hidden_{i}.bias", model.hidden_layers[i].bias, ep)
+        writer.add_histogram(f"{name}.output_layer.weights", model.output_layers.weight, ep)
+        writer.add_histogram(f"{name}.output_layer.bias", model.output_layers.bias, ep)
+
+    elif isinstance(model, NetFlowObj_Initializer):
+        writer.add_histogram(f"{name}.ip_layer.weights", model.ip_layer.weight, ep)
+        writer.add_histogram(f"{name}.ip_layer.bias", model.ip_layer.bias, ep)
+        writer.add_histogram(f"{name}.port_embedding.weights", model.port_embedding.weight, ep)
+        writer.add_histogram(f"{name}.port_embedding.bias", model.port_embedding.bias, ep)
+        writer.add_histogram(f"{name}.protocol_embedding.weights", model.protocol_embedding.weight, ep)
+        writer.add_histogram(f"{name}.protocol_embedding.bias", model.protocol_embedding.bias, ep)
+        writer.add_histogram(f"{name}.fc.weights", model.fc.weight, ep)
+        writer.add_histogram(f"{name}.fc.bias", model.fc.bias, ep)
+        for i, layer in enumerate(model.hidden_layers):
+            writer.add_histogram(f"{name}.hidden_{i}.weights", model.hidden_layers[i].weight, ep)
+            writer.add_histogram(f"{name}.hidden_{i}.bias", model.hidden_layers[i].bias, ep)
+        writer.add_histogram(f"{name}.output_layer.weights", model.output_layers.weight, ep)
+        writer.add_histogram(f"{name}.output_layer.bias", model.output_layers.bias, ep)
 
 
 def start_experiment(config):
+
+    writer = SummaryWriter()
+
     args = config
     experiment = None
     if args['mode'] == "train":
@@ -55,15 +89,26 @@ def start_experiment(config):
     node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
+
+    # load the checkpoint if it is given
+    if args['from_checkpoint'] is not None:
+        checkpoint_epoch_path = args['from_checkpoint']
+        node_inits = experiment.load_checkpoint(node_inits, checkpoint_epoch_path)
+
     # mo.subj_init = node_inits['Subject']
     mo.obj_inits = node_inits
 
     # ============= Groud Truth & Optimizers ====================#
     optimizers = {}
     for key in node_inits.keys():
-        optimizers[key] = torch.optim.RMSprop(node_inits[key].parameters(), lr=learning_rate)
+        optimizers[key] = torch.optim.AdamW(node_inits[key].parameters(), lr=learning_rate)
 
     if (mode == "train"):
+        # hparams = {'lr': learning_rate,
+        #            'epochs': epochs,
+        #            'lr_imb': args['lr_imb']}
+        # writer.add_hparams(hparams, )
+
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
                             filemode='w+',
@@ -154,6 +199,18 @@ def start_experiment(config):
 
         ec = eventClassifier(args['ground_truth_file'])
 
+        writer.add_graph(node_inits['NetFlowObject'], model_features['NetFlowObject'])
+        writer.add_graph(node_inits['SrcSinkObject'], model_features['SrcSinkObject'])
+        writer.add_graph(node_inits['FileObject'], model_features['FileObject'])
+        writer.add_graph(node_inits['UnnamedPipeObject'], model_features['UnnamedPipeObject'])
+        writer.add_graph(node_inits['MemoryObject'], model_features['MemoryObject'])
+        writer.add_graph(node_inits['PacketSocketObject'], model_features['PacketSocketObject'])
+        writer.add_graph(node_inits['RegistryKeyObject'], model_features['RegistryKeyObject'])
+
+        for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject',
+                          'PacketSocketObject', 'RegistryKeyObject']:
+            log_model_weights(node_inits[node_type], node_type, 0, writer)
+
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
             # ============== Initialization ================== #
@@ -161,7 +218,7 @@ def start_experiment(config):
             node_inital_tags = {}
 
             for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-                model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+                model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
                 for i, node_id in enumerate(model_nids[node_type]):
                     node_inital_tags[node_id] = model_tags[node_type][i,:]
             
@@ -192,22 +249,31 @@ def start_experiment(config):
                         # check if it's fn
                         if gt is not None:
                             s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                            writer.add_scalar('s_loss/train', s_loss, epoch)
+                            writer.add_scalar('o_loss/train', o_loss, epoch)
                             # if np.random.randint(0, 100, 1) == 1:
                             needs_to_update = True
                         else:
                             s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                            if np.random.randint(0, 100, 1) == 1:
-                                needs_to_update = True
+                            writer.add_scalar('s_loss/train', s_loss, epoch)
+                            writer.add_scalar('o_loss/train', o_loss, epoch)
+                            # if np.random.randint(0, 100, 1) == 1:
+                            needs_to_update = True
                     else:
                         # check if it's fp
                         if gt is None:
                             s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                            if np.random.randint(0, 100, 1) == 1:
-                                needs_to_update = True
-                                is_fp = True
+                            writer.add_scalar('s_loss/train', s_loss, epoch)
+                            writer.add_scalar('o_loss/train', o_loss, epoch)
+                            # if np.random.randint(0, 100, 1) == 1:
+                            needs_to_update = True
+                            is_fp = True
                         else:
                             s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                            writer.add_scalar('s_loss/train', s_loss, epoch)
+                            writer.add_scalar('o_loss/train', o_loss, epoch)
                             needs_to_update = True
+
                 
                 if needs_to_update:
                     if s_loss != 0.0 or o_loss != 0.0:
@@ -263,9 +329,18 @@ def start_experiment(config):
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             ec.reset()
 
+            # save checkpoint
+            experiment.save_checkpoint(node_inits, epoch)
+
+            for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject',
+                              'PacketSocketObject', 'RegistryKeyObject']:
+                log_model_weights(node_inits[node_type], node_type, epoch+1, writer)
+
         experiment.save_model(node_inits)
         # final_metrics = experiment.get_f1_score()
         experiment.save_metrics()
+        writer.flush()
+        writer.close()
 
         return None
 
@@ -369,7 +444,7 @@ def start_experiment(config):
 
         for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject',
                           'PacketSocketObject', 'RegistryKeyObject']:
-            model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+            model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
             for i, node_id in enumerate(model_nids[node_type]):
                 node_inital_tags[node_id] = model_tags[node_type][i, :]
 
@@ -417,6 +492,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_tag", default="traindata1", type=str)
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
     parser.add_argument("--no_hidden_layers", default=3, type=int)
+    parser.add_argument("--from_checkpoint", type=str)
 
     args = parser.parse_args()
 
@@ -433,7 +509,8 @@ if __name__ == '__main__':
         "data_tag": args.data_tag,
         "no_hidden_layers": args.no_hidden_layers,
         "experiment_prefix": args.experiment_prefix,
-        "trained_model_timestamp": args.trained_model_timestamp
+        "trained_model_timestamp": args.trained_model_timestamp,
+        "from_checkpoint": args.from_checkpoint
     }
 
     start_experiment(config)

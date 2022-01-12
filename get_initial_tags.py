@@ -63,7 +63,7 @@ def start_experiment(config):
             model_nids[node_type] = []
             feature_array = []
         model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64).to(device)
-        model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+        model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
         
         with open(os.path.join('./results/features','{}.json'.format(node_type)),'r') as fin:
             node_info = json.load(fin)
@@ -93,7 +93,7 @@ def start_experiment(config):
             model_nids[node_type] = []
             feature_array = []
         model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64).to(device)
-        model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+        model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
 
         with open(os.path.join('./results/features','{}.json'.format(node_type)),'r') as fin:
             node_info = json.load(fin)
