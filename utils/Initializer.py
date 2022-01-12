@@ -23,10 +23,10 @@ class FileObj_Initializer(nn.Module):
         super().__init__()
         self.dtype = torch.float64
         # self.dir_name_embedding = nn.Embedding(21, 5, dtype=self.dtype)
-        self.dir_name_embedding = nn.Linear(2000, 5, dtype=self.dtype)
+        self.dir_name_embedding = nn.Linear(2000, 1000, dtype=self.dtype)
         self.extension_name_embedding = nn.Embedding(7, 5, dtype=self.dtype)
         self.type_embedding = nn.Embedding(8, 5, dtype=self.dtype)
-        self.fc = Linear(15, 512, dtype=self.dtype)
+        self.fc = Linear(1010, 512, dtype=self.dtype)
         self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
@@ -56,10 +56,10 @@ class NetFlowObj_Initializer(nn.Module):
     def __init__(self, output_dim, no_hidden_layer=3):
         super().__init__()
         self.dtype = torch.float64
-        self.ip_layer = nn.Linear(32, 6, dtype=self.dtype)
+        self.ip_layer = nn.Linear(32, 24, dtype=self.dtype)
         self.port_embedding = nn.Embedding(11, 6, dtype=self.dtype)
         self.protocol_embedding = nn.Embedding(2, 2, dtype=self.dtype)
-        self.fc = Linear(14, 512,dtype=self.dtype)
+        self.fc = Linear(32, 512,dtype=self.dtype)
         self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
