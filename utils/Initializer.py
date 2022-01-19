@@ -10,7 +10,7 @@ class Initializer(nn.Module):
         self.embedding = nn.Embedding(input_dim, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
-        features.to(self.device)
+        # features.to(self.device)
         tags = torch.sigmoid(self.embedding(features))
         return tags
 
