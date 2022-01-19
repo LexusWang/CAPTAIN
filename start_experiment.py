@@ -169,7 +169,7 @@ def start_experiment(config):
             node_inital_tags = {}
 
             for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-                model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
+                model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
                 for i, node_id in enumerate(model_nids[node_type]):
                     node_inital_tags[node_id] = model_tags[node_type][i,:]
             
