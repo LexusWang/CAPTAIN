@@ -43,7 +43,7 @@ class dataProcessor:
                             vertexCounter += 1
                         elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
                             timestamp = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos']
-                            if timestamp < self.startTimestamp or timestamp > self.endTimestamp:
+                            if timestamp < self.startTimestamp or (timestamp > self.endTimestamp and self.endTimestamp > 0):
                                 continue
                             e.write(line)
                             segCounter += 1
