@@ -75,7 +75,7 @@ def start_detection(config):
 
 
     ec = eventClassifier(args['ground_truth_file'])
-    mo.reset_alarms()
+    mo.reset_morse()
 
     # ============= Dectection =================== #
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)

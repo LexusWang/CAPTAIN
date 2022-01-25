@@ -44,15 +44,13 @@ def start_experiment(config):
 
     # ============= Tag Initializer =============== #
     node_inits = {}
-    # node_inits['Subject'] = Initializer(150,5,no_hidden_layers)
-    # node_inits['NetFlowObject'] = Initializer(1,2)
     node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers)
     node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers)
     node_inits['FileObject'] = FileObj_Initializer(2,no_hidden_layers)
     node_inits['UnnamedPipeObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
-    node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
-    node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
+    # node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
+    # node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
 
     # load the checkpoint if it is given
     if args['from_checkpoint'] is not None:
@@ -68,9 +66,6 @@ def start_experiment(config):
         optimizers[key] = torch.optim.AdamW(node_inits[key].parameters(), lr=learning_rate)
 
     if (mode == "train"):
-        # hparams = {'lr': learning_rate,
-        #            'epochs': epochs,
-        #            'lr_imb': args['lr_imb']}
 
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
@@ -129,7 +124,7 @@ def start_experiment(config):
 
         model_nids = {}
         model_features = {}
-        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
+        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject']:
             with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
@@ -164,109 +159,114 @@ def start_experiment(config):
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
-            # ============== Initialization ================== #
-            model_tags = {}
-            node_inital_tags = {}
+            mo.reset_morse()
+            batch_num = len(events)//args['batch_size']
 
-            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-                model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
-                for i, node_id in enumerate(model_nids[node_type]):
-                    node_inital_tags[node_id] = model_tags[node_type][i,:]
+            for batch in range(batch_num):
+                batch_events = events[batch_num*args['batch_size']:(batch_num+1)*args['batch_size']]
             
-            mo.node_inital_tags = node_inital_tags
-            mo.reset_tags()
-            mo.reset_alarms()
+                # ============== Initialization ================== #
+                model_tags = {}
+                node_inital_tags = {}
 
-            # ============= Dectection =================== #
-            node_gradients = {}
-            Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-            mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
-            for event_info in tqdm.tqdm(events):
-                event_id = event_info[0]
-                event = event_info[1]
-                diagnois = mo.add_event(event)
-                gt = ec.classify(event_id)
-                needs_to_update = False
-                is_fp = False
-                src = mo.Nodes.get(event['src'], None)
-                dest = mo.Nodes.get(event['dest'], None)
-                if src and dest:
-                    s = torch.tensor(src.tags(),requires_grad=True)
-                    o = torch.tensor(dest.tags(),requires_grad=True)
-
-                    if epoch == epochs - 1:
-                        experiment.update_metrics(diagnois, gt)
-                    if diagnois is None:
-                        # check if it's fn
-                        if gt is not None:
-                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                            # if np.random.randint(0, 100, 1) == 1:
-                            needs_to_update = True
-                        else:
-                            s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                            # if np.random.randint(0, 100, 1) == 1:
-                            needs_to_update = True
-                    else:
-                        # check if it's fp
-                        if gt is None:
-                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                            # if np.random.randint(0, 100, 1) == 1:
-                            needs_to_update = True
-                            is_fp = True
-                        else:
-                            s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
-                            needs_to_update = True
+                for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject']:
+                    model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+                    for i, node_id in enumerate(model_nids[node_type]):
+                        node_inital_tags[node_id] = model_tags[node_type][i,:]
                 
-                if needs_to_update:
-                    if s_loss != 0.0 or o_loss != 0.0:
-                        s_loss.backward()
-                        o_loss.backward()
+                mo.node_inital_tags = node_inital_tags
+                mo.reset_tags()
 
-                        if is_fp:
-                            a = args['lr_imb']
+                # ============= Dectection =================== #
+                node_gradients = {}
+                Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+                mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
+                for event_info in tqdm.tqdm(batch_events):
+                    event_id = event_info[0]
+                    event = event_info[1]
+                    diagnois = mo.add_event(event)
+                    gt = ec.classify(event_id)
+                    needs_to_update = False
+                    is_fp = False
+                    src = mo.Nodes.get(event['src'], None)
+                    dest = mo.Nodes.get(event['dest'], None)
+                    if src and dest:
+                        s = torch.tensor(src.tags(),requires_grad=True)
+                        o = torch.tensor(dest.tags(),requires_grad=True)
+
+                        if epoch == epochs - 1:
+                            experiment.update_metrics(diagnois, gt)
+                        if diagnois is None:
+                            # check if it's fn
+                            if gt is not None:
+                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                            else:
+                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
                         else:
-                            a = 1
+                            # check if it's fp
+                            if gt is None:
+                                s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                                is_fp = True
+                            else:
+                                s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                                needs_to_update = True
+                    
+                    if needs_to_update:
+                        if s_loss != 0.0 or o_loss != 0.0:
+                            s_loss.backward()
+                            o_loss.backward()
 
-                        s_init_id = mo.Nodes[event['src']].getInitID()
-                        s_morse_grads = mo.Nodes[event['src']].get_grad()
-                        o_init_id = mo.Nodes[event['dest']].getInitID()
-                        o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                        nodes_need_updated = {}
-                        if s.grad != None:
-                            for i, node_id in enumerate(s_init_id):
-                                if node_id not in nodes_need_updated:
-                                    nodes_need_updated[node_id] = torch.zeros(5)
-                                nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
+                            if is_fp:
+                                a = args['lr_imb']
+                            else:
+                                a = 1
 
-                        if o.grad != None:
-                            for i, node_id in enumerate(o_init_id):
-                                if node_id not in nodes_need_updated:
-                                    nodes_need_updated[node_id] = torch.zeros(5)
-                                nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
+                            s_init_id = mo.Nodes[event['src']].getInitID()
+                            s_morse_grads = mo.Nodes[event['src']].get_grad()
+                            o_init_id = mo.Nodes[event['dest']].getInitID()
+                            o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                            nodes_need_updated = {}
+                            if s.grad != None:
+                                for i, node_id in enumerate(s_init_id):
+                                    if node_id not in nodes_need_updated:
+                                        nodes_need_updated[node_id] = torch.zeros(5)
+                                    nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
 
-                        for nid in nodes_need_updated.keys():
-                            if nid not in node_gradients:
-                                node_gradients[nid] = []
-                            node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                            if o.grad != None:
+                                for i, node_id in enumerate(o_init_id):
+                                    if node_id not in nodes_need_updated:
+                                        nodes_need_updated[node_id] = torch.zeros(5)
+                                    nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
 
-            for nid in list(node_gradients.keys()):
-                node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
-            
-            for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
-                gradients = []
-                for nid in model_nids[node_type]:
-                    if nid in node_gradients:
-                        gradients.append(node_gradients[nid].unsqueeze(0))
-                    else:
-                        gradients.append(torch.zeros(5).unsqueeze(0))
-                if len(gradients) > 0:
-                    gradients = torch.cat(gradients, 0)
-                    optimizers[node_type].zero_grad()
-                    if node_type == 'Subject':
-                        model_tags[node_type].backward(gradient=gradients, retain_graph=True)
-                    else:
-                        model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
-                    optimizers[node_type].step()
+                            for nid in nodes_need_updated.keys():
+                                if nid not in node_gradients:
+                                    node_gradients[nid] = []
+                                node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+
+                for nid in list(node_gradients.keys()):
+                    node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
+                
+                for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject']:
+                    gradients = []
+                    for nid in model_nids[node_type]:
+                        if nid in node_gradients:
+                            gradients.append(node_gradients[nid].unsqueeze(0))
+                        else:
+                            gradients.append(torch.zeros(5).unsqueeze(0))
+                    if len(gradients) > 0:
+                        gradients = torch.cat(gradients, 0)
+                        optimizers[node_type].zero_grad()
+                        if node_type == 'Subject':
+                            model_tags[node_type].backward(gradient=gradients, retain_graph=True)
+                        else:
+                            model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
+                        optimizers[node_type].step()
 
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             ec.reset()
@@ -342,7 +342,7 @@ def start_experiment(config):
 
         model_nids = {}
         model_features = {}
-        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject']:
+        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject']:
             with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
@@ -378,8 +378,7 @@ def start_experiment(config):
         model_tags = {}
         node_inital_tags = {}
 
-        for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject',
-                          'PacketSocketObject', 'RegistryKeyObject']:
+        for node_type in ['NetFlowObject', 'SrcSinkObject', 'FileObject', 'UnnamedPipeObject', 'MemoryObject']:
             model_tags[node_type] = node_inits[node_type].forward(model_features[node_type]).squeeze()
             for i, node_id in enumerate(model_nids[node_type]):
                 node_inital_tags[node_id] = model_tags[node_type][i, :]
@@ -429,6 +428,7 @@ if __name__ == '__main__':
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
     parser.add_argument("--no_hidden_layers", default=3, type=int)
     parser.add_argument("--from_checkpoint", type=str)
+    parser.add_argument("--batch_size", type=int, default=100000)
 
     args = parser.parse_args()
 
@@ -446,7 +446,8 @@ if __name__ == '__main__':
         "no_hidden_layers": args.no_hidden_layers,
         "experiment_prefix": args.experiment_prefix,
         "trained_model_timestamp": args.trained_model_timestamp,
-        "from_checkpoint": args.from_checkpoint
+        "from_checkpoint": args.from_checkpoint,
+        "batch_size": args.batch_size
     }
 
     start_experiment(config)

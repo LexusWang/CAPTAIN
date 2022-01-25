@@ -31,6 +31,7 @@ class Morse:
         # init graph
         self.G = nx.DiGraph()
         self.Nodes = {}
+        self.Initialized_Nodes = {}
         self.Principals = {}
         self.processes = {}
         # self.Objects = {}
@@ -186,11 +187,10 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event(self, event):
-        # if event['uuid'] in {'28AE8E83-B8D2-4BF2-A662-E6836D45C0D6','07572653-5D4D-C16F-7828-10F27CC36EBA'}:
-        #     stop = 1
-        # target = '028E38DF-7ADE-4650-A5C8-677B92E57414'
-        # if event['src'] == target or event['dest'] == target:
-        #     stop = 1
+        if event['src'] in self.Initialized_Nodes:
+            self.Initialized_Nodes[event['src']] = True
+        if event['dest'] in self.Initialized_Nodes:
+            self.Initialized_Nodes[event['dest']] = True
         if event['type'] in UNUSED_SET:
             return
         if event['type'] == 'EVENT_EXIT':
@@ -219,10 +219,12 @@ class Morse:
         # initObjectTags(object, self.obj_inits, format=self.format)
         # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
+        self.Initialized_Nodes[object.id] = False
 
     def add_subject(self, subject):
         self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
+        self.Initialized_Nodes[subject.id] = False
         # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
         #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
         # else:
@@ -241,12 +243,15 @@ class Morse:
     
     def reset_tags(self):
         for nid in self.Nodes.keys():
-            if isinstance(self.Nodes[nid],Subject):
-                # sub_tag = self.node_inital_tags[nid].tolist()
-                sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
-                self.Nodes[nid].setSubjTags(sub_tag)
-            else:
-                self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
+            if self.Initialized_Nodes[nid] == False:
+                if isinstance(self.Nodes[nid],Subject):
+                    # sub_tag = self.node_inital_tags[nid].tolist()
+                    sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
+                    self.Nodes[nid].setSubjTags(sub_tag)
+                else:
+                    self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
 
-    def reset_alarms(self):
+    def reset_morse(self):
+        for nid in self.Initialized_Nodes.keys():
+            self.Initialized_Nodes[nid] = False
         self.alarm = {}
