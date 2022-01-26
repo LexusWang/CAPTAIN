@@ -126,7 +126,7 @@ def start_experiment(config):
 
         model_nids = {}
         model_features = {}
-        for node_type in ['NetFlowObject','SrcSinkObject','UnnamedPipeObject','MemoryObject']:
+        for node_type in ['SrcSinkObject','NetFlowObject','UnnamedPipeObject','MemoryObject']:
             with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
                 node_features = json.load(fin)
             if len(node_features) > 0:
@@ -148,24 +148,28 @@ def start_experiment(config):
                 oh_index = [item[0] for item in ori_feature_array]
                 feature_array = []
                 for i, item in enumerate(ori_feature_array):
-                    feature_array.append(np.zeros(2002))
-                    feature_array[-1][oh_index[i]] = 1
-                    feature_array[-1][2000] = item[1]
-                    feature_array[-1][2001] = item[2]
+                    input_feature = np.zeros(2002,dtype=np.int64)
+                    input_feature[oh_index[i]] = 1
+                    input_feature[2000] = item[1]
+                    input_feature[2001] = item[2]
+                    feature_array.append(list(input_feature))
             else:
                 model_nids[node_type] = []
                 feature_array = []
             model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
-
+        
         ec = eventClassifier(args['ground_truth_file'])
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
+            Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+            mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
             batch_num = len(events)//args['batch_size']
+            pbar = tqdm.tqdm(total=len(events))
 
             for batch in range(batch_num):
-                batch_events = events[batch_num*args['batch_size']:(batch_num+1)*args['batch_size']]
+                batch_events = events[batch*args['batch_size']:(batch+1)*args['batch_size']]
             
                 # ============== Initialization ================== #
                 model_tags = {}
@@ -181,9 +185,8 @@ def start_experiment(config):
 
                 # ============= Dectection =================== #
                 node_gradients = {}
-                Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-                mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
-                for event_info in tqdm.tqdm(batch_events):
+                for event_info in batch_events:
+                    pbar.update(1)
                     event_id = event_info[0]
                     event = event_info[1]
                     if event['type'] not in UNUSED_SET:
