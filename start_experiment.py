@@ -1,6 +1,7 @@
 import json
 import torch
 import logging
+import math
 import argparse
 import time
 from utils.utils import *
@@ -166,11 +167,11 @@ def start_experiment(config):
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
-            batch_num = len(events)//args['batch_size']
+            batch_num = math.ceil(len(events)//args['batch_size'])
             pbar = tqdm.tqdm(total=len(events))
 
             for batch in range(batch_num):
-                batch_events = events[batch*args['batch_size']:(batch+1)*args['batch_size']]
+                batch_events = events[batch*args['batch_size']:min(len(events),(batch+1)*args['batch_size'])]
             
                 # ============== Initialization ================== #
                 model_tags = {}
