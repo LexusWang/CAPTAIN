@@ -20,6 +20,7 @@ import time
 import pandas as pd
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
+from parse.eventType import UNUSED_SET
 import numpy as np
 from pathlib import Path
 import pickle
@@ -83,7 +84,7 @@ def start_experiment(config):
         else:
             events = []
             loaded_line = 0
-            for i in range(7):
+            for i in range(args['volume_num']):
                 with open(args['train_data']+'.'+str(i),'r') as fin:
                     for line in fin:
                         loaded_line += 1
@@ -96,7 +97,8 @@ def start_experiment(config):
                         record_type = record_type[0].split('.')[-1]
                         if record_type == 'Event':
                             event = parse_event(record_datum)
-                            events.append((record_datum['uuid'],event))
+                            if event['type'] not in UNUSED_SET:
+                                events.append((record_datum['uuid'],event))
                         elif record_type == 'Subject':
                             subject_node, subject = parse_subject(record_datum)
                             if subject != None:
@@ -184,70 +186,71 @@ def start_experiment(config):
                 for event_info in tqdm.tqdm(batch_events):
                     event_id = event_info[0]
                     event = event_info[1]
-                    diagnois = mo.add_event(event)
-                    gt = ec.classify(event_id)
-                    needs_to_update = False
-                    is_fp = False
-                    src = mo.Nodes.get(event['src'], None)
-                    dest = mo.Nodes.get(event['dest'], None)
-                    if src and dest:
-                        s = torch.tensor(src.tags(),requires_grad=True)
-                        o = torch.tensor(dest.tags(),requires_grad=True)
+                    if event['type'] not in UNUSED_SET:
+                        diagnois = mo.add_event(event)
+                        gt = ec.classify(event_id)
+                        needs_to_update = False
+                        is_fp = False
+                        src = mo.Nodes.get(event['src'], None)
+                        dest = mo.Nodes.get(event['dest'], None)
+                        if src and dest:
+                            s = torch.tensor(src.tags(),requires_grad=True)
+                            o = torch.tensor(dest.tags(),requires_grad=True)
 
-                        if epoch == epochs - 1:
-                            experiment.update_metrics(diagnois, gt)
-                        if diagnois is None:
-                            # check if it's fn
-                            if gt is not None:
-                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                                # if np.random.randint(0, 100, 1) == 1:
-                                needs_to_update = True
+                            if epoch == epochs - 1:
+                                experiment.update_metrics(diagnois, gt)
+                            if diagnois is None:
+                                # check if it's fn
+                                if gt is not None:
+                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                                    # if np.random.randint(0, 100, 1) == 1:
+                                    needs_to_update = True
+                                else:
+                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                                    # if np.random.randint(0, 100, 1) == 1:
+                                    needs_to_update = True
                             else:
-                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                                # if np.random.randint(0, 100, 1) == 1:
-                                needs_to_update = True
-                        else:
-                            # check if it's fp
-                            if gt is None:
-                                s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                                # if np.random.randint(0, 100, 1) == 1:
-                                needs_to_update = True
-                                is_fp = True
-                            else:
-                                s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
-                                needs_to_update = True
-                    
-                    if needs_to_update:
-                        if s_loss != 0.0 or o_loss != 0.0:
-                            s_loss.backward()
-                            o_loss.backward()
+                                # check if it's fp
+                                if gt is None:
+                                    s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                                    # if np.random.randint(0, 100, 1) == 1:
+                                    needs_to_update = True
+                                    is_fp = True
+                                else:
+                                    s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                                    needs_to_update = True
+                        
+                        if needs_to_update:
+                            if s_loss != 0.0 or o_loss != 0.0:
+                                s_loss.backward()
+                                o_loss.backward()
 
-                            if is_fp:
-                                a = args['lr_imb']
-                            else:
-                                a = 1
+                                if is_fp:
+                                    a = args['lr_imb']
+                                else:
+                                    a = 1
 
-                            s_init_id = mo.Nodes[event['src']].getInitID()
-                            s_morse_grads = mo.Nodes[event['src']].get_grad()
-                            o_init_id = mo.Nodes[event['dest']].getInitID()
-                            o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                            nodes_need_updated = {}
-                            if s.grad != None:
-                                for i, node_id in enumerate(s_init_id):
-                                    if node_id not in nodes_need_updated:
-                                        nodes_need_updated[node_id] = torch.zeros(5)
-                                    nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
+                                s_init_id = mo.Nodes[event['src']].getInitID()
+                                s_morse_grads = mo.Nodes[event['src']].get_grad()
+                                o_init_id = mo.Nodes[event['dest']].getInitID()
+                                o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                                nodes_need_updated = {}
+                                if s.grad != None:
+                                    for i, node_id in enumerate(s_init_id):
+                                        if node_id not in nodes_need_updated:
+                                            nodes_need_updated[node_id] = torch.zeros(5)
+                                        nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
 
-                            if o.grad != None:
-                                for i, node_id in enumerate(o_init_id):
-                                    if node_id not in nodes_need_updated:
-                                        nodes_need_updated[node_id] = torch.zeros(5)
-                                    nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
+                                if o.grad != None:
+                                    for i, node_id in enumerate(o_init_id):
+                                        if node_id not in nodes_need_updated:
+                                            nodes_need_updated[node_id] = torch.zeros(5)
+                                        nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
 
-                            for nid in nodes_need_updated.keys():
-                                if nid not in node_gradients:
-                                    node_gradients[nid] = []
-                                node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                                for nid in nodes_need_updated.keys():
+                                    if nid not in node_gradients:
+                                        node_gradients[nid] = []
+                                    node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
 
                 for nid in list(node_gradients.keys()):
                     node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
@@ -262,10 +265,7 @@ def start_experiment(config):
                     if len(gradients) > 0:
                         gradients = torch.cat(gradients, 0)
                         optimizers[node_type].zero_grad()
-                        if node_type == 'Subject':
-                            model_tags[node_type].backward(gradient=gradients, retain_graph=True)
-                        else:
-                            model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
+                        model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
                         optimizers[node_type].step()
 
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
@@ -420,6 +420,7 @@ if __name__ == '__main__':
     parser.add_argument("--learning_rate", nargs='?', default=0.001, type=float)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
     parser.add_argument("--train_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--volume_num", nargs='?', default=7, type=int)
     parser.add_argument("--test_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
@@ -437,6 +438,7 @@ if __name__ == '__main__':
         "epoch": args.epoch,
         "lr_imb": args.lr_imb,
         "train_data": args.train_data,
+        "volume_num": args.volume_num,
         "test_data": args.test_data,
         "mode": args.mode,
         "device": args.device,
