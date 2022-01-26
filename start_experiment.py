@@ -20,6 +20,7 @@ import time
 import pandas as pd
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
+from parse.eventType import lttng_events, cdm_events, standard_events
 from parse.eventType import UNUSED_SET
 import numpy as np
 from pathlib import Path
@@ -97,7 +98,7 @@ def start_experiment(config):
                         record_type = record_type[0].split('.')[-1]
                         if record_type == 'Event':
                             event = parse_event(record_datum)
-                            if event['type'] not in UNUSED_SET:
+                            if cdm_events[event['type']] not in UNUSED_SET:
                                 events.append((record_datum['uuid'],event))
                         elif record_type == 'Subject':
                             subject_node, subject = parse_subject(record_datum)
@@ -189,7 +190,7 @@ def start_experiment(config):
                     pbar.update(1)
                     event_id = event_info[0]
                     event = event_info[1]
-                    if event['type'] not in UNUSED_SET:
+                    if cdm_events[event['type']] not in UNUSED_SET:
                         diagnois = mo.add_event(event)
                         gt = ec.classify(event_id)
                         needs_to_update = False
