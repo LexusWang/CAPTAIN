@@ -33,15 +33,16 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          stg = s.tags()
          cit = citag(stg)
          et = etag(stg)
-         if (isRoot(morse.Principals[s.owner]) and isTRUSTED(cit) and isTRUSTED(et) ):
+         if (isRoot(morse.Principals[s.owner]) and isTRUSTED(cit) and isTRUSTED(et)):
             s.setSubjTags(stg) # is this doing anything?
-            # whitelisted = True
+            whitelisted = True
 
       if (whitelisted == False and o.isMatch("UnknownObject")):
          stg = s.tags()
          whitelisted = True
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), 0, ctag(stg)))
          s.update_grad([1, 1, 1, 0, 1])
+         s.setiTagInitID(None)
 
       if whitelisted == False and o.isMatch("/.X11-unix/") or o.isMatch("/dev/null") or o.isMatch("/dev/pts"):
          whitelisted = True
@@ -71,11 +72,42 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.setSubjTags(alltags(citag(stg), etag(stg), invtag(stg), it, ct))
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
-   elif event_type in LOAD_SET or event_type==standard_events['EVENT_MMAP']:
+   elif event_type in LOAD_SET:
+      if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
+         stg = s.tags()
+         citag_grad = s.get_citag_grad()
+         etag_grad = s.get_etag_grad()
+         invtag_grad = s.get_invtag_grad()
+         itag_grad = s.get_itag_grad()
+         ctag_grad = s.get_ctag_grad()
+
+         if citag(stg) > citag(intags):
+            citag_grad = o.get_citag_grad()
+            s.setciTagInitID(o.getciTagInitID())
+         cit = min(citag(stg), citag(intags))
+
+         et = etag(stg)
+         
+         if (et > cit):
+            et = cit
+            etag_grad = citag_grad
+            s.seteTagInitID(s.getciTagInitID())
+         inv = invtag(stg)
+         if (isUNTRUSTED(cit)):
+            inv = UNTRUSTED
+            invtag_grad = 0
+         if itag(stg) > itag(intags):
+            itag_grad = o.get_itag_grad()
+            s.setiTagInitID(o.getiTagInitID())
+         it = min(itag(stg), itag(intags))
+         ct = ctag(stg)
+
+         s.setSubjTags(alltags(cit, et, inv, it, ct))
+         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+
+   elif event_type in {standard_events['EVENT_MMAP']}:
       if o.isFile():
          if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
-            # if (o.iTag+o.cTag) != 2:
-            #    print(o.path)
             stg = s.tags()
             citag_grad = s.get_citag_grad()
             etag_grad = s.get_etag_grad()
