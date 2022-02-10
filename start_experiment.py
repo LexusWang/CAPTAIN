@@ -207,6 +207,7 @@ def start_experiment(config):
                                 # if np.random.randint(0, 100, 1) == 1:
                                 needs_to_update = True
                         else:
+                            ec.tally(event_id)
                             # check if it's fp
                             if gt is None:
                                 s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
