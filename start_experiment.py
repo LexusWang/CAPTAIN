@@ -167,7 +167,7 @@ def start_experiment(config):
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
-            batch_num = math.ceil(len(events)//args['batch_size'])
+            batch_num = math.ceil(len(events)/args['batch_size'])
             pbar = tqdm.tqdm(total=len(events))
 
             for batch in range(batch_num):
@@ -213,7 +213,8 @@ def start_experiment(config):
                                 else:
                                     s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
                                     # if np.random.randint(0, 100, 1) == 1:
-                                    needs_to_update = True
+                                    if s_loss != 0.0 or o_loss != 0.0:
+                                        needs_to_update = True
                             else:
                                 ec.tally(event_id)
                                 # check if it's fp
