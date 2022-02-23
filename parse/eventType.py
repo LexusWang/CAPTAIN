@@ -50,6 +50,7 @@ EXECVE_SET = {standard_events['EVENT_EXECUTE']}
 LOAD_SET = {standard_events['EVENT_LOADLIBRARY']}
 CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
+REMOVE_SET = {standard_events['EVENT_UNLINK']}
 CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
 MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
 UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],
@@ -57,7 +58,7 @@ UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_
     standard_events['EVENT_DUP'],standard_events['EVENT_FLOWS_TO'],standard_events['EVENT_FCNTL'],
     standard_events['EVENT_LINK'],standard_events['EVENT_LOGCLEAR'],standard_events['EVENT_LOGIN'],standard_events['EVENT_LOGOUT'],standard_events['EVENT_LSEEK'],
     standard_events['EVENT_OTHER'],standard_events['EVENT_SERVICEINSTALL'],standard_events['EVENT_SHM'],standard_events['EVENT_SIGNAL'],standard_events['EVENT_STARTSERVICE'],standard_events['EVENT_TRUNCATE'],
-    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_UNLINK'],standard_events['EVENT_UPDATE'],standard_events['EVENT_WAIT']}
+    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_UPDATE'],standard_events['EVENT_WAIT']}
 # UNUSED_SET = {}
 
 # for key, value in standard_events.items():

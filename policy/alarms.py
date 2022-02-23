@@ -3,11 +3,13 @@ import sys
 sys.path.extend(['.','..','...'])
 
 # import floatTags
+from graph.Subject import Subject
+from graph.Subject import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET
 
 class AlarmArguments():
    
@@ -94,7 +96,12 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, format = 'cdm', mor
    #          prtSOAlarm(ts, "FileCorruption", s, o, alarms)
    #       }
    #    }
-
+   if event_type in REMOVE_SET:
+      assert isinstance(o,Object) and isinstance(s,Subject)
+      if (itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5 and o.isMatch("null") == False):
+            if not alarms[(s.get_pid(), o.get_name())]:
+               alarm_sum[1] = alarm_sum[1] + 1
+            alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event['uuid'], alarm_file)
   
    #    rename_pre(s, o, _, _, ts) --> {
    #       if (itag(objTags(o)) > 127 && itag(subjTags(s)) < 128 && !isMatch(o, "null") ) {
