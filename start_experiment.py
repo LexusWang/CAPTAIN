@@ -186,29 +186,36 @@ def start_experiment(config):
                 for event_info in tqdm.tqdm(batch_events):
                     event_id = event_info[0]
                     event = event_info[1]
-                    if event['type'] not in UNUSED_SET:
-                        diagnois = mo.add_event(event)
-                        gt = ec.classify(event_id)
-                        needs_to_update = False
-                        is_fp = False
-                        src = mo.Nodes.get(event['src'], None)
-                        dest = mo.Nodes.get(event['dest'], None)
-                        if src and dest:
-                            s = torch.tensor(src.tags(),requires_grad=True)
-                            o = torch.tensor(dest.tags(),requires_grad=True)
+                    diagnois = mo.add_event(event)
+                    gt = ec.classify(event_id)
+                    needs_to_update = False
+                    is_fp = False
+                    src = mo.Nodes.get(event['src'], None)
+                    dest = mo.Nodes.get(event['dest'], None)
+                    if src and dest:
+                        s = torch.tensor(src.tags(),requires_grad=True)
+                        o = torch.tensor(dest.tags(),requires_grad=True)
 
-                            if epoch == epochs - 1:
-                                experiment.update_metrics(diagnois, gt)
-                            if diagnois is None:
-                                # check if it's fn
-                                if gt is not None:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                                    # if np.random.randint(0, 100, 1) == 1:
-                                    needs_to_update = True
-                                else:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                                    # if np.random.randint(0, 100, 1) == 1:
-                                    needs_to_update = True
+                        if epoch == epochs - 1:
+                            experiment.update_metrics(diagnois, gt)
+                        if diagnois is None:
+                            # check if it's fn
+                            if gt is not None:
+                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                            else:
+                                s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                        else:
+                            ec.tally(event_id)
+                            # check if it's fp
+                            if gt is None:
+                                s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                                # if np.random.randint(0, 100, 1) == 1:
+                                needs_to_update = True
+                                is_fp = True
                             else:
                                 # check if it's fp
                                 if gt is None:
