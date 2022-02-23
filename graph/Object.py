@@ -19,17 +19,17 @@ class Object:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        self.ciTag_grad: float = 1.0
-        self.eTag_grad: float = 1.0
-        self.invTag_grad: float = 1.0
+        # self.ciTag_grad: float = 1.0
+        # self.eTag_grad: float = 1.0
+        # self.invTag_grad: float = 0.0
         self.iTag_grad: float = 1.0
         self.cTag_grad: float = 1.0
 
-        self.ciTag_initID = id
-        self.eTag_initID = id
-        self.invTag_initID = id
-        self.iTag_initID = id
-        self.cTag_initID = id
+        # self.ciTag_initID = id
+        # self.eTag_initID = id
+        # self.invTag_initID = None
+        self.iTag_initID = [id,'i']
+        self.cTag_initID = [id,'c']
 
     def dumps(self) -> str:
         json_dict = {}
@@ -77,16 +77,16 @@ class Object:
         return self.id
 
     def get_grad(self):
-        return [self.ciTag_grad, self.eTag_grad, self.invTag_grad, self.iTag_grad, self.cTag_grad]
+        return [self.iTag_grad, self.iTag_grad, 0.0, self.iTag_grad, self.cTag_grad]
 
     def get_citag_grad(self):
-        return self.ciTag_grad
+        return self.iTag_grad
 
     def get_etag_grad(self):
-        return self.eTag_grad
+        return self.iTag_grad
 
     def get_invtag_grad(self):
-        return self.invTag_grad
+        return 0.0
 
     def get_itag_grad(self):
         return self.iTag_grad
@@ -94,35 +94,41 @@ class Object:
     def get_ctag_grad(self):
         return self.cTag_grad
 
+    def set_itag_grad(self, i_grad):
+        self.iTag_grad = i_grad
+
+    def set_ctag_grad(self, c_grad):
+        self.cTag_grad = c_grad
+
     def set_grad(self, grads):
-        self.ciTag_grad = grads[0]
-        self.eTag_grad = grads[1]
-        self.invTag_grad = grads[2]
-        self.iTag_grad = grads[3]
-        self.cTag_grad = grads[4]
+        # self.ciTag_grad = grads[0]
+        # self.eTag_grad = grads[1]
+        # self.invTag_grad = grads[2]
+        self.iTag_grad = grads[0]
+        self.cTag_grad = grads[1]
 
     def update_grad(self, grads):
-        self.ciTag_grad *= grads[0]
-        self.eTag_grad *= grads[1]
-        self.invTag_grad *= grads[2]
-        self.iTag_grad *= grads[3]
-        self.cTag_grad *= grads[4]
+        # self.ciTag_grad *= grads[0]
+        # self.eTag_grad *= grads[1]
+        # self.invTag_grad *= grads[2]
+        self.iTag_grad *= grads[0]
+        self.cTag_grad *= grads[1]
 
-    def setInitID(self, InitID):
-        self.ciTag_initID = InitID[0]
-        self.eTag_initID = InitID[1]
-        self.invTag_initID = InitID[2]
-        self.iTag_initID = InitID[3]
-        self.cTag_initID = InitID[4]
+    # def setInitID(self, InitID):
+    #     self.ciTag_initID = InitID[0]
+    #     self.eTag_initID = InitID[1]
+    #     self.invTag_initID = InitID[2]
+    #     self.iTag_initID = InitID[3]
+    #     self.cTag_initID = InitID[4]
 
-    def setciTagInitID(self, id):
-        self.ciTag_initID = id
+    # def setciTagInitID(self, id):
+    #     self.ciTag_initID = id
 
-    def seteTagInitID(self, id):
-        self.eTag_initID = id
+    # def seteTagInitID(self, id):
+    #     self.eTag_initID = id
 
-    def setinvTagInitID(self, id):
-        self.invTag_initID = id
+    # def setinvTagInitID(self, id):
+    #     self.invTag_initID = id
 
     def setiTagInitID(self, id):
         self.iTag_initID = id
@@ -130,17 +136,17 @@ class Object:
     def setcTagInitID(self, id):
         self.cTag_initID = id
 
-    def getInitID(self):
-        return [self.ciTag_initID, self.eTag_initID, self.invTag_initID, self.iTag_initID, self.cTag_initID]
+    # def getInitID(self):
+    #     return [self.ciTag_initID, self.eTag_initID, self.invTag_initID, self.iTag_initID, self.cTag_initID]
 
     def getciTagInitID(self):
-        return self.ciTag_initID
+        return self.iTag_initID
 
     def geteTagInitID(self):
-        return self.eTag_initID
+        return self.iTag_initID
 
     def getinvTagInitID(self):
-        return self.invTag_initID
+        return None
 
     def getiTagInitID(self):
         return self.iTag_initID

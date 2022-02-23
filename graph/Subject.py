@@ -19,13 +19,9 @@ class Subject:
 
         # init tags
         self.eTag: float = 0.0
-        # init tags
         self.ciTag: float = 0.0
-        # init tags
         self.invTag: float = 0.0
-        # benign
         self.iTag: float = 0.0
-        #
         self.cTag: float = 0.0
 
         self.ciTag_grad: float = 1.0
@@ -34,11 +30,11 @@ class Subject:
         self.iTag_grad: float = 1.0
         self.cTag_grad: float = 1.0
 
-        self.ciTag_initID = id
-        self.eTag_initID = id
-        self.invTag_initID = id
-        self.iTag_initID = id
-        self.cTag_initID = id
+        self.ciTag_initID = None
+        self.eTag_initID = None
+        self.invTag_initID = None
+        self.iTag_initID = None
+        self.cTag_initID = None
 
     def dumps(self) -> str:
         json_dict = {}

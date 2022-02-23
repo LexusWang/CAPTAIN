@@ -61,7 +61,7 @@ def start_experiment(config):
         node_inits = experiment.load_checkpoint(node_inits, checkpoint_epoch_path)
 
     # mo.subj_init = node_inits['Subject']
-    mo.obj_inits = node_inits
+    # mo.obj_inits = node_inits
 
     # ============= Groud Truth & Optimizers ====================#
     optimizers = {}

@@ -50,7 +50,7 @@ EXECVE_SET = {standard_events['EVENT_EXECUTE']}
 LOAD_SET = {standard_events['EVENT_LOADLIBRARY']}
 CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
-CLONE_SET = {standard_events['EVENT_CLONE']}
+CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
 MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
 UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],
     standard_events['EVENT_BOOT'],standard_events['EVENT_CHECK_FILE_ATTRIBUTES'],standard_events['EVENT_CLOSE'],standard_events['EVENT_CONNECT'],standard_events['EVENT_CREATE_THREAD'],
