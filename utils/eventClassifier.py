@@ -2,6 +2,7 @@ from datetime import datetime
 
 class eventClassifier:
     def __init__(self, filePath):
+        self.reportedProcessUUID = {}
         self.dataLeakUUID = {}
         self.mkFileExecutableUUID = {}
         self.mkMemExecutableUUID = {}
@@ -35,23 +36,20 @@ class eventClassifier:
             self.fileExecUUID[sublst] = False
         for sublst in self.mkMemExecutableUUID.keys():
             self.mkMemExecutableUUID[sublst] = False
+        self.reportedProcessUUID = {}
 
     def classify(self, UUID):
         for sublst in self.dataLeakUUID.keys():
             if UUID in sublst:
-                self.dataLeakUUID[sublst] = True
                 return "DataLeak"
         for sublst in self.mkFileExecutableUUID.keys():
             if UUID in sublst:
-                self.mkFileExecutableUUID[sublst] = True
                 return "MkFileExecutable"
         for sublst in self.fileExecUUID.keys():
             if UUID in sublst:
-                self.fileExecUUID[sublst] = True
                 return "FileExec"
         for sublst in self.mkMemExecutableUUID.keys():
             if UUID in sublst:
-                self.mkMemExecutableUUID[sublst] = True
                 return "MkMemExecutable"
         # if UUID in [i for sublst in self.dataLeakUUID.keys() for i in sublst]:
         #     return "DataLeak"
@@ -63,10 +61,27 @@ class eventClassifier:
         #     return "MkMemExecutable"
         return None
 
+    def tally(self, UUID):
+        for sublst in self.dataLeakUUID.keys():
+            if UUID in sublst:
+                self.dataLeakUUID[sublst] = True
+        for sublst in self.mkFileExecutableUUID.keys():
+            if UUID in sublst:
+                self.mkFileExecutableUUID[sublst] = True
+        for sublst in self.fileExecUUID.keys():
+            if UUID in sublst:
+                self.fileExecUUID[sublst] = True
+        for sublst in self.mkMemExecutableUUID.keys():
+            if UUID in sublst:
+                self.mkMemExecutableUUID[sublst] = True
+
     def analyzeFile(self, filePath):
         with open(filePath, 'r') as f:
             for line in f:
                 l = line.split()
+                # print(l[14]) # subject UUID
+                if l[12] not in self.reportedProcessUUID.keys():
+                    self.reportedProcessUUID[l[12]] = ' '.join([l[6]]+l[13:-1])
                 if(self.classify(l[0])):
                     print(self.classify(l[0]), "alarm detected")
 
@@ -94,6 +109,10 @@ class eventClassifier:
                     if not self.mkMemExecutableUUID[sublst]:
                         print("missing MkMemExecutable TP from following eventids:", file = fout)
                         print(sublst, file = fout)
+                print("---------------------------------------------------------------", file = fout)
+                print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes:", file = fout)
+                for x in self.reportedProcessUUID.keys():
+                    print(x, " ", self.reportedProcessUUID[x], file = fout)
                 print("---------------------------------------------------------------", file = fout)
     
     def __addAlarmUUID(self, alarm, lst):
