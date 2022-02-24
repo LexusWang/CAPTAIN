@@ -231,7 +231,7 @@ class Morse:
                     o_grad = dest.get_grad()
                     o_init_id = dest.getInitID()
                 return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
-
+        
     def add_event(self, event):
         if event['src'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['src']] = True
