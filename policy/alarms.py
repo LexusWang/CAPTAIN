@@ -4,7 +4,7 @@ sys.path.extend(['.','..','...'])
 
 # import floatTags
 from graph.Subject import Subject
-from graph.Subject import Object
+from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
@@ -157,7 +157,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       created[(s.get_pid(), o.get_name())] = True  
 
    if event_type in EXECVE_SET:
-      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
+      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
          if (alarms[(s.get_pid(), o.get_name())]==False):
             alarm_sum[1] = alarm_sum[1] + 1
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)

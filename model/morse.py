@@ -7,7 +7,8 @@ from graph.Subject import Subject
 from graph.Object import Object
 # from policy.initTagsAT import initObjectTags, initSubjectTags
 from policy.propTags import propTags
-from policy.alarms import check_alarm, check_alarm_pre, printTime
+# from policy.alarms import check_alarm, check_alarm_pre, printTime
+from model.loss_1 import check_alarm, check_alarm_pre, printTime
 from parse.eventType import UNUSED_SET
 
 
@@ -186,6 +187,51 @@ class Morse:
     def propagate(self, event, s, o):
         propTags(event, s, o, format=self.format, morse = self)
 
+    def add_event_generate_loss(self, event, gt):
+        s_loss = None
+        o_loss = None
+        s_grad = None
+        o_grad = None
+        s_init_id = None
+        o_init_id = None
+        if event['src'] in self.Initialized_Nodes:
+            self.Initialized_Nodes[event['src']] = True
+        if event['dest'] in self.Initialized_Nodes:
+            self.Initialized_Nodes[event['dest']] = True
+        if event['type'] in UNUSED_SET:
+            return
+        if event['type'] == 'EVENT_EXIT':
+            try:
+                self.processes[self.Nodes[event['src']].pid]['alive'] = False
+            except KeyError:
+                # print('Oops! Cannot find Node!')
+                return
+        if event['src'] != -1 and event['dest'] != -1:
+            self.G.add_edge(event['src'], event['dest'])
+            src = self.Nodes.get(event['src'], None)
+            dest = self.Nodes.get(event['dest'], None)
+            if src and dest:
+                if (src.get_pid(), dest.get_name()) not in self.alarm:
+                    self.alarm[(src.get_pid(), dest.get_name())] = False
+                alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
+                s_grad_pre = src.get_grad()
+                s_initid_pre = src.getInitID()
+                o_grad_pre = dest.get_grad()
+                o_initid_pre = dest.getInitID()
+                self.propagate(event, src, dest)
+                diagnosis, s_loss, o_loss, s_tags, o_tags, grad_before_prop = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
+                if grad_before_prop:
+                    s_grad = s_grad_pre
+                    s_init_id = s_initid_pre
+                    o_grad = o_grad_pre
+                    o_init_id = o_initid_pre
+                else:
+                    s_grad = src.get_grad()
+                    s_init_id = src.getInitID()
+                    o_grad = dest.get_grad()
+                    o_init_id = dest.getInitID()
+                return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
+
     def add_event(self, event):
         if event['src'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['src']] = True
@@ -235,11 +281,11 @@ class Morse:
         self.processes[subject.pid]['node'] = subject.id
         self.processes[subject.pid]['alive'] = True
 
-    def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
-        return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
+    def detect_alarm(self,event,s ,o, alarmArg, gt, alarm_file = None):
+        return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, gt, self.format, self, alarm_file)
 
-    def detect_alarm_pre(self,event,s ,o, alarm_file = None):
-        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, self.format, self, alarm_file)
+    def detect_alarm_pre(self,event,s ,o, gt, alarm_file = None):
+        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, gt, self.format, self, alarm_file)
     
     def reset_tags(self):
         for nid in self.Nodes.keys():

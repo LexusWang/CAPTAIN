@@ -96,8 +96,8 @@ def get_loss(event_type: str, s: torch.Tensor, o: torch.Tensor, alarm_name: str,
         elif event_type in WRITE_SET:
             # to be discussed: which to be chosen to optimized (one is enough, more is also ok)
             o_loss = o - torch.tensor([o[0], o[1], o[2], 1, o[4]])
-            if alarm_name == "DataLeak":
-                s_loss = s - torch.tensor([s[0], s[1], s[2], 1, 1])
+            # if alarm_name == "DataLeak":
+            #     s_loss = s - torch.tensor([s[0], s[1], s[2], 1, 1])
 
         elif event_type in SET_UID_SET:
             s_loss = s - torch.tensor([s[0], s[1], s[2], 1, s[4]])

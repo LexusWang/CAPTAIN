@@ -161,6 +161,7 @@ def start_experiment(config):
             model_features[node_type] = torch.tensor(feature_array, dtype=torch.int64)
         
         ec = eventClassifier(args['ground_truth_file'])
+        ic_index = {'i':0,'c':1}
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
@@ -192,72 +193,100 @@ def start_experiment(config):
                     event_id = event_info[0]
                     event = event_info[1]
                     if cdm_events[event['type']] not in UNUSED_SET:
-                        diagnois = mo.add_event(event)
                         gt = ec.classify(event_id)
-                        needs_to_update = False
-                        is_fp = False
-                        src = mo.Nodes.get(event['src'], None)
-                        dest = mo.Nodes.get(event['dest'], None)
-                        if src and dest:
-                            s = torch.tensor(src.tags(),requires_grad=True)
-                            o = torch.tensor(dest.tags(),requires_grad=True)
+                        diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
+                        # needs_to_update = False
+                        # is_fp = False
+                        # src = mo.Nodes.get(event['src'], None)
+                        # dest = mo.Nodes.get(event['dest'], None)
+                        # if src and dest:
+                        #     s = torch.tensor(src.tags(),requires_grad=True)
+                        #     o = torch.tensor(dest.tags(),requires_grad=True)
 
-                            if epoch == epochs - 1:
-                                experiment.update_metrics(diagnois, gt)
-                            if diagnois is None:
-                                # check if it's fn
-                                if gt is not None:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
-                                    # if np.random.randint(0, 100, 1) == 1:
-                                    needs_to_update = True
-                                else:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
-                                    # if np.random.randint(0, 100, 1) == 1:
-                                    if s_loss != 0.0 or o_loss != 0.0:
-                                        needs_to_update = True
-                            else:
-                                ec.tally(event_id)
-                                # check if it's fp
-                                if gt is None:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
-                                    # if np.random.randint(0, 100, 1) == 1:
-                                    needs_to_update = True
-                                    is_fp = True
-                                else:
-                                    s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
-                                    needs_to_update = True
+                        #     if epoch == epochs - 1:
+                        #         experiment.update_metrics(diagnois, gt)
+                        #     if diagnois is None:
+                        #         # check if it's fn
+                        #         if gt is not None:
+                        #             s_loss, o_loss = get_loss(event['type'], s, o, gt, 'false_negative')
+                        #             # if np.random.randint(0, 100, 1) == 1:
+                        #             needs_to_update = True
+                        #         else:
+                        #             s_loss, o_loss = get_loss(event['type'], s, o, gt, 'true_negative')
+                        #             # if np.random.randint(0, 100, 1) == 1:
+                        #             if s_loss != 0.0 or o_loss != 0.0:
+                        #                 needs_to_update = True
+                        #     else:
+                        #         ec.tally(event_id)
+                        #         # check if it's fp
+                        #         if gt is None:
+                        #             s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'false_positive')
+                        #             # if np.random.randint(0, 100, 1) == 1:
+                        #             needs_to_update = True
+                        #             is_fp = True
+                        #         else:
+                        #             s_loss, o_loss = get_loss(event['type'], s, o, diagnois, 'true_positive')
+                        #             needs_to_update = True
+                        nodes_need_updated = {}
                         
-                        if needs_to_update:
-                            if s_loss != 0.0 or o_loss != 0.0:
-                                s_loss.backward()
-                                o_loss.backward()
-
-                                if is_fp:
-                                    a = args['lr_imb']
-                                else:
-                                    a = 1
-
-                                s_init_id = mo.Nodes[event['src']].getInitID()
-                                s_morse_grads = mo.Nodes[event['src']].get_grad()
-                                o_init_id = mo.Nodes[event['dest']].getInitID()
-                                o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                                nodes_need_updated = {}
-                                if s.grad != None:
-                                    for i, node_id in enumerate(s_init_id):
+                        if s_loss:
+                            s_loss.backward()
+                            if s_tags.grad != None:
+                                for i, node_info in enumerate(s_init_id):
+                                    if node_info:
+                                        node_id = node_info[0]
+                                        iorc = node_info[1]
                                         if node_id not in nodes_need_updated:
-                                            nodes_need_updated[node_id] = torch.zeros(5)
-                                        nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
+                                            nodes_need_updated[node_id] = torch.zeros(2)
+                                        nodes_need_updated[node_id][ic_index[iorc]] += s_tags.grad[i]*s_morse_grads[i]*1
 
-                                if o.grad != None:
-                                    for i, node_id in enumerate(o_init_id):
+                        if o_loss:
+                            o_loss.backward()
+                            if o_tags.grad != None:
+                                for i, node_info in enumerate(o_init_id):
+                                    if node_info:
+                                        node_id = node_info[0]
+                                        iorc = node_info[1]
                                         if node_id not in nodes_need_updated:
-                                            nodes_need_updated[node_id] = torch.zeros(5)
-                                        nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
+                                            nodes_need_updated[node_id] = torch.zeros(2)
+                                        nodes_need_updated[node_id][ic_index[iorc]] += o_tags.grad[i]*o_morse_grads[i]*1
 
-                                for nid in nodes_need_updated.keys():
-                                    if nid not in node_gradients:
-                                        node_gradients[nid] = []
-                                    node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                        for nid in nodes_need_updated.keys():
+                            if nid not in node_gradients:
+                                node_gradients[nid] = []
+                            node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                        
+                        # if needs_to_update:
+                        #     if s_loss != 0.0 or o_loss != 0.0:
+                        #         s_loss.backward()
+                        #         o_loss.backward()
+
+                        #         if is_fp:
+                        #             a = args['lr_imb']
+                        #         else:
+                        #             a = 1
+
+                        #         s_init_id = mo.Nodes[event['src']].getInitID()
+                        #         s_morse_grads = mo.Nodes[event['src']].get_grad()
+                        #         o_init_id = mo.Nodes[event['dest']].getInitID()
+                        #         o_morse_grads = mo.Nodes[event['dest']].get_grad()
+                        #         nodes_need_updated = {}
+                        #         if s.grad != None:
+                        #             for i, node_id in enumerate(s_init_id):
+                        #                 if node_id not in nodes_need_updated:
+                        #                     nodes_need_updated[node_id] = torch.zeros(5)
+                        #                 nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
+
+                        #         if o.grad != None:
+                        #             for i, node_id in enumerate(o_init_id):
+                        #                 if node_id not in nodes_need_updated:
+                        #                     nodes_need_updated[node_id] = torch.zeros(5)
+                        #                 nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
+
+                        #         for nid in nodes_need_updated.keys():
+                        #             if nid not in node_gradients:
+                        #                 node_gradients[nid] = []
+                        #             node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
 
                 for nid in list(node_gradients.keys()):
                     node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
