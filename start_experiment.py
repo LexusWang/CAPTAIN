@@ -297,11 +297,11 @@ def start_experiment(config):
                         if nid in node_gradients:
                             gradients.append(node_gradients[nid].unsqueeze(0))
                         else:
-                            gradients.append(torch.zeros(5).unsqueeze(0))
+                            gradients.append(torch.zeros(2).unsqueeze(0))
                     if len(gradients) > 0:
                         gradients = torch.cat(gradients, 0)
                         optimizers[node_type].zero_grad()
-                        model_tags[node_type].backward(gradient=gradients[:,-2:], retain_graph=True)
+                        model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                         optimizers[node_type].step()
 
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
