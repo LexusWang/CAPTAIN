@@ -199,13 +199,13 @@ class Morse:
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
         if event['type'] in UNUSED_SET:
-            return
+            return None, None, None, None, None, None, None, None, None
         if event['type'] == 'EVENT_EXIT':
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
             except KeyError:
                 # print('Oops! Cannot find Node!')
-                return
+                return None, None, None, None, None, None, None, None, None
         if event['src'] != -1 and event['dest'] != -1:
             self.G.add_edge(event['src'], event['dest'])
             src = self.Nodes.get(event['src'], None)

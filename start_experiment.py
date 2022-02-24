@@ -465,7 +465,7 @@ if __name__ == '__main__':
     parser.add_argument("--experiment_prefix", default="groupF", type=str)
     parser.add_argument("--no_hidden_layers", default=3, type=int)
     parser.add_argument("--from_checkpoint", type=str)
-    parser.add_argument("--batch_size", type=int, default=100000)
+    parser.add_argument("--batch_size", type=int, default=10000000)
 
     args = parser.parse_args()
 
