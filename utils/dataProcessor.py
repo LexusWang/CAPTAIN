@@ -15,6 +15,10 @@ class dataProcessor:
         self.segSize = int(self.dpConfig['SegmentSize'])
         self.startTimestamp = int(self.dpConfig['StartTimestamp'])
         self.endTimestamp = int(self.dpConfig['EndTimestamp'])
+        self.unusedEventType = ['EVENT_ACCEPT', 'EVENT_ADD_OBJECT_ATTRIBUTE', 'EVENT_BIND', 'EVENT_BLIND', \
+                                'EVENT_BOOT', 'EVENT_CHECK_FILE_ATTRIBUTES', 'EVENT_FCNTL', 'EVENT_LOGCLEAR', \
+                                'EVENT_LOGIN', 'EVENT_LOGOUT', 'EVENT_LSEEK', 'EVENT_TRUNCATE', 'EVENT_UNIT', \
+                                'EVENT_UNLINK', 'EVENT_UPDATE', 'EVENT_WAIT']
 
     def separate(self):
         if not os.path.exists(self.toDir):
@@ -34,6 +38,8 @@ class dataProcessor:
                     for line in f:
                         totalCounter += 1
                         tmp = json.loads(line.strip())
+                        line = line.strip()
+                        line = line + '\n'
                         if 'com.bbn.tc.schema.avro.cdm18.Subject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.SrcSinkObject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.NetFlowObject' in tmp['datum'] or \
@@ -43,8 +49,11 @@ class dataProcessor:
                             v.write(line)
                             vertexCounter += 1
                         elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
-                            timestamp = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos']
-                            if timestamp < self.startTimestamp or (timestamp > self.endTimestamp and self.endTimestamp > 0):
+                            timestamp = int(tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos'])
+                            event_type = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['type']
+                            if (timestamp < self.startTimestamp) or (timestamp > self.endTimestamp and self.endTimestamp > 0):
+                                continue
+                            if event_type in self.unusedEventType:
                                 continue
                             e.write(line)
                             segCounter += 1
