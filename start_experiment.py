@@ -290,17 +290,34 @@ def start_experiment(config):
 
                 for nid in list(node_gradients.keys()):
                     node_gradients[nid] = torch.mean(torch.cat(node_gradients[nid],0), dim=0)
+
+                ## output gradient to csv
+                df =pd.DataFrame.from_dict(node_gradients, orient='index', columns=['i_gradient','c_gradient'])
+                df['i_gradient'] = df['i_gradient'].map(lambda x: x.item())
+                df['c_gradient'] = df['c_gradient'].map(lambda x: x.item())
+                # df.to_csv('results/gradients.csv',index=True,index_label='Node_id')
+
+                df2 =pd.DataFrame.from_dict(node_inital_tags, orient='index', columns=['i_tag','c_tag'])
+                df2['i_tag'] = df2['i_tag'].map(lambda x: x.item())
+                df2['c_tag'] = df2['c_tag'].map(lambda x: x.item())
+                # df2.to_csv('results/tags.csv',index=True,index_label='Node_id')
+
+                df3 = df.join(df2, how='inner')
+                df3.to_csv('results/tags-grad-{}.csv'.format(epoch),index=True,index_label='Node_id')
                 
                 for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject']:
                     gradients = []
-                    for nid in model_nids[node_type]:
+                    need_update_index = []
+                    for i, nid in enumerate(model_nids[node_type]):
                         if nid in node_gradients:
                             gradients.append(node_gradients[nid].unsqueeze(0))
-                        else:
-                            gradients.append(torch.zeros(2).unsqueeze(0))
+                            need_update_index.append(i)
+                        # else:
+                        #     gradients.append(torch.zeros(2).unsqueeze(0))
                     if len(gradients) > 0:
                         gradients = torch.cat(gradients, 0)
                         optimizers[node_type].zero_grad()
+                        model_tags[node_type] = model_tags[node_type][need_update_index]
                         model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                         optimizers[node_type].step()
 
