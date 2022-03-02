@@ -3,6 +3,7 @@ from datetime import datetime
 class eventClassifier:
     def __init__(self, filePath):
         self.reportedProcessUUID = {}
+        self.reportedProcessName = {}
         self.dataLeakUUID = {}
         self.mkFileExecutableUUID = {}
         self.mkMemExecutableUUID = {}
@@ -82,6 +83,14 @@ class eventClassifier:
                 # print(l[14]) # subject UUID
                 if l[12] not in self.reportedProcessUUID.keys():
                     self.reportedProcessUUID[l[12]] = ' '.join([l[6]]+l[13:-1])
+                    if len(l[14:-1]) > 5:
+                        p_name = ' '.join(l[14:19])
+                    else:
+                        p_name = ' '.join(l[14:-1])
+                    if p_name in self.reportedProcessName.keys():
+                        self.reportedProcessName[p_name] += 1
+                    else:
+                        self.reportedProcessName[p_name] = 1
                 if(self.classify(l[0])):
                     print(self.classify(l[0]), "alarm detected")
 
@@ -110,10 +119,13 @@ class eventClassifier:
                         print("missing MkMemExecutable TP from following eventids:", file = fout)
                         print(sublst, file = fout)
                 print("---------------------------------------------------------------", file = fout)
-                print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes:", file = fout)
+                print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes with distinguishing UUIDs:", file = fout)
                 for x in self.reportedProcessUUID.keys():
                     print(x, " ", self.reportedProcessUUID[x], file = fout)
                 print("---------------------------------------------------------------", file = fout)
+                print("Reported alarms on the following ", len(self.reportedProcessName), " processes with distinguishing UUIDs and process names:", file = fout)
+                for y in self.reportedProcessName.keys():
+                    print(y, " ", self.reportedProcessName[y], file = fout)
     
     def __addAlarmUUID(self, alarm, lst):
         assert alarm != None
