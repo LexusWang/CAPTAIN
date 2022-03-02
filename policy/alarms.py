@@ -163,10 +163,11 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
          alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
 
    if event_type in LOAD_SET:
-      if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
-         if not alarms[(s.get_pid(), o.get_name())]:
-            alarm_sum[1] = alarm_sum[1] + 1
-         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
+      if o.isFile():
+         if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
+            if not alarms[(s.get_pid(), o.get_name())]:
+               alarm_sum[1] = alarm_sum[1] + 1
+            alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
 
    if event_type in INJECT_SET:
       if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
@@ -220,16 +221,11 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, format = 'cdm
       prm = int(event['properties']['map']['protection'])
       # print(event['properties']['map']['protection'])
 
-      if o.isFile():
-         if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
+      if o.isFile() == False:
+         if (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
             if not alarms[(s.get_pid(), o.get_name())]:
                alarm_sum[1] = alarm_sum[1] + 1
-            alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
-
-      elif (it < 0.5 and ((prm & int('01',8)) == int('01',8))):
-         if not alarms[(s.get_pid(), o.get_name())]:
-            alarm_sum[1] = alarm_sum[1] + 1
-         alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event['uuid'], alarm_file)
+            alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event['uuid'], alarm_file)
    
    
 

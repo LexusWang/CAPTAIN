@@ -177,14 +177,15 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
             s_target_ = torch.tensor([1.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
 
     if event_type in LOAD_SET:
-        if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
-            if not alarms[(s.get_pid(), o.get_name())]:
-                alarm_sum[1] = alarm_sum[1] + 1
-            alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
-        if gt == "FileExec":
-            s_target_ = torch.tensor([0.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
-        else:
-            s_target_ = torch.tensor([1.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
+        if o.isFile():
+            if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
+                if not alarms[(s.get_pid(), o.get_name())]:
+                    alarm_sum[1] = alarm_sum[1] + 1
+                alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
+            if gt == "FileExec":
+                s_target_ = torch.tensor([0.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
+            else:
+                s_target_ = torch.tensor([1.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
 
     # Not Used
     if event_type in INJECT_SET:
@@ -259,25 +260,16 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
         prm = int(event['properties']['map']['protection'])
         # print(event['properties']['map']['protection'])
 
-        if o.isFile():
-            if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
-                if not alarms[(s.get_pid(), o.get_name())]:
-                    alarm_sum[1] = alarm_sum[1] + 1
-                alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event['uuid'], alarm_file)
-            if gt == "FileExec":
-                s_target_ = torch.tensor([0.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
-            else:
-                s_target_ = torch.tensor([1.0, s_tags[1], s_tags[2], s_tags[3], s_tags[4]])
-
-        elif ((prm & int('01',8)) == int('01',8)):
-            if it < 0.5:
-                if not alarms[(s.get_pid(), o.get_name())]:
-                    alarm_sum[1] = alarm_sum[1] + 1
-                alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event['uuid'], alarm_file)
-            if gt == "MkMemExecutable":
-                s_target_ = torch.tensor([s_tags[0], s_tags[1], s_tags[2], 0.0, s_tags[4]])
-            else:
-                s_target_ = torch.tensor([s_tags[0], s_tags[1], s_tags[2], 1.0, s_tags[4]])
+        if o.isFile() == False:
+            if ((prm & int('01',8)) == int('01',8)):
+                if it < 0.5:
+                    if not alarms[(s.get_pid(), o.get_name())]:
+                        alarm_sum[1] = alarm_sum[1] + 1
+                    alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event['uuid'], alarm_file)
+                if gt == "MkMemExecutable":
+                    s_target_ = torch.tensor([s_tags[0], s_tags[1], s_tags[2], 0.0, s_tags[4]])
+                else:
+                    s_target_ = torch.tensor([s_tags[0], s_tags[1], s_tags[2], 1.0, s_tags[4]])
    
    
 

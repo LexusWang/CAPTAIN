@@ -9,10 +9,7 @@ def alltags(cit, et, inv, it, ct):
    return [cit, et, inv, it, ct]
 
 def alltags2(it, ct):
-   citag = 0
-   if (it > 0.5):
-      citag = 1
-   return alltags(citag, citag, 0, it, ct)
+   return [it, ct]
 
 def ctag(allTags):
    return allTags[4]

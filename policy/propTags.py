@@ -26,7 +26,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
 
-   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET or event_type in {standard_events['EVENT_MMAP']}:
+   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET:
       intags = o.tags()
       whitelisted = False
 
@@ -76,52 +76,52 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          s.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
 
 
+   # elif event_type in {}:
+   #    if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
+   #       stg = s.tags()
+   #       citag_grad = s.get_citag_grad()
+   #       ci_init_id = s.getciTagInitID()
+   #       etag_grad = s.get_etag_grad()
+   #       e_init_id = s.geteTagInitID()
+   #       invtag_grad = s.get_invtag_grad()
+   #       inv_init_id = s.getinvTagInitID()
+   #       itag_grad = s.get_itag_grad()
+   #       i_init_id = s.getiTagInitID()
+   #       ctag_grad = s.get_ctag_grad()
+   #       c_init_id = s.getiTagInitID()
+
+   #       if citag(stg) > citag(intags):
+   #          citag_grad = o.get_citag_grad()
+   #          ci_init_id = o.getciTagInitID()
+   #          # s.setciTagInitID(o.getciTagInitID())
+   #       cit = min(citag(stg), citag(intags))
+
+   #       et = etag(stg)
+   #       if (et > cit):
+   #          et = cit
+   #          etag_grad = citag_grad
+   #          e_init_id = ci_init_id
+   #          # s.seteTagInitID(s.getciTagInitID())
+
+   #       inv = invtag(stg)
+   #       if (isUNTRUSTED(cit)):
+   #          inv = UNTRUSTED
+   #          invtag_grad = citag_grad
+   #          inv_init_id = ci_init_id
+
+   #       if itag(stg) > itag(intags):
+   #          itag_grad = o.get_itag_grad()
+   #          i_init_id = o.getiTagInitID()
+   #          # s.setiTagInitID(o.getiTagInitID())
+   #       it = min(itag(stg), itag(intags))
+
+   #       ct = ctag(stg)
+
+   #       s.setSubjTags(alltags(cit, et, inv, it, ct))
+   #       s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+   #       s.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
+
    elif event_type in LOAD_SET:
-      if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
-         stg = s.tags()
-         citag_grad = s.get_citag_grad()
-         ci_init_id = s.getciTagInitID()
-         etag_grad = s.get_etag_grad()
-         e_init_id = s.geteTagInitID()
-         invtag_grad = s.get_invtag_grad()
-         inv_init_id = s.getinvTagInitID()
-         itag_grad = s.get_itag_grad()
-         i_init_id = s.getiTagInitID()
-         ctag_grad = s.get_ctag_grad()
-         c_init_id = s.getiTagInitID()
-
-         if citag(stg) > citag(intags):
-            citag_grad = o.get_citag_grad()
-            ci_init_id = o.getciTagInitID()
-            # s.setciTagInitID(o.getciTagInitID())
-         cit = min(citag(stg), citag(intags))
-
-         et = etag(stg)
-         if (et > cit):
-            et = cit
-            etag_grad = citag_grad
-            e_init_id = ci_init_id
-            # s.seteTagInitID(s.getciTagInitID())
-
-         inv = invtag(stg)
-         if (isUNTRUSTED(cit)):
-            inv = UNTRUSTED
-            invtag_grad = citag_grad
-            inv_init_id = ci_init_id
-
-         if itag(stg) > itag(intags):
-            itag_grad = o.get_itag_grad()
-            i_init_id = o.getiTagInitID()
-            # s.setiTagInitID(o.getiTagInitID())
-         it = min(itag(stg), itag(intags))
-
-         ct = ctag(stg)
-
-         s.setSubjTags(alltags(cit, et, inv, it, ct))
-         s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
-         s.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
-
-   elif event_type in {standard_events['EVENT_MMAP']}:
       if o.isFile():
          if o.isMatch("/dev/null")==False and o.isMatch("libresolv.so.2")==False:
             stg = s.tags()
@@ -209,7 +209,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
       o.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
 
    elif event_type in EXECVE_SET:
-      assert isinstance(o,Subject) and isinstance(s,Subject)
+      assert isinstance(o,Object) and isinstance(s,Subject)
       if (o.isMatch("/bin/bash")):
          whitelisted = True
 
@@ -222,6 +222,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
          invtag_grad = s.get_invtag_grad()
          itag_grad = s.get_itag_grad()
          ctag_grad = s.get_ctag_grad()
+         citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad = o.get_grad()
+         ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id = o.getInitID()
 
          if isTRUSTED(citag(intags)):
             if (isTRUSTED(cit) and isTRUSTED(et)):
@@ -235,16 +237,10 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
                if itag(stg) > itag(intags):
                   itag_grad = o.get_itag_grad()
                   s.setiTagInitID(o.getiTagInitID())
-               elif itag(stg) > itag(intags):
-                  itag_grad = s.get_itag_grad()
-                  o.setiTagInitID(s.getiTagInitID())
                it = min(itag(stg), itag(intags))
                if ctag(stg) > ctag(intags):
                   ctag_grad = o.get_ctag_grad()
                   s.setcTagInitID(o.getcTagInitID())
-               elif ctag(stg) < ctag(intags):
-                  ctag_grad = s.get_ctag_grad()
-                  o.setcTagInitID(s.getcTagInitID())
                ct = min(ctag(stg), ctag(intags))
             else:
                cit = TRUSTED
@@ -254,42 +250,30 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0, format = '
                if itag(stg) > itag(intags):
                   itag_grad = o.get_itag_grad()
                   s.setiTagInitID(o.getiTagInitID())
-               elif itag(stg) < itag(intags):
-                  itag_grad = s.get_itag_grad()
-                  o.setiTagInitID(s.getiTagInitID())
                it = min(itag(stg), itag(intags))
                if ctag(stg) > ctag(intags):
                   ctag_grad = o.get_ctag_grad()
                   s.setcTagInitID(o.getcTagInitID())
-               elif ctag(stg) < ctag(intags):
-                  ctag_grad = s.get_ctag_grad()
-                  o.setcTagInitID(s.getcTagInitID())
                ct = min(ctag(stg), ctag(intags))
          else:
             cit = UNTRUSTED
-            citag_grad = 0
+            citag_grad = o.get_itag_grad()
+            s.setciTagInitID(o.getiTagInitID())
             et = UNTRUSTED
-            etag_grad = 0
+            etag_grad = o.get_itag_grad()
+            s.seteTagInitID(o.getiTagInitID())
             if itag(stg) > itag(intags):
                itag_grad = o.get_itag_grad()
                s.setiTagInitID(o.getiTagInitID())
-            elif itag(stg) < itag(intags):
-               itag_grad = s.get_itag_grad()
-               o.setiTagInitID(s.getiTagInitID())
             it = min(itag(stg), itag(intags))
             if ctag(stg) > ctag(intags):
                ctag_grad = o.get_ctag_grad()
                s.setcTagInitID(o.getcTagInitID())
-            elif ctag(stg) < ctag(intags):
-               ctag_grad = s.get_ctag_grad()
-               o.setcTagInitID(s.getcTagInitID())
             ct = min(ctag(stg), ctag(intags))
          inv = UNTRUSTED
          invtag_grad = 0
          s.setSubjTags(alltags(cit, et, inv, it, ct))
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
-         o.setSubjTags(alltags(cit, et, inv, it, ct))
-         o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
 
    elif event_type in SET_UID_SET :
       assert isinstance(o,Subject)
