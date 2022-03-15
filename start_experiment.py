@@ -49,7 +49,7 @@ def start_experiment(config):
     node_inits = {}
     node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers)
     node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers)
-    node_inits['FileObject'] = FileObj_Initializer(2,no_hidden_layers)
+    node_inits['FileObject'] = FileObj_Initializer(20000, 2,no_hidden_layers)
     node_inits['UnnamedPipeObject'] = Initializer(1,2,no_hidden_layers)
     node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers)
     # node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
@@ -150,10 +150,10 @@ def start_experiment(config):
                 oh_index = [item[0] for item in ori_feature_array]
                 feature_array = []
                 for i, item in enumerate(ori_feature_array):
-                    input_feature = np.zeros(2002,dtype=np.int64)
+                    input_feature = np.zeros(20002,dtype=np.int64)
                     input_feature[oh_index[i]] = 1
-                    input_feature[2000] = item[1]
-                    input_feature[2001] = item[2]
+                    input_feature[20000] = item[1]
+                    input_feature[20001] = item[2]
                     feature_array.append(list(input_feature))
             else:
                 model_nids[node_type] = []

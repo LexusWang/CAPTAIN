@@ -19,11 +19,12 @@ class FileObj_Initializer(nn.Module):
     '''
     features = [dir_name, extension_name, object_type]
     '''
-    def __init__(self, output_dim, no_hidden_layer=3):
+    def __init__(self, input_dim, output_dim, no_hidden_layer=3):
         super().__init__()
+        self.input_dim = input_dim
         self.dtype = torch.float64
         # self.dir_name_embedding = nn.Embedding(21, 5, dtype=self.dtype)
-        self.dir_name_embedding = nn.Linear(2000, 1000, dtype=self.dtype)
+        self.dir_name_embedding = nn.Linear(input_dim, 1000, dtype=self.dtype)
         self.extension_name_embedding = nn.Embedding(7, 5, dtype=self.dtype)
         self.type_embedding = nn.Embedding(8, 5, dtype=self.dtype)
         self.fc = Linear(1010, 512, dtype=self.dtype)
@@ -34,9 +35,9 @@ class FileObj_Initializer(nn.Module):
         self.output_layers = Linear(512, output_dim, dtype=self.dtype)
 
     def initialize(self, features):
-        dir_emb = self.dir_name_embedding(features[:,:2000].to(torch.float64))
-        extname_emb = self.extension_name_embedding(features[:,2000])
-        type_emb = self.type_embedding(features[:,2001])
+        dir_emb = self.dir_name_embedding(features[:,:self.input_dim].to(torch.float64))
+        extname_emb = self.extension_name_embedding(features[:,self.input_dim])
+        type_emb = self.type_embedding(features[:,self.input_dim+1])
         features = torch.cat((dir_emb, extname_emb, type_emb),dim=1)
         hidden_result = None
         for i, hl in enumerate(self.hidden_layers):

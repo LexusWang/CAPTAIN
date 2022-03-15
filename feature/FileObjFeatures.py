@@ -12,7 +12,7 @@ def get_path_vocb(path_set):
     path_vocb = dict(Counter(path_vocb))
     path_vocb = sorted(path_vocb.items(),key=lambda x:x[1],reverse=True)
 
-    return path_vocb[:1999]
+    return path_vocb[:19999]
 
 
 def get_one_hot_encoding(path_tree, path_vocb):
@@ -66,6 +66,10 @@ path_list = df['path'].to_list()
 path_list = list(set(path_list))
 
 path_vocb_freq = get_path_vocb(path_list)
+# with open('results/features/path_vocb.csv','w')as fout:
+#     fout.write("sub_path,frequency\n")
+#     for item in path_vocb_freq:
+#         fout.write("{},{}\n".format(item[0],item[1]))
 path_vocb = {}
 for i, item in enumerate(path_vocb_freq):
     path_vocb[item[0]] = i+1
