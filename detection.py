@@ -75,7 +75,7 @@ def start_detection(config):
 
 
     ec = eventClassifier(args['ground_truth_file'])
-    mo.reset_morse()
+    # mo.reset_morse()
 
     # ============= Dectection =================== #
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument("--mode", nargs="?", default="detection", type=str)
     # parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
     parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth.txt', type=str)
-    parser.add_argument("--detection_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--detection_data", nargs='?', default="/home/weijian/weijian/projects/E3data/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--data_tag", default="E32-morse", type=str)
     parser.add_argument("--experiment_prefix", default="Original", type=str)
 
