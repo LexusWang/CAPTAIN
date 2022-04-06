@@ -4,13 +4,12 @@ import numpy as np
 import re
 
 class Object:
-    def __init__(self, id = None, time: int = None, type: str = None, subtype: str = None, pid: int = None, ppid: int = None,
-                 objName: str = None):
+    def __init__(self, id, type, subtype: str = None, pid: int = None, objName: str = None):
         self.id = id
-        self.time = time
+        # self.time = time
         self.type = type
         self.subtype = subtype
-        self.ppid = ppid
+        # self.ppid = ppid
         self.name = objName
         self.path = None
 
@@ -34,10 +33,10 @@ class Object:
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
-        json_dict['time'] = self.time
+        # json_dict['time'] = self.time
         json_dict['type'] = self.type
         json_dict['subtype'] = self.subtype
-        json_dict['ppid'] = self.ppid
+        # json_dict['ppid'] = self.ppid
         json_dict['name'] = self.name
         json_dict['path'] = self.path
         return str(json_dict)

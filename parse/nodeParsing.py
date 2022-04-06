@@ -13,28 +13,19 @@ def parse_subject_cdm(datum):
         type_ = datum['type']
         pid_ = datum['cid']
         pname_ = datum['properties']['map']['name']
-        ppid_ = datum['properties']['map']['ppid']
-        seen_time_ = float(datum['properties']['map'].get('seen time',0))
+        parent_ = datum['parentSubject']
+        # ppid_ = datum['properties']['map']['ppid']
+        # seen_time_ = float(datum['properties']['map'].get('seen time',0))
         if isinstance(datum['cmdLine'], dict):
             cmdLine_ = datum['cmdLine'].get('string')
         else:
             cmdLine_ = None
-        subject = Subject(id=datum['uuid'], time = seen_time_, type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
+        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=parent_, cmdLine = cmdLine_, processName=pname_)
         subject.owner = datum['localPrincipal']
     elif subject_type == 'SUBJECT_THREAD':
         pass
     elif subject_type == 'SUBJECT_UNIT':
         pass
-        # type_ = datum['type']
-        # pid_ = datum['cid']
-        # pname_ = datum['properties']['map']['name']
-        # ppid_ = datum['properties']['map']['ppid']
-        # seen_time_ = float(datum['startTimestampNanos'])
-        # if isinstance(datum['cmdLine'], dict):
-        #     cmdLine_ = datum['cmdLine'].get('string')
-        # else:
-        #     cmdLine_ = None
-        # subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
     elif subject_type == 'SUBJECT_BASIC_BLOCK':
         pass
     else:
@@ -64,8 +55,8 @@ def parse_object_cdm(datum, object_type):
         object.path = datum['baseObject']['properties']['map']['path']
     elif object_type == 'UnnamedPipeObject':
         permission = datum['baseObject']['permission']
-        object.name = 'UnknownObject'
-        object.path = 'UnknownObject'
+        object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
+        object.path = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
     elif object_type == 'RegistryKeyObject':
         pass
     elif object_type == 'PacketSocketObject':
@@ -73,13 +64,13 @@ def parse_object_cdm(datum, object_type):
     elif object_type == 'NetFlowObject':
         object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
-        object.name = 'MemoryObject'
-        object.path = 'MemoryObject'
+        object.name = 'MemoryObject_{}'.format(datum['memoryAddress'])
+        object.path = object.name
     elif object_type == 'SrcSinkObject':
         object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
-        object.name = 'UnknownObject'
-        object.path = 'UnknownObject'
+        object.name = 'UnknownObject_{}_{}'.format(datum['fileDescriptor']['int'],datum['baseObject']['properties']['map']['pid'])
+        object.path = object.name
     else:
         # error!
         pass
@@ -114,7 +105,7 @@ def parse_subject(datum, format='cdm'):
     elif format == 'lttng':
         subject_node['uuid'] = datum.Id
         subject = parse_subject_lttng(datum)
-    return subject_node, subject
+    return subject
 
 
 def parse_object(datum, object_type, format='cdm'):
@@ -126,4 +117,4 @@ def parse_object(datum, object_type, format='cdm'):
         object_node['uuid'] = datum.Id
         object = parse_object_lttng(datum, object_type)
     
-    return object_node, object
+    return object

@@ -30,15 +30,15 @@ def match_path(path):
             ctag = 0
             return itag, ctag
 
-    for regexp in benign_public_group:
-        if re.match(regexp,path):
-            itag = 1
-            ctag = 1
-            return itag, ctag
-
     for regexp in untrusted_public_group:
         if re.match(regexp,path):
             itag = 0
+            ctag = 1
+            return itag, ctag
+
+    for regexp in benign_public_group:
+        if re.match(regexp,path):
+            itag = 1
             ctag = 1
             return itag, ctag
 

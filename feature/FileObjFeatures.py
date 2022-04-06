@@ -11,14 +11,18 @@ def get_path_vocb(path_set):
 
     path_vocb = dict(Counter(path_vocb))
     path_vocb = sorted(path_vocb.items(),key=lambda x:x[1],reverse=True)
+    with open('results/path_vocabulary.csv','w') as fout:
+        for item in path_vocb:
+            fout.write('{},{}\n'.format(item[0],item[1]))
 
-    return path_vocb[:19999]
+    return path_vocb[:10000]
 
 
 def get_one_hot_encoding(path_tree, path_vocb):
     oh_vector = []
     for dir in path_tree:
-        oh_vector.append(path_vocb.get(dir,0))
+        if dir in path_vocb:
+            oh_vector.append(path_vocb[dir])
     
     return oh_vector
 

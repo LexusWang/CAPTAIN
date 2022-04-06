@@ -3,12 +3,11 @@ import numpy as np
 import re
 
 class Subject:
-    def __init__(self, id = -1, time: float = -1.0, type: int = -1, subtype: int = -1, pid: int = -1, ppid: int = -1, cmdLine: str = None,
-                 processName: str = None):
+    def __init__(self, id, type, pid: int = -1, ppid: str = None, cmdLine: str = None, processName: str = None):
         self.id = id
-        self.time = time
+        # self.time = time
         self.type = type
-        self.subtype = subtype
+        # self.subtype = subtype
         self.pid = pid
         self.ppid = ppid
         self.cmdLine = cmdLine
@@ -39,9 +38,9 @@ class Subject:
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
-        json_dict['time'] = self.time
+        # json_dict['time'] = self.time
         json_dict['type'] = self.type
-        json_dict['subtype'] = self.subtype
+        # json_dict['subtype'] = self.subtype
         json_dict['pid'] = self.pid
         json_dict['ppid'] = self.ppid
         json_dict['cmdLine'] = self.cmdLine

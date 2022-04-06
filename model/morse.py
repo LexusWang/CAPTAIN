@@ -9,12 +9,13 @@ from graph.Object import Object
 from policy.propTags import propTags
 # from policy.alarms import check_alarm, check_alarm_pre, printTime
 from model.loss_1 import check_alarm, check_alarm_pre, printTime
-from parse.eventType import UNUSED_SET
+from parse.eventType import UNUSED_SET, UPDATE_SET, cdm_events
 
 
 class Morse:
 
-    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
+    def __init__(self, device, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
+        self.device = device
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
@@ -198,7 +199,12 @@ class Morse:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
-        if event['type'] in UNUSED_SET:
+        if cdm_events[event['type']] in UNUSED_SET:
+            return None, None, None, None, None, None, None, None, None
+        if cdm_events[event['type']] in UPDATE_SET:
+            src = self.Nodes.get(event['src'], None)
+            dest = self.Nodes.get(event['dest'], None)
+            self.propagate(event, src, dest)
             return None, None, None, None, None, None, None, None, None
         if event['type'] == 'EVENT_EXIT':
             try:
@@ -230,11 +236,25 @@ class Morse:
                     s_init_id = src.getInitID()
                     o_grad = dest.get_grad()
                     o_init_id = dest.getInitID()
+
+                if diagnosis is None:
+                    if gt is not None:
+                        fn = 0
+                    else:
+                        tn = 0
+                else:
+                    if gt is None:
+                        fp = 0
+                        if dest.id == '49463062-60DC-4F2A-39DD-1020749C0642':
+                            stop = 0
+                    else:
+                        tp = 0
+
                 return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
         
         return None, None, None, None, None, None, None, None, None
 
-    def add_event(self, event):
+    def add_event(self, event, gt=None):
         if event['src'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
@@ -258,9 +278,18 @@ class Morse:
                 #             print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
+                # alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
+                # self.propagate(event, src, dest)
+                # return self.detect_alarm(event, src, dest, alarmArg, self.alarm_file)
+
+                alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
+                # s_grad_pre = src.get_grad()
+                # s_initid_pre = src.getInitID()
+                # o_grad_pre = dest.get_grad()
+                # o_initid_pre = dest.getInitID()
                 self.propagate(event, src, dest)
-                return self.detect_alarm(event, src, dest, alarmArg, self.alarm_file)
+                diagnosis, s_loss, o_loss, s_tags, o_tags, grad_before_prop = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
+                return diagnosis
 
     def add_object(self, object):
         self.G.add_node(object.id)

@@ -10,7 +10,7 @@ from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,invtag,itag,etag,alltags, isRoot, permbits
 from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET
 
 class AlarmArguments():
    
@@ -30,32 +30,32 @@ def getTime(ts):
    return dt
 
 def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
-   if not alarms[(s.get_pid(), o.get_name())]:
-      alarms[(s.get_pid(), o.get_name())] = True
-      if alarmfile:
-         # with open(alarmfile, 'a') as fout:
-         alarm_string = "{} AlarmS {} : Alarm: {} : Object {} ({}) Subject {}  pid={} {}  AlarmE\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_cmdln())
-         alarmfile.write(alarm_string)
-      return an
+    if not alarms[(s.get_pid(), o.get_name())]:
+        alarms[(s.get_pid(), o.get_name())] = True
+        if alarmfile:
+            # with open(alarmfile, 'a') as fout:
+            alarm_string = "{} AlarmS {} : Alarm: {} : Object {} ({}) Subject {}  pid={} {}  AlarmE\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_cmdln())
+            alarmfile.write(alarm_string)
+        return an
    
 
 def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
-   # Question
-   # print(": Alarm: ", an, ": Subject ", s.get_subjid(), " pid=", s.get_pid(),
-   #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
-   if alarmfile:
-      # with open(alarmfile, 'a') as fout:
-      alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_cmdln())
-      alarmfile.write(alarm_string)
-   return an
+    # Question
+    # print(": Alarm: ", an, ": Subject ", s.get_subjid(), " pid=", s.get_pid(),
+    #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
+    if alarmfile:
+        # with open(alarmfile, 'a') as fout:
+        alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_cmdln())
+        alarmfile.write(alarm_string)
+    return an
 
 
 def prtSAlarm(ts, an, s, event_id, alarmfile= None):
-   if alarmfile:
-      # with open(alarmfile, 'a') as fout:
-      alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln())
-      alarmfile.write(alarm_string)
-   return an
+    if alarmfile:
+        # with open(alarmfile, 'a') as fout:
+        alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln())
+        alarmfile.write(alarm_string)
+    return an
 
 def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm', morse = None, alarm_file = None):
     ts = event['timestamp']
@@ -120,7 +120,7 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm',
                 o_target_ = torch.tensor([o_tags[0], o_tags[1], o_tags[2], 0.0, o_tags[4]])
 
 
-    if event_type == standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']:
+    if event_type in CHMOD_SET:
         ositag = itag(o.tags())
         prm = permbits(event)
         if ((prm & int('0111',8)) != 0):
