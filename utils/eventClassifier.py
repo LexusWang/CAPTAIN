@@ -91,6 +91,7 @@ class eventClassifier:
                         self.reportedProcessName[p_name] += 1
                     else:
                         self.reportedProcessName[p_name] = 1
+                self.tally(l[0])
                 if(self.classify(l[0])):
                     print(self.classify(l[0]), "alarm detected")
 
