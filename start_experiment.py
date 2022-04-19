@@ -303,7 +303,8 @@ def start_experiment(config):
                         model_tags[node_type] = model_tags[node_type][need_update_index]
                         model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                         optimizers[node_type].step()
-
+            fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
+            ec.analyzeFile(fAnalyze)
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             ec.reset()
 
