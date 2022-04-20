@@ -166,6 +166,7 @@ def start_experiment(config):
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
+            total_loss = 0.0
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
@@ -204,9 +205,11 @@ def start_experiment(config):
 
                         #     if epoch == epochs - 1:
                         #         experiment.update_metrics(diagnois, gt)
+                        experiment.update_metrics(diagnois, gt)
                         nodes_need_updated = {}
                         
                         if s_loss:
+                            total_loss += s_loss.item()
                             s_loss.to(device)
                             s_loss.backward()
                             if s_tags.grad != None:
@@ -220,6 +223,7 @@ def start_experiment(config):
                                             nodes_need_updated[node_id][ic_index[iorc]] += s_tags.grad[i]*s_morse_grads[i]*1
 
                         if o_loss:
+                            total_loss += o_loss.item()
                             o_loss.to(device)
                             o_loss.backward()
                             if o_tags.grad != None:
@@ -239,42 +243,10 @@ def start_experiment(config):
                                 node_gradients[nid] = []
                             node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
                         
-                        # if needs_to_update:
-                        #     if s_loss != 0.0 or o_loss != 0.0:
-                        #         s_loss.backward()
-                        #         o_loss.backward()
-
-                        #         if is_fp:
-                        #             a = args['lr_imb']
-                        #         else:
-                        #             a = 1
-
-                        #         s_init_id = mo.Nodes[event['src']].getInitID()
-                        #         s_morse_grads = mo.Nodes[event['src']].get_grad()
-                        #         o_init_id = mo.Nodes[event['dest']].getInitID()
-                        #         o_morse_grads = mo.Nodes[event['dest']].get_grad()
-                        #         nodes_need_updated = {}
-                        #         if s.grad != None:
-                        #             for i, node_id in enumerate(s_init_id):
-                        #                 if node_id not in nodes_need_updated:
-                        #                     nodes_need_updated[node_id] = torch.zeros(5)
-                        #                 nodes_need_updated[node_id][i] += s.grad[i]*s_morse_grads[i]*a
-
-                        #         if o.grad != None:
-                        #             for i, node_id in enumerate(o_init_id):
-                        #                 if node_id not in nodes_need_updated:
-                        #                     nodes_need_updated[node_id] = torch.zeros(5)
-                        #                 nodes_need_updated[node_id][i] += o.grad[i]*o_morse_grads[i]*a
-
-                        #         for nid in nodes_need_updated.keys():
-                        #             if nid not in node_gradients:
-                        #                 node_gradients[nid] = []
-                        #             node_gradients[nid].append(nodes_need_updated[nid].unsqueeze(0))
+                
 
                 for nid in list(node_gradients.keys()):
                     node_gradients[nid] = torch.sum(torch.cat(node_gradients[nid],0), dim=0)
-
-                # a = node_gradients['49463062-60DC-4F2A-39DD-1020749C0642']
 
                 ## output gradient to csv
                 df =pd.DataFrame.from_dict(node_gradients, orient='index', columns=['i_gradient','c_gradient'])
@@ -293,8 +265,11 @@ def start_experiment(config):
                     need_update_index = []
                     for i, nid in enumerate(model_nids[node_type]):
                         if nid in node_gradients:
-                            gradients.append(node_gradients[nid].unsqueeze(0))
-                            need_update_index.append(i)
+                            itag,ctag = model_tags[node_type][i].tolist()
+                            i_grad, c_grad = node_gradients[nid].tolist()
+                            if (itag < 0.6 and i_grad < 0) or (itag > 0.4 and i_grad > 0) or (ctag < 0.6 and c_grad < 0) or (ctag > 0.4 and c_grad > 0):
+                                gradients.append(node_gradients[nid].unsqueeze(0))
+                                need_update_index.append(i)
                         # else:
                         #     gradients.append(torch.zeros(2).unsqueeze(0))
                     if len(gradients) > 0:
@@ -304,7 +279,11 @@ def start_experiment(config):
                         model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                         optimizers[node_type].step()
 
+            print('total loss is {}'.format(total_loss))
+
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            experiment.print_metrics()
+            experiment.reset_metrics()
             ec.reset()
 
             # save checkpoint
@@ -462,10 +441,10 @@ if __name__ == '__main__':
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="traindata1", type=str)
-    parser.add_argument("--experiment_prefix", default="groupF", type=str)
+    parser.add_argument("--experiment_prefix", default="DefaultSetting", type=str)
     parser.add_argument("--no_hidden_layers", default=1, type=int)
     parser.add_argument("--from_checkpoint", type=str)
-    parser.add_argument("--batch_size", type=int, default=10000000)
+    parser.add_argument("--batch_size", type=int, default=100000000)
 
     args = parser.parse_args()
 
