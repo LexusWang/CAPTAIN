@@ -280,7 +280,8 @@ def start_experiment(config):
                         optimizers[node_type].step()
 
             print('total loss is {}'.format(total_loss))
-
+            fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
+            ec.analyzeFile(fAnalyze)
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             experiment.print_metrics()
             experiment.reset_metrics()
