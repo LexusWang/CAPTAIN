@@ -45,7 +45,8 @@ class dataProcessor:
                         'com.bbn.tc.schema.avro.cdm18.NetFlowObject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.FileObject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.UnnamedPipeObject' in tmp['datum'] or \
-                        'com.bbn.tc.schema.avro.cdm18.Principal' in tmp['datum']:
+                        'com.bbn.tc.schema.avro.cdm18.Principal' in tmp['datum'] or \
+                        'com.bbn.tc.schema.avro.cdm18.MemoryObject' in tmp['datum']:
                             v.write(line)
                             vertexCounter += 1
                         elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
