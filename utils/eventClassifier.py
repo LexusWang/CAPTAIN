@@ -119,10 +119,10 @@ class eventClassifier:
                     if not self.mkMemExecutableUUID[sublst]:
                         print("missing MkMemExecutable TP from following eventids:", file = fout)
                         print(sublst, file = fout)
-                print("---------------------------------------------------------------", file = fout)
-                print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes with distinguishing UUIDs:", file = fout)
-                for x in self.reportedProcessUUID.keys():
-                    print(x, " ", self.reportedProcessUUID[x], file = fout)
+                # print("---------------------------------------------------------------", file = fout)
+                # print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes with distinguishing UUIDs:", file = fout)
+                # for x in self.reportedProcessUUID.keys():
+                #     print(x, " ", self.reportedProcessUUID[x], file = fout)
                 print("---------------------------------------------------------------", file = fout)
                 print("Reported alarms on the following ", len(self.reportedProcessName), " processes with distinguishing UUIDs and process names:", file = fout)
                 for y in self.reportedProcessName.keys():
