@@ -53,8 +53,9 @@ CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
 REMOVE_SET = {standard_events['EVENT_UNLINK']}
 CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
-MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
+MPROTECT_SET = {standard_events['EVENT_MPROTECT']}
 UPDATE_SET = {standard_events['EVENT_UPDATE']}
+EXIT_SET = {standard_events['EVENT_EXIT']}
 UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],
     standard_events['EVENT_BOOT'],standard_events['EVENT_CHECK_FILE_ATTRIBUTES'],standard_events['EVENT_CLOSE'],standard_events['EVENT_CONNECT'],standard_events['EVENT_CREATE_THREAD'],
     standard_events['EVENT_DUP'],standard_events['EVENT_FLOWS_TO'],standard_events['EVENT_FCNTL'],

@@ -70,7 +70,7 @@ class NetFlowObj_Initializer(nn.Module):
     def initialize(self, features):
         proto_vec = self.protocol_embedding(features[:,0].to(torch.int32))
         ip_vec = torch.sigmoid(self.ip_layer(features[:,1:33].to(torch.float32)))
-        port_vec = self.port_embedding(features[:,33:].to(torch.int32)).squeeze()
+        port_vec = self.port_embedding(features[:,33].to(torch.int32))
         features = torch.cat((proto_vec, ip_vec, port_vec),dim=1)
         # hidden_result = None
         # for i, hl in enumerate(self.hidden_layers):

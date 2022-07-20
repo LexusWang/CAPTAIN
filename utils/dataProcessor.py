@@ -50,9 +50,9 @@ class dataProcessor:
                         'com.bbn.tc.schema.avro.cdm18.MemoryObject' in tmp['datum']:
                             v.write(line)
                             vertexCounter += 1
-                        elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
-                            timestamp = int(tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos'])
-                            event_type = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['type']
+                        elif 'com.bbn.tc.schema.avro.cdm20.Event' in tmp['datum']:
+                            timestamp = int(tmp['datum']['com.bbn.tc.schema.avro.cdm20.Event']['timestampNanos'])
+                            event_type = tmp['datum']['com.bbn.tc.schema.avro.cdm20.Event']['type']
                             if (timestamp < self.startTimestamp) or (timestamp > self.endTimestamp and self.endTimestamp > 0):
                                 continue
                             if event_type in self.unusedEventType:

@@ -79,7 +79,7 @@ class Experiment:
 
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
-        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+        # print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
         with open(filename, 'w') as f:
             f.write(f"tp: {self.tp}")
             f.write(f"fp: {self.fp}")

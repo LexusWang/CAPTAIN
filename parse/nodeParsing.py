@@ -12,8 +12,11 @@ def parse_subject_cdm(datum):
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
         pid_ = datum['cid']
-        pname_ = datum['properties']['map']['name']
-        parent_ = datum['parentSubject']
+        pname_ = datum['properties']['map'].get('name','Null')
+        if datum['parentSubject']:
+            parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        else:
+            parent_ = datum['parentSubject']
         # ppid_ = datum['properties']['map']['ppid']
         # seen_time_ = float(datum['properties']['map'].get('seen time',0))
         if isinstance(datum['cmdLine'], dict):
@@ -51,26 +54,31 @@ def parse_object_cdm(datum, object_type):
     if object_type == 'FileObject':
         object.subtype = cdm_file_object_type[datum['type']]
         permission = datum['baseObject']['permission']
-        object.name = datum['baseObject']['properties']['map']['path']
-        object.path = datum['baseObject']['properties']['map']['path']
+        object.name = datum['baseObject']['properties']['map'].get('path','Null')
+        object.path = datum['baseObject']['properties']['map'].get('path','Null')
     elif object_type == 'UnnamedPipeObject':
         permission = datum['baseObject']['permission']
-        object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
-        object.path = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
+        object.name = 'Pipe_{}'.format(object.id)
+        # object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
+        object.path = object.name
     elif object_type == 'RegistryKeyObject':
         pass
     elif object_type == 'PacketSocketObject':
         pass
     elif object_type == 'NetFlowObject':
-        object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
+        try:
+            object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
+        except TypeError:
+            object.set_IP(datum['remoteAddress'], datum['remotePort'], None)
     elif object_type == 'MemoryObject':
-        object.name = 'MemoryObject_{}'.format(datum['memoryAddress'])
+        object.name = 'MEM_{}'.format(datum['memoryAddress'])
         object.path = object.name
     elif object_type == 'SrcSinkObject':
         object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
-        object.name = 'UnknownObject_{}_{}'.format(datum['fileDescriptor']['int'],datum['baseObject']['properties']['map']['pid'])
-        object.path = object.name
+        if object.subtype == cdm_srcsink_type['SRCSINK_UNKNOWN']:
+            object.name = 'UnknownObject_{}_{}'.format(datum['fileDescriptor']['int'],datum['baseObject']['properties']['map']['pid'])
+            object.path = object.name
     else:
         # error!
         pass

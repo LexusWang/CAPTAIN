@@ -7,7 +7,7 @@ class Subject:
         self.id = id
         # self.time = time
         self.type = type
-        # self.subtype = subtype
+        # self.parent_subject = subtype
         self.pid = pid
         self.ppid = ppid
         self.cmdLine = cmdLine
@@ -142,9 +142,9 @@ class Subject:
         return self.cTag_initID
 
     def isMatch(self, string):
-        if self.cmdLine == None:
+        if self.processName == None:
             return False
-        return isinstance(re.search(string, self.cmdLine), re.Match)
+        return isinstance(re.search(string, self.processName), re.Match)
 
     def get_matrix_array(self, padding: 4):
         if padding < 4:

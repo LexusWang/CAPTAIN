@@ -9,7 +9,7 @@ from graph.Object import Object
 from policy.propTags import propTags
 # from policy.alarms import check_alarm, check_alarm_pre, printTime
 from model.loss_1 import check_alarm, check_alarm_pre, printTime
-from parse.eventType import UNUSED_SET, UPDATE_SET, cdm_events
+from parse.eventType import UNUSED_SET, EXIT_SET, UPDATE_SET, cdm_events
 
 
 class Morse:
@@ -73,117 +73,6 @@ class Morse:
     def backward(self):
         pass
 
-    # -------------- tag getters ------------------ #
-
-    def get_benign_thresh(self) -> float:
-        return self.benign
-
-    def get_susp_thresh(self) -> float:
-        return self.suspect_env
-
-    def get_stag_benign(self) -> float:
-        return self.stag_benign
-
-    def get_itag_benign(self) -> float:
-        return self.itag_benign
-
-    def get_ctag_benign(self) -> float:
-        return self.ctag_benign
-
-    def get_stag_susp_env(self) -> float:
-        return self.stag_suspect_env
-
-    def get_itag_susp_env(self) -> float:
-        return self.itag_suspect_env
-
-    def get_ctag_susp_env(self) -> float:
-        return self.ctag_suspect_env
-
-    def get_stag_dangerous(self) -> float:
-        return self.stag_dangerous
-
-    def get_itag_dangerous(self) -> float:
-        return self.itag_dangerous
-
-    def get_ctag_dangerous(self) -> float:
-        return self.ctag_dangerous
-
-    def get_attenuate_susp_env(self) -> float:
-        return self.a_e
-
-    def get_attenuate_benign(self) -> float:
-        return self.a_b
-
-    # ------------------ tag setters -------------- #
-
-    def set_stag_benign(self, val):
-        self.stag_benign = val
-
-    def set_itag_benign(self, val):
-        self.itag_benign = val
-
-    def set_ctag_benign(self, val):
-        self.ctag_benign = val
-
-    def set_stag_susp_env(self, val):
-        self.stag_suspect_env = val
-
-    def set_itag_susp_env(self, val):
-        self.itag_suspect_env = val
-
-    def set_ctag_susp_env(self, val):
-        self.ctag_suspect_env = val
-
-    def set_stag_dangerous(self, val):
-        self.stag_dangerous = val
-
-    def set_itag_dangerous(self, val):
-        self.itag_dangerous = val
-
-    def set_itag_dangerous(self, val):
-        self.itag_dangerous = val
-
-    # ------------------ model getters-------------- #
-
-    def get_benign_possibility(self, stag: float):
-        return self.benign_thresh_model(stag)
-
-    def get_susp_possibility(self, stag: float):
-        return self.suspect_env_model(stag)
-
-    def get_benign_thresh_grad(self)-> np.ndarray((1,2)):
-        return self.benign_thresh_model.backward()
-
-    def get_susp_thresh_grad(self) -> np.ndarray((1,2)):
-        return self.suspect_env_model.backward()
-
-    def benign_thresh_backward(self, grad: float):
-        self.benign_thresh_model.backward(grad)
-
-    def susp_thresh_backward(self, grad: float):
-        self.suspect_env_model.backward(grad)
-
-    # ------------------ weights setters ----------- #
-
-    def a_b_setter(self, final_a_b_grad):
-        self.a_b = self.a_b + final_a_b_grad
-
-    def a_e_setter(self, final_a_e_grad):
-        self.a_e = self.a_e + final_a_e_grad
-
-    def benign_thresh_model_setter(self, w_grad, b_grad):
-        self.benign_thresh_model.update_weight(w_grad, b_grad)
-
-    def suspect_env_model_setter(self, w_grad, b_grad):
-        self.suspect_env_model.update_weight(w_grad, b_grad)
-
-
-    # ------------------ save & load ----------- #
-    def save(path):
-        pass
-
-    def load(path):
-        pass
 
     def propagate(self, event, s, o):
         propTags(event, s, o, format=self.format, morse = self)
@@ -206,9 +95,10 @@ class Morse:
             dest = self.Nodes.get(event['dest'], None)
             self.propagate(event, src, dest)
             return None, None, None, None, None, None, None, None, None
-        if event['type'] == 'EVENT_EXIT':
+        if cdm_events[event['type']] in EXIT_SET:
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
+                del self.Nodes[event['src']]
             except KeyError:
                 # print('Oops! Cannot find Node!')
                 return None, None, None, None, None, None, None, None, None
@@ -259,55 +149,56 @@ class Morse:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
-        if event['type'] in UNUSED_SET:
+        if cdm_events[event['type']] in UNUSED_SET:
             return
-        if event['type'] == 'EVENT_EXIT':
+        if cdm_events[event['type']] in UPDATE_SET:
+            src = self.Nodes.get(event['src'], None)
+            dest = self.Nodes.get(event['dest'], None)
+            self.propagate(event, src, dest)
+            return
+        if cdm_events[event['type']] in EXIT_SET:
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
+                del self.Nodes[event['src']]
             except KeyError:
                 # print('Oops! Cannot find Node!')
                 return
         if event['src'] != -1 and event['dest'] != -1:
-            self.G.add_edge(event['src'], event['dest'])
+            # self.G.add_edge(event['src'], event['dest'])
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
-                # if isinstance(src,Subject) and isinstance(dest,Subject):
-                #     if src.pid == dest.pid:
-                #         if src.id != dest.id:
-                #             print(event)
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
-                # alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
-                # self.propagate(event, src, dest)
-                # return self.detect_alarm(event, src, dest, alarmArg, self.alarm_file)
-
                 alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
-                # s_grad_pre = src.get_grad()
-                # s_initid_pre = src.getInitID()
-                # o_grad_pre = dest.get_grad()
-                # o_initid_pre = dest.getInitID()
                 self.propagate(event, src, dest)
                 diagnosis, s_loss, o_loss, s_tags, o_tags, grad_before_prop = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
+
                 return diagnosis
+        
+        return
 
     def add_object(self, object):
-        self.G.add_node(object.id)
+        # self.G.add_node(object.id)
         # initObjectTags(object, self.obj_inits, format=self.format)
         # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
         self.Initialized_Nodes[object.id] = False
+        if self.Nodes[object.id].type in {"SrcSinkObject", "MemoryObject", "UnnamedPipeObject"}:
+            obj_tag = [1.0, 1.0]
+        else:
+            obj_tag = self.node_inital_tags[object.id]
+        self.Nodes[object.id].setObjTags(obj_tag)
 
     def add_subject(self, subject):
-        self.G.add_node(subject.id)
+        # self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
         self.Initialized_Nodes[subject.id] = False
-        # if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-        #     subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
-        # else:
-        #     # initSubjectTags(subject, self.subj_init)
-        #     subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
-        # subject.setSubjTags(self.node_inital_tags[subject.id].tolist())
+        if subject.ppid and subject.ppid in self.Nodes:
+            sub_tag = self.Nodes[subject.ppid].tags()
+        else:
+            sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
+        self.Nodes[subject.id].setSubjTags(sub_tag)
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject.id
         self.processes[subject.pid]['alive'] = True
@@ -326,7 +217,11 @@ class Morse:
                     sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
                     self.Nodes[nid].setSubjTags(sub_tag)
                 else:
-                    self.Nodes[nid].setObjTags(self.node_inital_tags[nid].tolist())
+                    if self.Nodes[nid].type in {"SrcSinkObject","MemoryObject","UnnamedPipeObject"}:
+                        obj_tag = [1.0, 1.0]
+                    else:
+                        obj_tag = self.node_inital_tags[nid].tolist()
+                    self.Nodes[nid].setObjTags(obj_tag)
 
     def reset_morse(self):
         for nid in self.Initialized_Nodes.keys():

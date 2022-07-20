@@ -25,7 +25,7 @@ from collections import defaultdict
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
-def extract_nodes(file):
+def extract_nodes_from_events_files(file):
     null = 0
     node_features = {}
 
@@ -57,6 +57,64 @@ def extract_nodes(file):
     df = pd.DataFrame.from_dict(node_features,orient='index')
     # print(df)
     df.to_json('results/features/features.json', orient='index')
+
+def get_node_features_from_node_file(file, output_dir):
+    null = 0
+    node_features = {}
+    for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+        node_features[node_type] = {}
+
+    initialized_line = 0
+    node_num = 0
+
+    with open(file,'r') as fin:
+        for line in fin:
+            initialized_line += 1
+            if initialized_line % 100000 == 0:
+                print("Morse has initialized {} lines, {} nodes.".format(initialized_line, node_num))
+            try:
+                record_datum = eval(line)['datum']
+                record_type = list(record_datum.keys())
+                assert len(record_type)==1
+                record_datum = record_datum[record_type[0]]
+                record_type = record_type[0].split('.')[-1]
+                if record_type == 'Subject':
+                    node_num += 1
+                    subject = parse_subject(record_datum)
+                    features = get_subject_feature(subject)
+                    node_features[record_type][subject.id] = {}
+                    node_features[record_type][subject.id]['pname'] = features[0]
+                    node_features[record_type][subject.id]['cmdl'] = features[1]
+                    node_features[record_type][subject.id]['type'] = 'Subject'
+                elif record_type.endswith('Object'):
+                    node_num += 1
+                    object = parse_object(record_datum, record_type)
+                    features = get_object_feature(object)
+                    node_features[record_type][object.id] = {}
+                    node_features[record_type][object.id]['type'] = record_type
+                    if record_type == 'NetFlowObject':
+                        node_features[record_type][object.id]['remoteAddress'] = features[0]
+                        node_features[record_type][object.id]['remotePort'] = features[1]
+                        node_features[record_type][object.id]['ipProtocol'] = features[2]
+                    if record_type == 'SrcSinkObject':
+                        node_features[record_type][object.id]['subtype'] = features[0]
+                    if record_type == 'FileObject':
+                        node_features[record_type][object.id]['path'] = features[0]
+                        node_features[record_type][object.id]['FileObjectType'] = features[1]
+                    if record_type == 'UnnamedPipeObject':
+                        node_features[record_type][object.id]['subtype'] = features[0]
+                    if record_type == 'MemoryObject':
+                        node_features[record_type][object.id]['subtype'] = features[0]
+                    if record_type == 'PacketSocketObject':
+                        node_features[record_type][object.id]['subtype'] = features[0]
+                    if record_type == 'RegistryKeyObject':
+                        node_features[record_type][object.id]['subtype'] = features[0]
+            except:
+                pass
+    
+    for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject','PacketSocketObject','RegistryKeyObject','Subject']:
+        df = pd.DataFrame.from_dict(node_features[node_type],orient='index')
+        df.to_json(os.path.join(output_dir, '{}.json'.format(node_type)), orient='index')
 
 def get_node_features(file):
     null = 0
@@ -290,8 +348,10 @@ def parse_lttng_logs(file):
 
 
 if __name__ == '__main__':
-    file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
-    get_node_features(file)
+    # file = '/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json'
+    # get_node_features(file)
     # parse_logs(file)
     # file = '/Users/lexus/Documents/research/APT/Data/lttng/reverseshell_debug.out'
     # parse_lttng_logs(file)
+    file = '/home/weijian/weijian/projects/E31data_updated/vertex.json'
+    get_node_features_from_node_file(file, output_dir = 'results/testing/features')

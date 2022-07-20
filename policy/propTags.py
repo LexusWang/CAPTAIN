@@ -10,7 +10,20 @@ from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SE
 def propTags_pre():
    pass
 
-def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0.001, format = 'cdm', morse = None):
+def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
+   target_event_id = '5A5D146A-C259-9DE3-6A4E-7AA84EAE7B92'
+   if event['uuid'] == target_event_id:
+      a = 0
+
+   target_node_id = '25237608-007E-5B93-2EB0-08F80F349FC6'
+   if s.id == target_node_id or o.id == target_node_id:
+      if s.id == target_node_id:
+         if s.iTag != 1.0:
+            a = 0
+      if o.id == target_node_id:
+         if o.iTag != 1.0:
+            a = 0
+
    if format == 'cdm':
       event_type = cdm_events[event['type']]
    elif format == 'lttng':
@@ -384,7 +397,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0.001, format
       if (s.updateTime == 0):
          s.updateTime = ts
       elif (et > 0.5 and it < 1):
-         diff = (ts - s.updateTime) / 4000000
+         diff = (ts - s.updateTime) / 4000000000
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.75
          temp = pow(dpc, diff)
@@ -399,7 +412,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.25, decay = 0.001, format
          s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       
       elif (citag(stg) > 0.5 and et < 0.5 and it < 0.5):
-         diff = (ts - s.updateTime) / 4000000
+         diff = (ts - s.updateTime) / 4000000000
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.45
          temp = pow(dpc, diff)

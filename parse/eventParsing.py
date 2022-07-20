@@ -36,7 +36,10 @@ def parse_event_cdm(datum):
         event['dest'] = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm18.UUID']
     else:
         event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
-        event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        if isinstance(datum['predicateObject'], dict):
+            event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        else:
+            event['dest'] = -1
         
     return event
 

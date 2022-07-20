@@ -1,4 +1,4 @@
 from utils.dataProcessor import dataProcessor
 
-dp = dataProcessor('d:/ATPG/config.ini')
+dp = dataProcessor('config.ini')
 dp.separate()
