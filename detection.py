@@ -118,8 +118,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--volume_num", nargs='?', default=3, type=int)
-    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E31_cadets_data/ta1-cadets-e3-official.json", type=str)
+    parser.add_argument("--volume_num", nargs='?', default=7, type=int)
+    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E32data/ta1-trace-e3-official-1.json", type=str)
     parser.add_argument("--experiment_prefix", default="Manual", type=str)
     parser.add_argument("--mode", nargs="?", default="test", type=str)
 

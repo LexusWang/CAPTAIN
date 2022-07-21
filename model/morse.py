@@ -184,8 +184,10 @@ class Morse:
         # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
         self.Initialized_Nodes[object.id] = False
-        if self.Nodes[object.id].type in {"SrcSinkObject", "MemoryObject", "UnnamedPipeObject"}:
+        if self.Nodes[object.id].type in {"MemoryObject", "UnnamedPipeObject"}:
             obj_tag = [1.0, 1.0]
+        elif self.Nodes[object.id].type in {"SrcSinkObject"}:
+            obj_tag = [0.0, 1.0]
         else:
             obj_tag = self.node_inital_tags[object.id]
         self.Nodes[object.id].setObjTags(obj_tag)
@@ -197,7 +199,7 @@ class Morse:
         if subject.ppid and subject.ppid in self.Nodes:
             sub_tag = self.Nodes[subject.ppid].tags()
         else:
-            sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
+            sub_tag = [1.0, 1.0, 1.0, 1.0]
         self.Nodes[subject.id].setSubjTags(sub_tag)
         self.processes[subject.pid] = {}
         self.processes[subject.pid]['node'] = subject.id
@@ -214,7 +216,7 @@ class Morse:
             if self.Initialized_Nodes[nid] == False:
                 if isinstance(self.Nodes[nid],Subject):
                     # sub_tag = self.node_inital_tags[nid].tolist()
-                    sub_tag = [1.0, 1.0, 1.0, 1.0, 1.0]
+                    sub_tag = [1.0, 1.0, 1.0, 1.0]
                     self.Nodes[nid].setSubjTags(sub_tag)
                 else:
                     if self.Nodes[nid].type in {"SrcSinkObject","MemoryObject","UnnamedPipeObject"}:

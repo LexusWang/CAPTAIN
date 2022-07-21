@@ -6,10 +6,8 @@ import re
 class Object:
     def __init__(self, id, type, subtype: str = None, pid: int = None, objName: str = None):
         self.id = id
-        # self.time = time
         self.type = type
         self.subtype = subtype
-        # self.ppid = ppid
         self.name = objName
         self.path = None
 
@@ -18,15 +16,9 @@ class Object:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        # self.ciTag_grad: float = 1.0
-        # self.eTag_grad: float = 1.0
-        # self.invTag_grad: float = 0.0
         self.iTag_grad: float = 1.0
         self.cTag_grad: float = 1.0
 
-        # self.ciTag_initID = id
-        # self.eTag_initID = id
-        # self.invTag_initID = None
         self.iTag_initID = [id,'i']
         self.cTag_initID = [id,'c']
 
@@ -46,7 +38,7 @@ class Object:
             ciTag = 1.0
         else:
             ciTag = 0.0
-        return [ciTag, ciTag, 0.0, float(self.iTag), float(self.cTag)]
+        return [ciTag, ciTag, float(self.iTag), float(self.cTag)]
 
     def setObjTags(self, tags):
         self.iTag = tags[0]
@@ -76,16 +68,13 @@ class Object:
         return self.id
 
     def get_grad(self):
-        return [self.iTag_grad, self.iTag_grad, 0.0, self.iTag_grad, self.cTag_grad]
+        return [self.iTag_grad, self.iTag_grad, self.iTag_grad, self.cTag_grad]
 
     def get_citag_grad(self):
         return self.iTag_grad
 
     def get_etag_grad(self):
         return self.iTag_grad
-
-    def get_invtag_grad(self):
-        return 0.0
 
     def get_itag_grad(self):
         return self.iTag_grad
@@ -100,34 +89,8 @@ class Object:
         self.cTag_grad = c_grad
 
     def set_grad(self, grads):
-        # self.ciTag_grad = grads[0]
-        # self.eTag_grad = grads[1]
-        # self.invTag_grad = grads[2]
         self.iTag_grad = grads[0]
         self.cTag_grad = grads[1]
-
-    def update_grad(self, grads):
-        # self.ciTag_grad *= grads[0]
-        # self.eTag_grad *= grads[1]
-        # self.invTag_grad *= grads[2]
-        self.iTag_grad *= grads[0]
-        self.cTag_grad *= grads[1]
-
-    # def setInitID(self, InitID):
-    #     self.ciTag_initID = InitID[0]
-    #     self.eTag_initID = InitID[1]
-    #     self.invTag_initID = InitID[2]
-    #     self.iTag_initID = InitID[3]
-    #     self.cTag_initID = InitID[4]
-
-    # def setciTagInitID(self, id):
-    #     self.ciTag_initID = id
-
-    # def seteTagInitID(self, id):
-    #     self.eTag_initID = id
-
-    # def setinvTagInitID(self, id):
-    #     self.invTag_initID = id
 
     def setiTagInitID(self, id):
         self.iTag_initID = id
@@ -136,16 +99,13 @@ class Object:
         self.cTag_initID = id
 
     def getInitID(self):
-        return [self.iTag_initID, self.iTag_initID, None, self.iTag_initID, self.cTag_initID]
+        return [self.iTag_initID, self.iTag_initID, self.iTag_initID, self.cTag_initID]
 
     def getciTagInitID(self):
         return self.iTag_initID
 
     def geteTagInitID(self):
         return self.iTag_initID
-
-    def getinvTagInitID(self):
-        return None
 
     def getiTagInitID(self):
         return self.iTag_initID

@@ -71,12 +71,11 @@ def match_network_addr(ip_address, port):
 
 
 def initSubjectTags(subject):
-    citag = 1
-    eTag = 1
-    invTag = 1
-    itag = 1
-    ctag = 1
-    subject.setSubjTags([citag, eTag, invTag, itag, ctag])
+    citag = 1.0
+    eTag = 1.0
+    itag = 1.0
+    ctag = 1.0
+    subject.setSubjTags([citag, eTag, itag, ctag])
 
 def initObjectTags(object, format = 'cdm'):
     itag = 0

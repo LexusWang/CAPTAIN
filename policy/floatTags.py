@@ -5,26 +5,17 @@ UNTRUSTED = 0
 BENIGN = 1
 PUBLIC = 1
 
-def alltags(cit, et, inv, it, ct):
-   return [cit, et, inv, it, ct]
-
-def alltags2(it, ct):
-   return [it, ct]
-
-def ctag(allTags):
-   return allTags[4]
-
-def itag(allTags):
-   return allTags[3]
-
-def invtag(allTags):
-   return allTags[2]
+def citag(alltags):
+   return alltags[0]
 
 def etag(allTags):
    return allTags[1]
 
-def citag(allTags):
-   return allTags[0]
+def itag(allTags):
+   return allTags[2]
+
+def ctag(allTags):
+   return allTags[3]
 
 
 def isRoot(principal):
