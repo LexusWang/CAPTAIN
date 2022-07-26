@@ -32,9 +32,7 @@ class Subject:
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
-        # json_dict['time'] = self.time
         json_dict['type'] = self.type
-        # json_dict['subtype'] = self.subtype
         json_dict['pid'] = self.pid
         json_dict['ppid'] = self.ppid
         json_dict['cmdLine'] = self.cmdLine

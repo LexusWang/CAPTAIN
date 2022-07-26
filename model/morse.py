@@ -88,8 +88,8 @@ class Morse:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
-        if cdm_events[event['type']] in UNUSED_SET:
-            return None, None, None, None, None, None, None, None, None
+        # if cdm_events[event['type']] in UNUSED_SET:
+        #     return None, None, None, None, None, None, None, None, None
         if cdm_events[event['type']] in UPDATE_SET:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
@@ -127,18 +127,18 @@ class Morse:
                     o_grad = dest.get_grad()
                     o_init_id = dest.getInitID()
 
-                if diagnosis is None:
-                    if gt is not None:
-                        fn = 0
-                    else:
-                        tn = 0
-                else:
-                    if gt is None:
-                        fp = 0
-                        if dest.id == '49463062-60DC-4F2A-39DD-1020749C0642':
-                            stop = 0
-                    else:
-                        tp = 0
+                # if diagnosis is None:
+                #     if gt is not None:
+                #         fn = 0
+                #     else:
+                #         tn = 0
+                # else:
+                #     if gt is None:
+                #         fp = 0
+                #         if dest.id == '49463062-60DC-4F2A-39DD-1020749C0642':
+                #             stop = 0
+                #     else:
+                #         tp = 0
 
                 return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
         
@@ -149,8 +149,8 @@ class Morse:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
-        if cdm_events[event['type']] in UNUSED_SET:
-            return
+        # if cdm_events[event['type']] in UNUSED_SET:
+        #     return
         if cdm_events[event['type']] in UPDATE_SET:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)

@@ -7,9 +7,6 @@ from policy.floatTags import citag, ctag, itag, etag, isRoot
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
-def propTags_pre():
-   pass
-
 def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
    if citag(o.tags()) != 1.0 and (cdm_events[event['type']] in LOAD_SET or cdm_events[event['type']] in EXECVE_SET): 
       a = 0
@@ -46,47 +43,94 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
    if event_type in READ_SET:
       assert isinstance(s,Subject) and isinstance(o,Object)
       stg = s.tags()
-      it = itag(stg)
-      oit = itag(intags)
-      ct = ctag(stg)
-      oct = ctag(intags)
+      otg = o.tags()
+      sit = itag(stg)
+      oit = itag(otg)
+      sct = ctag(stg)
+      oct = ctag(otg)
       
       citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
       ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
-      if it > oit:
+      if sit > oit:
          itag_grad = o.get_itag_grad()
          i_init_id = o.getiTagInitID()
-         it = min(it, oit)
+         sit = min(sit, oit)
 
-      if ct > oct:
+      if sct > oct:
          ctag_grad = o.get_ctag_grad()
          c_init_id = o.getcTagInitID()
-         ct = min(ct, oct)
-      s.setSubjTags([citag(stg), etag(stg), it, ct])
+         sct = min(sct, oct)
+
+      s.setSubjTags([citag(stg), etag(stg), sit, sct])
       s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
       s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
 
+   elif event_type in CREATE_SET:
+      assert isinstance(s, Subject) and isinstance(o, Object)
+      st = s.tags()
+      sit = itag(st)
+      sct = ctag(st)
+      itag_grad = s.get_itag_grad()
+      ctag_grad = s.get_ctag_grad()
+      ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
+      
+      o.setObjTags([sit, sct])
+      o.setiTagInitID(i_init_id)
+      o.setcTagInitID(c_init_id)
+      o.set_grad([itag_grad, ctag_grad])
+
+   elif event_type in WRITE_SET:
+      assert isinstance(s,Subject) and isinstance(o,Object)
+      stg = s.tags()
+      it = itag(stg)
+      ct = ctag(stg)
+      citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
+      ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
+
+      otg = o.tags()
+      itag_grad = o.get_itag_grad()
+      ctag_grad = o.get_ctag_grad()
+      isiTagChanged = False
+      iscTagChanged = False
+
+      if (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
+         new_it = min(1, it + ab)
+         new_ct = min(1, ct + ab)
+      elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))): 
+         new_it = min(1, it + ae)
+         new_ct = min(1, ct + ae)
+      else:
+         new_it = it
+         new_ct = ct
+
+      if itag(otg) > new_it:
+         isiTagChanged = True
+      it = min(itag(otg), new_it)
+      if ctag(otg) > new_ct:
+         iscTagChanged = True
+      ct = min(ctag(otg), new_ct)
+      newtags = [it, ct]
+
+      if (o.isIP() == False and o.isMatch("UnknownObject")== False):
+         o.setObjTags(newtags)
+         if isiTagChanged:
+            o.set_itag_grad(itag_grad)
+            o.setiTagInitID(i_init_id)
+         if iscTagChanged:
+            o.set_ctag_grad(ctag_grad)
+            o.setcTagInitID(c_init_id)
+
    elif event_type in LOAD_SET:
       if o.isFile():
-         a = citag(o.tags())
-         if citag(o.tags()) != 1.0: 
-            a = 0
          stg = s.tags()
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
          ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
-         if citag(stg) > citag(intags):
+         if citag(stg) > citag(o.tags()):
             citag_grad = o.get_citag_grad()
             ci_init_id = o.getciTagInitID()
          cit = min(citag(stg), citag(intags))
-
-         # et = etag(stg)
-         # if (et > cit):
-         #    et = cit
-         #    etag_grad = citag_grad
-         #    e_init_id = ci_init_id
-         #    # s.seteTagInitID(s.getciTagInitID())
 
          if itag(stg) > itag(intags):
             itag_grad = o.get_itag_grad()
@@ -97,8 +141,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
             ctag_grad = o.get_ctag_grad()
             c_init_id = o.getcTagInitID()
          ct = min(ctag(stg), ctag(intags))
-
-         # ct = ctag(stg)
 
          s.setSubjTags([cit, etag(stg), it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
@@ -176,53 +218,53 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
          # citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad = o.get_grad()
          # ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id = o.getInitID()
 
-         if isTRUSTED(citag(intags)):
-            if (isTRUSTED(cit) and isTRUSTED(et)):
-               cit = citag(intags)
-               citag_grad = o.get_itag_grad()
-               s.setSubjTags([cit, et, 1.0, 1.0])
-               s.set_grad([citag_grad, etag_grad, 1.0, 1.0])
-               s.setInitID([o.getiTagInitID(), etag_grad, None, None])
-            elif (isTRUSTED(cit) and isUNTRUSTED(et)):
-               cit = citag(intags)
-               citag_grad = o.get_itag_grad()
-               ci_init_id = o.getiTagInitID()
+         # if isTRUSTED(citag(intags)):
+         if (isTRUSTED(cit) and isTRUSTED(et)):
+            cit = citag(intags)
+            citag_grad = o.get_itag_grad()
+            s.setSubjTags([cit, et, 1.0, 1.0])
+            s.set_grad([citag_grad, etag_grad, 1.0, 1.0])
+            s.setInitID([o.getiTagInitID(), etag_grad, None, None])
+         elif (isTRUSTED(cit) and isUNTRUSTED(et)):
+            cit = citag(intags)
+            citag_grad = o.get_itag_grad()
+            ci_init_id = o.getiTagInitID()
 
-               if itag(stg) > itag(intags):
-                  itag_grad = o.get_itag_grad()
-                  i_init_id = o.getiTagInitID()
-               it = min(itag(stg), itag(intags))
+            if itag(stg) > itag(intags):
+               itag_grad = o.get_itag_grad()
+               i_init_id = o.getiTagInitID()
+            it = min(itag(stg), itag(intags))
 
-               if ctag(stg) > ctag(intags):
-                  ctag_grad = o.get_ctag_grad()
-                  c_init_id = o.getcTagInitID()
-               ct = min(ctag(stg), ctag(intags))
+            if ctag(stg) > ctag(intags):
+               ctag_grad = o.get_ctag_grad()
+               c_init_id = o.getcTagInitID()
+            ct = min(ctag(stg), ctag(intags))
 
-               s.setSubjTags([cit, et, it, ct])
-               s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
-               s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
-            else:
-               cit = citag(intags)
-               citag_grad = 1.0 * o.get_itag_grad()
-               s.setciTagInitID(o.getiTagInitID())
+            s.setSubjTags([cit, et, it, ct])
+            s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
+            s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
+         else:
+            cit = citag(intags)
+            citag_grad = 1.0 * o.get_itag_grad()
+            ci_init_id = o.getiTagInitID()
 
-               et = 1 - citag(intags)
-               etag_grad = -1.0 * o.get_itag_grad()
-               s.seteTagInitID(o.getiTagInitID())
+            et = 1 - citag(intags)
+            etag_grad = -1.0 * o.get_itag_grad()
+            etag_grad = o.getiTagInitID()
 
-               if itag(stg) > itag(intags):
-                  itag_grad = o.get_itag_grad()
-                  i_init_id = o.getiTagInitID()
-               it = min(itag(stg), itag(intags))
+            if itag(stg) > itag(intags):
+               itag_grad = o.get_itag_grad()
+               i_init_id = o.getiTagInitID()
+            it = min(itag(stg), itag(intags))
 
-               if ctag(stg) > ctag(intags):
-                  ctag_grad = o.get_ctag_grad()
-                  c_init_id = o.getcTagInitID()
-               ct = min(ctag(stg), ctag(intags))
-               
-               s.setSubjTags([cit, et, it, ct])
-               s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
-               s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
+            if ctag(stg) > ctag(intags):
+               ctag_grad = o.get_ctag_grad()
+               c_init_id = o.getcTagInitID()
+            ct = min(ctag(stg), ctag(intags))
+            
+            s.setSubjTags([cit, et, it, ct])
+            s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
+            s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
          # else:
          #    cit = citag(intags)
          #    citag_grad = o.get_itag_grad()
@@ -255,64 +297,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
    #       o.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
    #       o.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
       
-   elif event_type in CREATE_SET:
-      assert isinstance(s, Subject) and isinstance(o, Object)
-      st = s.tags()
-      sit = itag(st)
-      sct = ctag(st)
-      itag_grad = s.get_itag_grad()
-      ctag_grad = s.get_ctag_grad()
-      ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
-      
-      o.setObjTags([sit, sct])
-      o.setiTagInitID(i_init_id)
-      o.setcTagInitID(c_init_id)
-      o.set_grad([itag_grad, ctag_grad])
-
-   elif event_type in WRITE_SET:
-      assert isinstance(s,Subject) and isinstance(o,Object)
-      stg = s.tags()
-      it = itag(stg)
-      ct = ctag(stg)
-      citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
-      ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
-
-      otg = o.tags()
-      itag_grad = o.get_itag_grad()
-      ctag_grad = o.get_ctag_grad()
-      isiTagChanged = False
-      iscTagChanged = False
-
-      if (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
-         new_it = it + ab
-         new_ct = ct + ab
-         new_it = min(1, new_it)
-         new_ct = min(1, new_ct)
-      elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))): 
-         new_it = it + ae
-         new_ct = ct + ae
-         new_it = min(1, new_it)
-         new_ct = min(1, new_ct)
-      else:
-         new_it = it
-         new_ct = ct
-
-      if itag(otg) > new_it:
-         isiTagChanged = True
-      it = min(itag(otg), new_it)
-      if ctag(otg) > new_ct:
-         iscTagChanged = True
-      ct = min(ctag(otg), new_ct)
-      newtags = [it, ct]
-
-      if (o.isIP() == False and o.isMatch("UnknownObject")== False):
-         o.setObjTags(newtags)
-         if isiTagChanged:
-            o.set_itag_grad(itag_grad)
-            o.setiTagInitID(i_init_id)
-         if iscTagChanged:
-            o.set_ctag_grad(ctag_grad)
-            o.setcTagInitID(c_init_id)
+   
    
    elif event_type in CLONE_SET:
       assert isinstance(o,Subject) and isinstance(s,Subject)

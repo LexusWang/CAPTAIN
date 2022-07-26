@@ -54,6 +54,7 @@ RENAME_SET = {standard_events['EVENT_RENAME']}
 REMOVE_SET = {standard_events['EVENT_UNLINK']}
 CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
 MPROTECT_SET = {standard_events['EVENT_MPROTECT']}
+MMAP_SET = {standard_events['EVENT_MMAP']}
 UPDATE_SET = {standard_events['EVENT_UPDATE']}
 EXIT_SET = {standard_events['EVENT_EXIT']}
 UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],

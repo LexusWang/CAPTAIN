@@ -10,7 +10,7 @@ from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
 from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET
+from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET, MMAP_SET
 
 class AlarmArguments():
    
@@ -245,23 +245,10 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
             else:
                 s_target_ = torch.tensor([s_tags[0], s_tags[1], 1.0, s_tags[3]])
    
-
-    #    mprotect(s, o, p, ts) --> {
-    #       unsigned it = itag(subjTags(s))
-    #       unsigned prm = permbits(p)
-        
-    #       if (it < 128 && ((prm & 0100) == 0100)) {
-    #    if (!alarms[(pid(s), name(o))]) talarms = talarms + 1
-    #          prtSOAlarm(ts, "MkMemExecutable", s, o, alarms)
-    #       }
-    #    }
-   
-    if event_type in MPROTECT_SET:
+    if event_type in MPROTECT_SET or event_type in MMAP_SET:
         it = itag(s.tags())
-        # prm = permbits(event)
         prm = int(event['properties']['map']['protection'])
-        # print(event['properties']['map']['protection'])
-
+        
         if o.isFile() == False:
             if ((prm & int('01',8)) == int('01',8)):
                 if it < 0.5:
