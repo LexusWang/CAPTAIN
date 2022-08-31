@@ -11,6 +11,9 @@ def get_path_vocb(path_set):
 
     path_vocb = dict(Counter(path_vocb))
     path_vocb = sorted(path_vocb.items(),key=lambda x:x[1],reverse=True)
+    with open('results/path_vocabulary.csv','w') as fout:
+        for item in path_vocb:
+            fout.write('{},{}\n'.format(item[0],item[1]))
 
     return path_vocb[:19999]
 

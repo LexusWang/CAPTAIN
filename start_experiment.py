@@ -304,6 +304,8 @@ def start_experiment(config):
 
                 df3 = df.join(df2, how='inner')
                 df3.to_csv('results/tags-grad-{}.csv'.format(epoch),index=True,index_label='Node_id')
+
+                a = df3.to_dict(orient='records')
                 
                 for node_type in ['NetFlowObject','SrcSinkObject','FileObject','UnnamedPipeObject','MemoryObject']:
                     gradients = []
