@@ -5,7 +5,7 @@ import sys
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
-# from policy.initTagsAT import initObjectTags, initSubjectTags
+from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags
 # from policy.alarms import check_alarm, check_alarm_pre, printTime
 from model.loss_1 import check_alarm, check_alarm_pre, printTime
@@ -14,8 +14,8 @@ from parse.eventType import UNUSED_SET, EXIT_SET, UPDATE_SET, cdm_events
 
 class Morse:
 
-    def __init__(self, device, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
-        self.device = device
+    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
+        self.device = None
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
@@ -88,8 +88,6 @@ class Morse:
             self.Initialized_Nodes[event['src']] = True
         if event['dest'] in self.Initialized_Nodes:
             self.Initialized_Nodes[event['dest']] = True
-        # if cdm_events[event['type']] in UNUSED_SET:
-        #     return None, None, None, None, None, None, None, None, None
         if cdm_events[event['type']] in UPDATE_SET:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
@@ -98,7 +96,7 @@ class Morse:
         if cdm_events[event['type']] in EXIT_SET:
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
-                del self.Nodes[event['src']]
+                # del self.Nodes[event['src']]
             except KeyError:
                 # print('Oops! Cannot find Node!')
                 return None, None, None, None, None, None, None, None, None
@@ -127,18 +125,8 @@ class Morse:
                     o_grad = dest.get_grad()
                     o_init_id = dest.getInitID()
 
-                # if diagnosis is None:
-                #     if gt is not None:
-                #         fn = 0
-                #     else:
-                #         tn = 0
-                # else:
-                #     if gt is None:
-                #         fp = 0
-                #         if dest.id == '49463062-60DC-4F2A-39DD-1020749C0642':
-                #             stop = 0
-                #     else:
-                #         tp = 0
+                if diagnosis:
+                    a = 0
 
                 return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
         
@@ -159,7 +147,7 @@ class Morse:
         if cdm_events[event['type']] in EXIT_SET:
             try:
                 self.processes[self.Nodes[event['src']].pid]['alive'] = False
-                del self.Nodes[event['src']]
+                # del self.Nodes[event['src']]
             except KeyError:
                 # print('Oops! Cannot find Node!')
                 return
@@ -184,13 +172,40 @@ class Morse:
         # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
         self.Initialized_Nodes[object.id] = False
-        if self.Nodes[object.id].type in {"MemoryObject", "UnnamedPipeObject"}:
+    
+    def set_object_tags(self, object_id):
+        if self.Nodes[object_id].type in {"MemoryObject", "UnnamedPipeObject"}:
             obj_tag = [1.0, 1.0]
-        elif self.Nodes[object.id].type in {"SrcSinkObject"}:
+        elif self.Nodes[object_id].type in {"SrcSinkObject"}:
             obj_tag = [0.0, 1.0]
+            # pid = int(self.Nodes[object_id].name.split('_')[-1])
+            # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in {'sshd', 'firefox', 'xfce4-appfinder'}:
+            #     obj_tag = [1.0, 1.0]
+            # else:
+            #     obj_tag = [0.0, 1.0]
+        elif self.Nodes[object_id].type in {"NetFlowObject"}:
+            obj_tag = self.node_inital_tags[object_id]
+        elif self.Nodes[object_id].type in {"FileObject"}:
+            # obj_tag = self.node_inital_tags[object_id]
+
+            obj_tag = list(match_path(self.Nodes[object_id].path))
+
+            # obj_tag_prov = self.node_inital_tags[object_id]
+            # obj_tag = []
+            # if obj_tag_prov[0] > 0.5:
+            #     obj_tag.append(1.0)
+            # else:
+            #     obj_tag.append(0.0)
+
+            # if obj_tag_prov[1] > 0.5:
+            #     obj_tag.append(1.0)
+            # else:
+            #     obj_tag.append(0.0)
+
+            # obj_tag = [1.0, 1.0]
         else:
-            obj_tag = self.node_inital_tags[object.id]
-        self.Nodes[object.id].setObjTags(obj_tag)
+            obj_tag = self.node_inital_tags[object_id]
+        self.Nodes[object_id].setObjTags(obj_tag)
 
     def add_subject(self, subject):
         # self.G.add_node(subject.id)
@@ -212,20 +227,18 @@ class Morse:
         return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, gt, self.format, self, alarm_file)
     
     def reset_tags(self):
-        for nid in self.Nodes.keys():
+        nid_list = list(self.Nodes.keys())
+        for nid in nid_list:
             if self.Initialized_Nodes[nid] == False:
-                if isinstance(self.Nodes[nid],Subject):
+                if isinstance(self.Nodes[nid], Subject):
                     # sub_tag = self.node_inital_tags[nid].tolist()
                     sub_tag = [1.0, 1.0, 1.0, 1.0]
                     self.Nodes[nid].setSubjTags(sub_tag)
                 else:
-                    if self.Nodes[nid].type in {"SrcSinkObject","MemoryObject","UnnamedPipeObject"}:
-                        obj_tag = [1.0, 1.0]
-                    else:
-                        obj_tag = self.node_inital_tags[nid].tolist()
-                    self.Nodes[nid].setObjTags(obj_tag)
-
+                    self.set_object_tags(nid)
+        
     def reset_morse(self):
-        for nid in self.Initialized_Nodes.keys():
+        nid_list = list(self.Nodes.keys())
+        for nid in nid_list:
             self.Initialized_Nodes[nid] = False
         self.alarm = {}

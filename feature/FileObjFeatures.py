@@ -1,4 +1,5 @@
 import tqdm
+import os
 
 def get_path_vocb(path_set):
     path_vocb = []
@@ -11,12 +12,8 @@ def get_path_vocb(path_set):
 
     path_vocb = dict(Counter(path_vocb))
     path_vocb = sorted(path_vocb.items(),key=lambda x:x[1],reverse=True)
-    with open('results/path_vocabulary.csv','w') as fout:
-        for item in path_vocb:
-            fout.write('{},{}\n'.format(item[0],item[1]))
-
-    return path_vocb[:10000]
-
+    
+    return path_vocb
 
 def get_one_hot_encoding(path_tree, path_vocb):
     oh_vector = []
@@ -68,18 +65,24 @@ import torch
 
 
 def main():
-    feature_path = './results/testing/features/FileObject.json'
+    feature_path = './results/features/E31-trace/FileObject.json'
+    vector_dir = './results/features/E31-trace/feature_vectors/'
     with open(feature_path,'r') as fin:
         node_features = json.load(fin)
 
     df = pd.DataFrame.from_dict(node_features,orient='index')
 
-    path_list = df['path'].to_list()
-    path_list = list(set(path_list))
+    path_list = df['path'].unique()
     node_type = 'FileObject'
 
     # path_vocb_freq = get_path_vocb(path_list)
+    # with open('results/path_vocabulary.csv','w') as fout:
+    #     for item in path_vocb:
+    #         fout.write('{},{}\n'.format(item[0],item[1]))
+    # path_vocb = path_vocb[:10000]
+
     path_vocb_freq = load_path_vocb('./results/path_vocabulary.csv')
+
     path_vocb = {}
     for i, item in enumerate(path_vocb_freq):
         path_vocb[item[0]] = i+1
@@ -109,7 +112,7 @@ def main():
 
     df['features'] = new_features
     feature_df = df.drop(columns=['path', 'FileObjectType'])
-    feature_df.to_json('results/testing/features/feature_vectors/{}.json'.format(node_type), orient='index')
+    feature_df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
 
 if __name__ == "__main__":
     main()

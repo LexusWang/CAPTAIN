@@ -8,20 +8,20 @@ from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, s
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
 def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
-   if citag(o.tags()) != 1.0 and (cdm_events[event['type']] in LOAD_SET or cdm_events[event['type']] in EXECVE_SET): 
-      a = 0
-   target_event_id = '5A5D146A-C259-9DE3-6A4E-7AA84EAE7B92'
-   if event['uuid'] == target_event_id:
-      a = 0
+   # if citag(o.tags()) != 1.0 and (cdm_events[event['type']] in LOAD_SET or cdm_events[event['type']] in EXECVE_SET): 
+   #    a = 0
+   # target_event_id = '5A5D146A-C259-9DE3-6A4E-7AA84EAE7B92'
+   # if event['uuid'] == target_event_id:
+   #    a = 0
 
-   target_node_id = '25237608-007E-5B93-2EB0-08F80F349FC6'
-   if s.id == target_node_id or o.id == target_node_id:
-      if s.id == target_node_id:
-         if s.iTag != 1.0:
-            a = 0
-      if o.id == target_node_id:
-         if o.iTag != 1.0:
-            a = 0
+   # target_node_id = '25237608-007E-5B93-2EB0-08F80F349FC6'
+   # if s.id == target_node_id or o.id == target_node_id:
+   #    if s.id == target_node_id:
+   #       if s.iTag != 1.0:
+   #          a = 0
+   #    if o.id == target_node_id:
+   #       if o.iTag != 1.0:
+   #          a = 0
 
    if format == 'cdm':
       event_type = cdm_events[event['type']]
@@ -198,9 +198,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
 
    elif event_type in EXECVE_SET:
       assert isinstance(o,Object) and isinstance(s,Subject)
-      a = citag(o.tags())
-      if citag(o.tags()) != 1.0: 
-         a = 0
 
       if (o.isMatch("/bin/bash")):
          whitelisted = True

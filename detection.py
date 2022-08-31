@@ -24,7 +24,7 @@ import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
-from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
+# from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 from parse.eventType import lttng_events, cdm_events, standard_events
 from parse.eventType import UNUSED_SET
 import numpy as np
@@ -33,10 +33,9 @@ import pickle
 
 def start_experiment(config):
     args = config
-    experiment = Experiment(str(int(time.time())), args, args['experiment_prefix'])
+    experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args['experiment_prefix'])
 
-    device = torch.device("cpu")
-    mo = Morse(device = device)
+    mo = Morse()
 
     print("Begin preparing testing...")
     logging.basicConfig(level=logging.INFO,
@@ -51,12 +50,22 @@ def start_experiment(config):
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
     mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
+    # close interval
+    if args["line_range"]:
+        l_range = args["line_range"][0]
+        r_range = args["line_range"][1]
+    else:
+        l_range = 0
+        r_range = 5000000*args['volume_num']
+
     loaded_line = 0
     last_event_str = ''
     for i in range(args['volume_num']):
         print("Loading the no.{} volume...".format(i))
         with open(args['test_data']+'.'+str(i),'r') as fin:
             for line in fin:
+                if loaded_line > r_range:
+                    break
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
                     print("Morse has loaded {} lines.".format(loaded_line))
@@ -66,6 +75,8 @@ def start_experiment(config):
                 record_datum = record_datum[record_type]
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Event':
+                    if loaded_line < l_range:
+                        continue
                     if cdm_events[record_datum['type']] not in UNUSED_SET:
                         event = parse_event(record_datum)
                         event_str = '{},{},{}'.format(event['src'], event['type'], event['dest'])
@@ -93,6 +104,7 @@ def start_experiment(config):
                             tag = list(match_network_addr(object.IP, object.port))
                             mo.node_inital_tags[object.id] = tag
                         mo.add_object(object)
+                        mo.set_object_tags(object.id)
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -104,6 +116,7 @@ def start_experiment(config):
                 else:
                     pass
 
+    ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
     ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
     experiment.print_metrics()
@@ -116,22 +129,22 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth31.txt', type=str)
-    parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--volume_num", nargs='?', default=204, type=int)
-    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E31data/ta1-trace-e3-official.json", type=str)
-    parser.add_argument("--experiment_prefix", default="Manual", type=str)
+    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
+    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E32-trace/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--volume_num", nargs='?', default=7, type=int)
+    parser.add_argument("--experiment_prefix", default="Manual-T32", type=str)
     parser.add_argument("--mode", nargs="?", default="test", type=str)
+    parser.add_argument("--line_range", nargs=2, type=int, default=[10000000,35000000])
 
     args = parser.parse_args()
 
     config = {
         "volume_num": args.volume_num,
         "test_data": args.test_data,
-        "device": args.device,
         "ground_truth_file": args.ground_truth_file,
         "experiment_prefix": args.experiment_prefix,
-        "mode": args.mode
+        "mode": args.mode,
+        "line_range": args.line_range
     }
 
     start_experiment(config)

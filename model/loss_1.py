@@ -151,7 +151,7 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
     ts = event['timestamp']
     alarm_result = None
 
-    s_loss, o_loss = torch.zeros(5, requires_grad=True), torch.zeros(4, requires_grad=True)
+    s_loss, o_loss = torch.zeros(4, requires_grad=True), torch.zeros(4, requires_grad=True)
     s_tags = torch.tensor(s.tags(),requires_grad=True)
     o_tags = torch.tensor(o.tags(),requires_grad=True)
     s_target_ = False
