@@ -21,6 +21,6 @@ ec = eventClassifier('groundTruth32.txt')
 # else:
 #     print("error")
 
-ec.analyzeFile('../alarms-epoch-28.txt')
+ec.analyzeFile(open('/home/weijian/weijian/projects/ATPG/experiments/Test-E32-t-3-32022-08-31-04-03-12/test/alarms/alarms-in-test.txt','r'))
 
 ec.summary("../missingTP.txt")

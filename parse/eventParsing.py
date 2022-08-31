@@ -30,9 +30,17 @@ def parse_event_cdm(datum):
     event['uuid'] = datum['uuid']
     event['type'] = datum['type']
     event['properties'] = datum['properties']
-    event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
-    event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
     event['timestamp'] = datum['timestampNanos']
+    if event['type'] == 'EVENT_UPDATE':
+        event['src'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        event['dest'] = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm18.UUID']
+    else:
+        event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        if isinstance(datum['predicateObject'], dict):
+            event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        else:
+            event['dest'] = -1
+        
     return event
 
 def parse_event(datum, format='cdm'):

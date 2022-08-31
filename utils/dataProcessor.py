@@ -31,9 +31,10 @@ class dataProcessor:
         edgeIndex = 0
         edgePath = os.path.join(self.toDir, self.edgeDataFileName + '.' + str(edgeIndex))
         files = glob.glob(self.fromFormat)
+        files.sort(key=lambda f:int(os.path.splitext(f)[-1][1:]))
         e = open(edgePath, 'w+')
         with open(vertexPath, 'w+') as v:
-            for file in sorted(files):
+            for file in files:
                 with open(file, 'r') as f:
                     for line in f:
                         totalCounter += 1
@@ -45,12 +46,13 @@ class dataProcessor:
                         'com.bbn.tc.schema.avro.cdm18.NetFlowObject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.FileObject' in tmp['datum'] or \
                         'com.bbn.tc.schema.avro.cdm18.UnnamedPipeObject' in tmp['datum'] or \
-                        'com.bbn.tc.schema.avro.cdm18.Principal' in tmp['datum']:
+                        'com.bbn.tc.schema.avro.cdm18.Principal' in tmp['datum'] or \
+                        'com.bbn.tc.schema.avro.cdm18.MemoryObject' in tmp['datum']:
                             v.write(line)
                             vertexCounter += 1
-                        elif 'com.bbn.tc.schema.avro.cdm18.Event' in tmp['datum']:
-                            timestamp = int(tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['timestampNanos'])
-                            event_type = tmp['datum']['com.bbn.tc.schema.avro.cdm18.Event']['type']
+                        elif 'com.bbn.tc.schema.avro.cdm20.Event' in tmp['datum']:
+                            timestamp = int(tmp['datum']['com.bbn.tc.schema.avro.cdm20.Event']['timestampNanos'])
+                            event_type = tmp['datum']['com.bbn.tc.schema.avro.cdm20.Event']['type']
                             if (timestamp < self.startTimestamp) or (timestamp > self.endTimestamp and self.endTimestamp > 0):
                                 continue
                             if event_type in self.unusedEventType:

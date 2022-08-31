@@ -49,6 +49,11 @@ class Experiment:
             Path(pre_load_morse_dir).mkdir(parents=True, exist_ok=True)
             return pre_load_morse_dir
 
+    def reset_metrics(self):
+        self.fn = 0
+        self.tp = 0
+        self.fp = 0
+    
     def update_metrics(self, pred, gt):
         if pred is None:
             self.fn += 1
@@ -69,9 +74,12 @@ class Experiment:
         r = self.get_recall()
         return 2 * (p * r / (p + r))
 
+    def print_metrics(self):
+        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
-        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+        # print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
         with open(filename, 'w') as f:
             f.write(f"tp: {self.tp}")
             f.write(f"fp: {self.fp}")

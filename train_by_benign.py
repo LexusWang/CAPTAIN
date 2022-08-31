@@ -18,7 +18,7 @@ from numpy import gradient, record
 from parse.eventParsing import parse_event
 from parse.nodeParsing import parse_subject, parse_object
 from parse.lttng.recordParsing import read_lttng_record
-# from policy.initTagsAT import get_object_feature, get_subject_feature
+from policy.initTags import match_path, match_network_addr
 import sys
 import tqdm
 import time
@@ -32,7 +32,7 @@ from pathlib import Path
 import pickle
 
 def get_network_tags(node_features_dict, node_id, initializer, device):
-    features = torch.tensor(node_features_dict[node_id]['features'], dtype=torch.int16).unsqueeze(dim=0).to(device)
+    features = torch.tensor(np.array(node_features_dict[node_id]['features'], dtype=np.int16)).unsqueeze(dim=0).to(device)
     return initializer.initialize(features).squeeze()
 
 def get_file_tags(node_features_dict, node_id, initializer, device):
@@ -46,7 +46,7 @@ def get_file_tags(node_features_dict, node_id, initializer, device):
     #     features[index] = 1
     # features[10000] = orig_feature[1]
     # features[10001] = orig_feature[2]
-    features = torch.tensor(input_feature, dtype=torch.int16).unsqueeze(dim=0).to(device)
+    features = torch.tensor(input_feature).unsqueeze(dim=0).to(device)
     return initializer.initialize(features).squeeze()
 
 def read_graph_from_files(data_path, volume_num, line_range):
@@ -108,7 +108,7 @@ def read_graph_from_files(data_path, volume_num, line_range):
 
 def start_experiment(config):
     args = config
-    experiment = Experiment(str(int(time.time())), args, args['experiment_prefix'])
+    experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args['experiment_prefix'])
 
     # if torch.cuda.is_available():
     #     device = torch.device("cuda:0")
@@ -121,7 +121,7 @@ def start_experiment(config):
     # ============= Tag Initializer =============== #
     node_inits = {}
     node_inits['NetFlowObject'] = NetFlowObj_Initializer(2, no_hidden_layers).to(device)
-    node_inits['FileObject'] = FileObj_Initializer(10000, 2,no_hidden_layers).to(device)
+    # node_inits['FileObject'] = FileObj_Initializer(10000, 2,no_hidden_layers).to(device)
     # node_inits['SrcSinkObject'] = Initializer(111,2,no_hidden_layers).to(device)
     # node_inits['UnnamedPipeObject'] = Initializer(1,2,no_hidden_layers).to(device)
     # node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers).to(device)
@@ -173,27 +173,27 @@ def start_experiment(config):
             else:
                 model_nids[node_type] = []
                 feature_array = []
-            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int16).to(device)
-
-        for node_type in ['FileObject']:
-            with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
-                node_features = json.load(fin)
-            if len(node_features) > 0:
-                target_features = pd.DataFrame.from_dict(node_features,orient='index')
-                model_nids[node_type] = target_features.index.tolist()
-                ori_feature_array = target_features['features'].values.tolist()
-                oh_index = [item[0] for item in ori_feature_array]
-                feature_array = []
-                for i, item in enumerate(ori_feature_array):
-                    input_feature = np.zeros(10002,dtype=np.int16)
-                    input_feature[oh_index[i]] = 1
-                    input_feature[10000] = item[1]
-                    input_feature[10001] = item[2]
-                    feature_array.append(list(input_feature))
-            else:
-                model_nids[node_type] = []
-                feature_array = []
-            model_features[node_type] = torch.tensor(feature_array, dtype=torch.int16).to(device)
+            model_features[node_type] = torch.tensor(np.array(feature_array, dtype=np.int16)).to(device)
+            
+        # for node_type in ['FileObject']:
+        #     with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
+        #         node_features = json.load(fin)
+        #     if len(node_features) > 0:
+        #         target_features = pd.DataFrame.from_dict(node_features,orient='index')
+        #         model_nids[node_type] = target_features.index.tolist()
+        #         ori_feature_array = target_features['features'].values.tolist()
+        #         oh_index = [item[0] for item in ori_feature_array]
+        #         feature_array = []
+        #         for i, item in enumerate(ori_feature_array):
+        #             input_feature = np.zeros(10002,dtype=np.int16)
+        #             input_feature[oh_index[i]] = 1
+        #             input_feature[10000] = item[1]
+        #             input_feature[10001] = item[2]
+        #             feature_array.append(list(input_feature))
+        #     else:
+        #         model_nids[node_type] = []
+        #         feature_array = []
+        #     model_features[node_type] = torch.tensor(feature_array, dtype=torch.int16).to(device)
         
         ec = eventClassifier(args['ground_truth_file'])
         ic_index = {'i':0,'c':1}
@@ -214,7 +214,7 @@ def start_experiment(config):
                 model_tags = {}
                 node_inital_tags = {}
 
-                for node_type in ['NetFlowObject','FileObject']:
+                for node_type in ['NetFlowObject']:
                     model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
                     for i, node_id in enumerate(model_nids[node_type]):
                         node_inital_tags[node_id] = model_tags[node_type][i,:]
@@ -230,8 +230,17 @@ def start_experiment(config):
                     event = event_info[1]
                     if cdm_events[event['type']] not in UNUSED_SET:
                         gt = ec.classify(event_id)
-                        diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
-                        experiment.update_metrics(diagnois, gt)
+                        diagnosis, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
+                        experiment.update_metrics(diagnosis, gt)
+
+                        # if gt == None:
+                        #     if len(nodes_need_updated) == 0:
+                        #         continue
+                        #     if random.randint(0,99) != 37:
+                        #         continue
+
+                        if diagnosis == None:
+                            continue
 
                         nodes_need_updated = {}
                         
@@ -245,6 +254,10 @@ def start_experiment(config):
                                         if s_tags.grad[i] != 0.0:
                                             node_id = node_info[0]
                                             iorc = node_info[1]
+                                            debug_node = mo.Nodes.get(node_id, None)
+                                            if debug_node.type == 'SrcSinkObject':
+                                                pid = int(debug_node.name.split('_')[-1])
+                                                print(mo.Nodes[mo.processes[pid]['node']].processName)
                                             if node_id not in nodes_need_updated:
                                                 nodes_need_updated[node_id] = torch.zeros(2).to(device)
                                             nodes_need_updated[node_id][ic_index[iorc]] += s_tags.grad[i]*s_morse_grads[i]*1
@@ -259,28 +272,15 @@ def start_experiment(config):
                                         if o_tags.grad[i] != 0.0:
                                             node_id = node_info[0]
                                             iorc = node_info[1]
+                                            debug_node = mo.Nodes.get(node_id, None)
+                                            if debug_node.type == 'SrcSinkObject':
+                                                pid = int(debug_node.name.split('_')[-1])
+                                                print(mo.Nodes[mo.processes[pid]['node']].processName)
                                             if node_id not in nodes_need_updated:
                                                 nodes_need_updated[node_id] = torch.zeros(2).to(device)
                                             nodes_need_updated[node_id][ic_index[iorc]] += o_tags.grad[i]*o_morse_grads[i]*1
 
-                        if gt == None:
-                            if len(nodes_need_updated) == 0:
-                                continue
-                            if random.randint(0,99) != 37:
-                                continue
-                            # print("FP")
-                        # else:
-                        #     print("TP")
-                        #     print(event_id)
-                        #     src = mo.Nodes.get(event['src'], None)
-                        #     dest = mo.Nodes.get(event['dest'], None)
-                        #     if src and dest:
-                        #         print("success!")
-                        #     else:
-                        #         print("failed!")
-                        #         print(src)
-                        #         print(dest)
-                        #     print(diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id)
+                            
                         for nid in nodes_need_updated.keys():
                             if nid not in node_gradients:
                                 node_gradients[nid] = []
@@ -290,21 +290,25 @@ def start_experiment(config):
                 for nid in list(node_gradients.keys()):
                     node_gradients[nid] = torch.sum(torch.cat(node_gradients[nid],0), dim=0)
 
-                ## output gradient to csv
-                df =pd.DataFrame.from_dict(node_gradients, orient='index', columns=['i_gradient','c_gradient'])
-                df['i_gradient'] = df['i_gradient'].map(lambda x: x.item())
-                df['c_gradient'] = df['c_gradient'].map(lambda x: x.item())
+                # ## output gradient to csv
+                # df =pd.DataFrame.from_dict(node_gradients, orient='index', columns=['i_gradient','c_gradient'])
+                # df['i_gradient'] = df['i_gradient'].map(lambda x: x.item())
+                # df['c_gradient'] = df['c_gradient'].map(lambda x: x.item())
                 
-                df2 =pd.DataFrame.from_dict(node_inital_tags, orient='index', columns=['i_tag','c_tag'])
-                df2['i_tag'] = df2['i_tag'].map(lambda x: x.item())
-                df2['c_tag'] = df2['c_tag'].map(lambda x: x.item())
+                # df2 =pd.DataFrame.from_dict(node_inital_tags, orient='index', columns=['i_tag','c_tag'])
+                # df2['i_tag'] = df2['i_tag'].map(lambda x: x.item())
+                # df2['c_tag'] = df2['c_tag'].map(lambda x: x.item())
                 
-                df3 = df.join(df2, how='inner')
-                df3.to_csv('results/tags-grad-{}.csv'.format(epoch),index=True,index_label='Node_id')
+                # df3 = df.join(df2, how='inner')
+                # df3.to_csv('results/tags-grad-{}.csv'.format(epoch),index=True,index_label='Node_id')
 
-                a = df3.to_dict(orient='records')
+                target_tags = {'NetFlowObject': torch.tensor([0.0, 1.0]),
+                            'FileObject': torch.tensor([1.0, 1.0]),
+                            'SrcSinkObject': torch.tensor([0.0, 1.0])}
+
+                total_unseen_loss = 0.0
                 
-                for node_type in ['NetFlowObject','FileObject']:
+                for node_type in ['NetFlowObject']:
                     gradients = []
                     need_update_index = []
                     for i, nid in enumerate(model_nids[node_type]):
@@ -314,9 +318,20 @@ def start_experiment(config):
                             if (itag < 0.8 and i_grad < 0) or (itag > 0.2 and i_grad > 0) or (ctag < 0.8 and c_grad < 0) or (ctag > 0.2 and c_grad > 0):
                                 gradients.append(node_gradients[nid].unsqueeze(0))
                                 need_update_index.append(i)
-                        # else:
-                        #     gradients.append(torch.zeros(2).unsqueeze(0))
+                        else:
+                            if random.randint(0,999) == 37:
+                                predicted_tags = model_tags[node_type][i].clone().detach().requires_grad_(True)
+                                # predicted_tags = torch.tensor(model_tags[node_type][i], requires_grad=True)
+                                loss = torch.mean(torch.square(predicted_tags - target_tags[node_type]))
+                                total_unseen_loss += loss.item()
+                                loss.backward()
+                                gradients.append(predicted_tags.grad.unsqueeze(0))
+                                need_update_index.append(i)
+                                a = predicted_tags.grad.unsqueeze(0)
+                                b = torch.zeros(2).unsqueeze(0)
+                            # gradients.append(torch.zeros(2).unsqueeze(0))
                     if len(gradients) > 0:
+                        # print(gradients)
                         gradients = torch.cat(gradients, 0).to(device)
                         optimizers[node_type].zero_grad()
                         model_tags[node_type] = model_tags[node_type][need_update_index]
@@ -324,12 +339,13 @@ def start_experiment(config):
                         optimizers[node_type].step()
 
             print('total loss is {}'.format(total_loss))
+            print('total unseen loss is {}'.format(total_unseen_loss))
             fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
             ec.analyzeFile(fAnalyze)
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
-            experiment.print_metrics()
-            experiment.reset_metrics()
-            ec.reset()
+            # experiment.print_metrics()
+            # experiment.reset_metrics()
+            # ec.reset()
 
             # save checkpoint
             experiment.save_checkpoint(node_inits, epoch)
@@ -374,13 +390,13 @@ def start_experiment(config):
         with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
             node_features = json.load(fin)
         for node_id in tqdm.tqdm(node_features.keys()):
-            node_inital_tags[node_id] = get_network_tags(node_features, node_id, node_inits[node_type], device)
+            node_inital_tags[node_id] = get_network_tags(node_features, node_id, node_inits[node_type], device).tolist()
 
         node_type = 'FileObject'
         with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
             node_features = json.load(fin)
         for node_id in tqdm.tqdm(node_features.keys()):
-            node_inital_tags[node_id] = get_file_tags(node_features, node_id, node_inits[node_type], device)
+            node_inital_tags[node_id] = get_file_tags(node_features, node_id, node_inits[node_type], device).tolist()
 
         print('Initialization finished!')
         
@@ -422,8 +438,6 @@ def start_experiment(config):
                     if record_type == 'Event':
                         if loaded_line < l_range:
                             continue
-                        # event = parse_event(record_datum)
-                        # if cdm_events[event['type']] not in UNUSED_SET:
                         if cdm_events[record_datum['type']] not in UNUSED_SET:
                             event = parse_event(record_datum)
                             event_str = '{},{},{}'.format(event['src'], event['type'], event['dest'])
@@ -431,8 +445,8 @@ def start_experiment(config):
                                 last_event_str = event_str
                                 event_id = record_datum['uuid']
                                 gt = ec.classify(event_id)
-                                diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
-                                experiment.update_metrics(diagnois, gt)
+                                diagnosis, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
+                                experiment.update_metrics(diagnosis, gt)
                     elif record_type == 'Subject':
                         subject = parse_subject(record_datum)
                         if subject != None:
@@ -442,7 +456,11 @@ def start_experiment(config):
                     elif record_type.endswith('Object'):
                         object = parse_object(record_datum, record_type)
                         if object != None:
+                            if object.type == 'FileObject':
+                                tag = list(match_path(object.path))
+                                mo.node_inital_tags[object.id] = tag
                             mo.add_object(object)
+                            mo.set_object_tags(object.id)
                     elif record_type == 'TimeMarker':
                         pass
                     elif record_type == 'StartMarker':
@@ -454,6 +472,8 @@ def start_experiment(config):
                     else:
                         pass
 
+        
+        ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
         ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
         experiment.print_metrics()
@@ -466,23 +486,23 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/feature_vectors', type=str)
+    parser.add_argument("--feature_path", default='/home/weijian/weijian/projects/ATPG/results/features/E32-trace/feature_vectors', type=str)
     parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
+    parser.add_argument("--train_data", nargs='?', default="/home/weijian/weijian/projects/E32-trace/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E32-trace/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--volume_num", nargs='?', default=7, type=int)
     parser.add_argument("--epoch", default=100, type=int)
-    parser.add_argument("--learning_rate", nargs='?', default=2.0, type=float)
     parser.add_argument("--device", nargs='?', default="cuda", type=str)
-    parser.add_argument("--train_data", nargs='?', default="/home/weijian/weijian/projects/E32data/ta1-trace-e3-official-1.json", type=str)
-    parser.add_argument("--volume_num", nargs='?', default=2, type=int)
-    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E32data/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--learning_rate", nargs='?', default=2.0, type=float)
     parser.add_argument("--mode", nargs="?", default="train", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)
     parser.add_argument("--lr_imb", default=2.0, type=float)
     parser.add_argument("--data_tag", default="t32-train", type=str)
-    parser.add_argument("--experiment_prefix", default="DefaultSetting", type=str)
+    parser.add_argument("--experiment_prefix", default="Train_by_benign", type=str)
     parser.add_argument("--no_hidden_layers", default=1, type=int)
     parser.add_argument("--from_checkpoint", type=str)
-    parser.add_argument("--batch_size", type=int, default=100000000)
-    parser.add_argument("--line_range", type=tuple, default=None)
+    parser.add_argument("--batch_size", type=int, default=1000000000000000)
+    parser.add_argument("--line_range", nargs = 2, type=int, default=[0,10000000])
 
     args = parser.parse_args()
 

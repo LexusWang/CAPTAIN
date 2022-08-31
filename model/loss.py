@@ -6,7 +6,7 @@ sys.path.extend(['.', '..', '...'])
 
 # import floatTags
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
-from policy.floatTags import citag, ctag, invtag, itag, etag, alltags
+from policy.floatTags import citag, ctag, itag, etag
 from parse.eventType import lttng_events, cdm_events, standard_events
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, SET_UID_SET
 

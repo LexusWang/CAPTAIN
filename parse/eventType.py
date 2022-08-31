@@ -45,6 +45,7 @@ for i, event in enumerate(lttng_special_events):
 READ_SET = {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG'], standard_events['EVENT_READ_SOCKET_PARAMS'],standard_events['EVENT_RECVFROM']}
 WRITE_SET = {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG'],standard_events['EVENT_SENDTO'],standard_events['EVENT_WRITE_SOCKET_PARAMS']}
 INJECT_SET = {standard_events['EVENT_MODIFY_PROCESS']}
+CHMOD_SET = {standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']}
 SET_UID_SET = {standard_events['EVENT_CHANGE_PRINCIPAL']}
 EXECVE_SET = {standard_events['EVENT_LOADLIBRARY']}
 LOAD_SET = {standard_events['EVENT_MMAP']}
@@ -52,13 +53,18 @@ CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
 RENAME_SET = {standard_events['EVENT_RENAME']}
 REMOVE_SET = {standard_events['EVENT_UNLINK']}
 CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
-MPROTECT_SET = {standard_events['EVENT_MPROTECT'], standard_events['EVENT_MMAP']}
+MPROTECT_SET = {standard_events['EVENT_MPROTECT']}
+MMAP_SET = {standard_events['EVENT_MMAP']}
+UPDATE_SET = {standard_events['EVENT_UPDATE']}
+EXIT_SET = {standard_events['EVENT_EXIT']}
 UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],
     standard_events['EVENT_BOOT'],standard_events['EVENT_CHECK_FILE_ATTRIBUTES'],standard_events['EVENT_CLOSE'],standard_events['EVENT_CONNECT'],standard_events['EVENT_CREATE_THREAD'],
     standard_events['EVENT_DUP'],standard_events['EVENT_FLOWS_TO'],standard_events['EVENT_FCNTL'],
     standard_events['EVENT_LINK'],standard_events['EVENT_LOGCLEAR'],standard_events['EVENT_LOGIN'],standard_events['EVENT_LOGOUT'],standard_events['EVENT_LSEEK'],
-    standard_events['EVENT_OTHER'],standard_events['EVENT_SERVICEINSTALL'],standard_events['EVENT_SHM'],standard_events['EVENT_SIGNAL'],standard_events['EVENT_STARTSERVICE'],standard_events['EVENT_TRUNCATE'],
-    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_UPDATE'],standard_events['EVENT_WAIT']}
+    standard_events['EVENT_OTHER'], standard_events['EVENT_OPEN'],
+    standard_events['EVENT_SERVICEINSTALL'],standard_events['EVENT_SHM'],standard_events['EVENT_SIGNAL'],standard_events['EVENT_STARTSERVICE'],
+    standard_events['EVENT_TRUNCATE'],
+    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_WAIT']}
 # UNUSED_SET = {}
 
 # for key, value in standard_events.items():
