@@ -20,8 +20,8 @@ import pickle
 
 def start_detection(config):
     args = config
-    target = '1F52B45B-9618-A060-215D-7BD61ECCAE05'
-    fout = open('../lc/'+target+'.txt','a')
+    target = '40F52486-45FF-19E4-167C-36E2578B23EF'
+    fout = open('/Users/lexus/Documents/research/APT/Data/'+target+'.txt','a')
     mo = Morse()
     
     loaded_line = 0
@@ -101,13 +101,11 @@ def parse_lttng_logs(file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run MORSE")
-    parser.add_argument("--mode", nargs="?", default="detection", type=str)
-    parser.add_argument("--detection_data", nargs='?', default="/root/Downloads/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--detection_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json", type=str)
 
     args = parser.parse_args()
 
     config = {
-        "mode": args.mode,
         "detection_data": args.detection_data,
     }
 

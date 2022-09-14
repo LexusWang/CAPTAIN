@@ -8,26 +8,8 @@ from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, s
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
 def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
-   # if citag(o.tags()) != 1.0 and (cdm_events[event['type']] in LOAD_SET or cdm_events[event['type']] in EXECVE_SET): 
-   #    a = 0
-   # target_event_id = '5A5D146A-C259-9DE3-6A4E-7AA84EAE7B92'
-   # if event['uuid'] == target_event_id:
-   #    a = 0
-
-   # target_node_id = '25237608-007E-5B93-2EB0-08F80F349FC6'
-   # if s.id == target_node_id or o.id == target_node_id:
-   #    if s.id == target_node_id:
-   #       if s.iTag != 1.0:
-   #          a = 0
-   #    if o.id == target_node_id:
-   #       if o.iTag != 1.0:
-   #          a = 0
-
    if format == 'cdm':
       event_type = cdm_events[event['type']]
-   elif format == 'lttng':
-      event_type = lttng_events[event['type']]
-
    intags = None
    newtags = None
    whitelisted = False
@@ -65,6 +47,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       s.setSubjTags([citag(stg), etag(stg), sit, sct])
       s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
       s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
+      s.updateTime = event['timestamp']
 
    elif event_type in CREATE_SET:
       assert isinstance(s, Subject) and isinstance(o, Object)
@@ -79,6 +62,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setiTagInitID(i_init_id)
       o.setcTagInitID(c_init_id)
       o.set_grad([itag_grad, ctag_grad])
+      o.updateTime = event['timestamp']
 
    elif event_type in WRITE_SET:
       assert isinstance(s,Subject) and isinstance(o,Object)
@@ -114,6 +98,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
 
       if (o.isIP() == False and o.isMatch("UnknownObject")== False):
          o.setObjTags(newtags)
+         o.updateTime = event['timestamp']
          if isiTagChanged:
             o.set_itag_grad(itag_grad)
             o.setiTagInitID(i_init_id)
@@ -145,6 +130,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
          s.setSubjTags([cit, etag(stg), it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
          s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
+         s.updateTime = event['timestamp']
 
    elif event_type in INJECT_SET:
       assert isinstance(o,Subject)
@@ -195,6 +181,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setSubjTags(alltags(cit, et, inv, it, ct))
       o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       o.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
+      o.updateTime = event['timestamp']
 
    elif event_type in EXECVE_SET:
       assert isinstance(o,Object) and isinstance(s,Subject)
@@ -208,12 +195,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
          et = etag(stg)
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
          ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
-         # citag_grad = s.get_citag_grad()
-         # etag_grad = s.get_etag_grad()
-         # itag_grad = s.get_itag_grad()
-         # ctag_grad = s.get_ctag_grad()
-         # citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad = o.get_grad()
-         # ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id = o.getInitID()
 
          # if isTRUSTED(citag(intags)):
          if (isTRUSTED(cit) and isTRUSTED(et)):
@@ -262,26 +243,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
             s.setSubjTags([cit, et, it, ct])
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
             s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
-         # else:
-         #    cit = citag(intags)
-         #    citag_grad = o.get_itag_grad()
-         #    s.setciTagInitID(o.getiTagInitID())
-         #    et = citag(intags)
-         #    etag_grad = o.get_itag_grad()
-         #    s.seteTagInitID(o.getiTagInitID())
-         #    if itag(stg) > itag(intags):
-         #       itag_grad = o.get_itag_grad()
-         #       s.setiTagInitID(o.getiTagInitID())
-         #    it = min(itag(stg), itag(intags))
-         #    if ctag(stg) > ctag(intags):
-         #       ctag_grad = o.get_ctag_grad()
-         #       s.setcTagInitID(o.getcTagInitID())
-         #    ct = min(ctag(stg), ctag(intags))
-         # inv = UNTRUSTED
-         # invtag_grad = 0
-         # s.setinvTagInitID(None)
-         # s.setSubjTags(alltags(cit, et, inv, it, ct))
-         # s.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+         
+         s.updateTime = event['timestamp']
 
    # elif event_type in SET_UID_SET :
    #    assert isinstance(o,Subject)
@@ -301,6 +264,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setSubjTags(s.tags())
       o.set_grad(s.get_grad())
       o.setInitID(s.getInitID())
+      o.updateTime = event['timestamp']
 
    elif event_type in UPDATE_SET:
       assert isinstance(o,Object) and isinstance(s,Object)
@@ -309,6 +273,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.set_grad([s.get_itag_grad(), s.get_ctag_grad()])
       o.setiTagInitID(s.getiTagInitID())
       o.setcTagInitID(s.getcTagInitID())
+      o.updateTime = event['timestamp']
       return
 
    
@@ -337,6 +302,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
          ct = max(ct, nct)
          s.setSubjTags([citag(stg), et, it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
+         s.updateTime = ts
       
       elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))):
          diff = (ts - s.updateTime) / 4000000000
@@ -354,5 +320,6 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       
          s.setSubjTags([citag(stg), et, it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
+         s.updateTime = ts
 
 
