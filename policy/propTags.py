@@ -157,8 +157,8 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       # itag_grad = s.get_itag_grad()
       # ctag_grad = s.get_ctag_grad()
 
-      citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad = o.get_grad()
-      ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id = o.getInitID()
+      citag_grad, etag_grad, itag_grad, ctag_grad = o.get_grad()
+      ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
 
       if citag(stg) > citag(intags):
          citag_grad = s.get_citag_grad()

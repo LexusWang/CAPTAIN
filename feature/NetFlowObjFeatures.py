@@ -35,11 +35,22 @@ def ipaddr_to_list(ipaddr):
     return return_res
 
 def main():
-    feature_path = 'results/features/E31-trace/NetFlowObject.json'
-    vector_dir = 'results/features/E31-trace/feature_vectors/'
+    feature_path = 'results/features/E51-trace/NetFlowObject.json'
+    vector_dir = 'results/features/E51-trace/feature_vectors/'
 
+    node_features = {}
     with open(feature_path,'r') as fin:
-        node_features = json.load(fin)
+        for line in fin:
+            record = eval(line)
+            for key in record.keys():
+                node_features[key] = record[key]
+
+    # node_features = pd.read_json(feature_path, orient='records', lines = True)
+    # print(node_features.columns)
+    
+
+    # with open(feature_path,'r') as fin:
+    #     node_features = json.load(fin)
 
     # df = pd.DataFrame.from_dict(node_features,orient='index')
     # a = dict(Counter(df['remotePort'].tolist()))

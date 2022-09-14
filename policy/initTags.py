@@ -65,9 +65,13 @@ def match_path(path):
 benign_public_ips = []
 benign_ports = set()
 
-def match_network_addr(ip_address, port):
+def match_network_addr(ip_address, port_):
     itag = 0
     ctag = 1
+    if isinstance(port_,dict):
+        port = port_['int']
+    else:
+        port = port
     if port in benign_ports:
         itag = 1
         ctag = 1

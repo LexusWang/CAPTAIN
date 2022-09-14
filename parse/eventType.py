@@ -16,7 +16,8 @@ cdm_events_list = ['EVENT_ACCEPT','EVENT_ADD_OBJECT_ATTRIBUTE','EVENT_BIND','EVE
             'EVENT_LOGCLEAR','EVENT_LOGIN','EVENT_LOGOUT','EVENT_LSEEK','EVENT_MMAP','EVENT_MODIFY_FILE_ATTRIBUTES','EVENT_MODIFY_PROCESS',         
             'EVENT_MOUNT','EVENT_MPROTECT','EVENT_OPEN','EVENT_OTHER','EVENT_READ','EVENT_READ_SOCKET_PARAMS','EVENT_RECVFROM','EVENT_RECVMSG',                
             'EVENT_RENAME','EVENT_SENDTO','EVENT_SENDMSG','EVENT_SERVICEINSTALL','EVENT_SHM','EVENT_SIGNAL','EVENT_STARTSERVICE',           
-            'EVENT_TRUNCATE','EVENT_UMOUNT','EVENT_UNIT','EVENT_UNLINK','EVENT_UPDATE','EVENT_WAIT','EVENT_WRITE','EVENT_WRITE_SOCKET_PARAMS']
+            'EVENT_TRUNCATE','EVENT_UMOUNT','EVENT_UNIT','EVENT_UNLINK','EVENT_UPDATE','EVENT_WAIT','EVENT_WRITE','EVENT_WRITE_SOCKET_PARAMS',
+            'EVENT_TEE', 'EVENT_SPLICE', 'EVENT_VMSPLICE', 'EVENT_INIT_MODULE', 'EVENT_FINIT_MODULE']
 
 
 standard_events = {}
@@ -64,7 +65,9 @@ UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_
     standard_events['EVENT_OTHER'], standard_events['EVENT_OPEN'],
     standard_events['EVENT_SERVICEINSTALL'],standard_events['EVENT_SHM'],standard_events['EVENT_SIGNAL'],standard_events['EVENT_STARTSERVICE'],
     standard_events['EVENT_TRUNCATE'],
-    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_WAIT']}
+    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_WAIT'],
+    standard_events['EVENT_TEE'], standard_events['EVENT_SPLICE'], standard_events['EVENT_VMSPLICE'],
+    standard_events['EVENT_INIT_MODULE'], standard_events['EVENT_FINIT_MODULE']}
 # UNUSED_SET = {}
 
 # for key, value in standard_events.items():

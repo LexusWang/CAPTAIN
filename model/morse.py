@@ -178,11 +178,17 @@ class Morse:
             obj_tag = [1.0, 1.0]
         elif self.Nodes[object_id].type in {"SrcSinkObject"}:
             obj_tag = [0.0, 1.0]
-            # pid = int(self.Nodes[object_id].name.split('_')[-1])
+
+            # white_list = {'pulseaudio': 97817, 'mandb': 17744, 'indicator-sound': 13289, 'dpkg': 7616, 'apt-config': 4073, 'bash': 3325, 'date': 2331, 'dirname': 1797, 'uname': 1619, '50-landscape-sy': 1542, 'sshd': 1445, 'cat': 1298, 'grep': 1260, 'stat': 1059, 'cargo': 1041, 'find': 965, 'cut': 947, 'sh': 937, 'tail': 865, 'rm': 796, 'landscape-sysin': 759, 'lesspipe': 751, 'ls': 741, 'pool': 716, 'update-motd-fsc': 663, 'update-motd-hwe': 576, 'lsb_release': 518, 'expr': 505, '10-help-text': 475, 'update-motd-reb': 470, 'update-motd-upd': 467, '91-release-upgr': 459, 'bc': 452, 'run-parts': 405, 'who': 403, 'mktemp': 386, 'awk': 377, 'basename': 374, 'pkexec': 368, 'at-spi-bus-laun': 367, 'release-upgrade': 347, '00-header': 316, 'clear_console': 308, 'ldconfig.real': 293, 'firefox': 266, 'dircolors': 250, 'Web Content': 182, 'sudo': 166, 'thunderbird': 165, 'ssh': 158, 'xfce4-session': 134, 'wall': 117, 'scp': 88, 'which': 78, 'df': 69, 'mv': 66, 'dpkg-deb': 65, 'xvnc4viewer.pos': 58, 'sync': 57, 'ping': 45, 'netstat': 37, 'fiberlamp': 35, 'xfce4-appfinder': 34, 'man-db.postinst': 33, 'xscreensaver': 30, 'gvfs-udisks2-vo': 28, 'update-alternat': 28, 'sysctl': 28, 'xvnc4viewer.pre': 27, 'du': 27, 'xfce4-terminal': 26, 'salt-minion': 24, 'hostname': 24, 'dumpe2fs': 24, 'gvfsd-trash': 23, 'write': 21, 'indicator-bluet': 20, 'fuzzyflakes': 20, 'tar': 17, 'blueman-applet': 16, 'ps': 16, 'chsh': 16, 'dpkg-split': 16, 'whoami': 16, 'wget': 15, 'top': 14, 'apt-check': 14, 'hwe-support-sta': 14, 'update-notifier': 13, 'exo-open': 11, 'check-new-relea': 11, 'ImageIO': 10, 'xfsettingsd': 9, 'Thunar': 8, 'mkdir': 8, 'dmesg': 8, 'at-spi2-registr': 7, 'gvfsd': 7, 'indicator-appli': 6, 'autospawn': 5, 'nm-applet': 4, 'cron': 4, 'Socket Thread': 4, 'dconf-service': 4, 'ifconfig': 4, 'resolvconf': 4, 'gnome-pty-helpe': 4, 'mount': 4, 'sed': 4, 'uptime': 4, 'xfdesktop': 3, 'xfce4-power-man': 3, 'light-locker': 3, 'indicator-power': 3, 'xfwm4': 2, 'xfce4-panel': 2, 'gconfd-2': 2, 'gvfs-gphoto2-vo': 2, 'gvfs-afc-volume': 2, 'gvfs-mtp-volume': 2, 'nc': 1}
+            white_list = {}
+
+            pid = int(self.Nodes[object_id].name.split('_')[-1])
             # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in {'sshd', 'firefox', 'xfce4-appfinder'}:
-            #     obj_tag = [1.0, 1.0]
-            # else:
-            #     obj_tag = [0.0, 1.0]
+            # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in {'sshd', 'salt-minion', 'pkexec'}:
+            if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in white_list:
+                obj_tag = [1.0, 1.0]
+            else:
+                obj_tag = [0.0, 1.0]
         elif self.Nodes[object_id].type in {"NetFlowObject"}:
             obj_tag = self.node_inital_tags[object_id]
         elif self.Nodes[object_id].type in {"FileObject"}:
@@ -204,7 +210,9 @@ class Morse:
 
             # obj_tag = [1.0, 1.0]
         else:
-            obj_tag = self.node_inital_tags[object_id]
+            # a = self.Nodes[object_id].type
+            # obj_tag = self.node_inital_tags[object_id]
+            obj_tag = [1.0, 1.0]
         self.Nodes[object_id].setObjTags(obj_tag)
 
     def add_subject(self, subject):

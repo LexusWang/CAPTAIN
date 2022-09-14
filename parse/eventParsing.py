@@ -25,19 +25,19 @@ def parse_event_lttng(datum):
     event['timestamp'] = datum.time
     return event
 
-def parse_event_cdm(datum):
+def parse_event_cdm(datum, cdm_version = 20):
     event = {}
     event['uuid'] = datum['uuid']
     event['type'] = datum['type']
     event['properties'] = datum['properties']
     event['timestamp'] = datum['timestampNanos']
     if event['type'] == 'EVENT_UPDATE':
-        event['src'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
-        event['dest'] = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm18.UUID']
+        event['src'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
+        event['dest'] = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
     else:
-        event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         if isinstance(datum['predicateObject'], dict):
-            event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+            event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
             event['dest'] = -1
         
