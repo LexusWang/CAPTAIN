@@ -6,7 +6,7 @@ from parse.cdm.SRCSINKType import srcsink_type as cdm_srcsink_type
 
 lttng_object_type = ['common_file', 'share_memory', 'unix_socket_file', 'inet_scoket_file', 'pipe_file']
 
-def parse_subject_cdm(datum):
+def parse_subject_cdm(datum, cdm_version=20):
     subject_type = datum['type']
     subject = None
     if subject_type == 'SUBJECT_PROCESS':
@@ -14,7 +14,7 @@ def parse_subject_cdm(datum):
         pid_ = datum['cid']
         pname_ = datum['properties']['map'].get('name','Null')
         if datum['parentSubject']:
-            parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm18.UUID']
+            parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
             parent_ = datum['parentSubject']
         # ppid_ = datum['properties']['map']['ppid']
@@ -24,7 +24,7 @@ def parse_subject_cdm(datum):
         else:
             cmdLine_ = None
         subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=parent_, cmdLine = cmdLine_, processName=pname_)
-        subject.owner = datum['localPrincipal']
+        subject.owner = datum['localPrincipal']['com.bbn.tc.schema.avro.cdm20.UUID']
     elif subject_type == 'SUBJECT_THREAD':
         pass
     elif subject_type == 'SUBJECT_UNIT':

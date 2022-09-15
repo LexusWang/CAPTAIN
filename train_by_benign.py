@@ -9,7 +9,7 @@ import gc
 import argparse
 import time
 from utils.utils import *
-# from model.loss import get_loss
+from collections import Counter
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
 from collections import defaultdict
@@ -62,8 +62,10 @@ def read_graph_from_files(data_path, volume_num, line_range):
     events = []
     loaded_line = 0
     last_event_str = ''
-    for i in range(volume_num):
-        with open(data_path+'.'+str(i),'r') as fin:
+    volume_list = os.listdir(data_path)
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    for volume_name in volume_list:
+        with open(os.path.join(data_path, volume_name), 'r') as fin:
             for line in fin:
                 if loaded_line > r_range:
                     break
@@ -200,6 +202,9 @@ def start_experiment(config):
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
+
+            srcsink_counter = Counter([])
+
             total_loss = 0.0
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
@@ -257,7 +262,8 @@ def start_experiment(config):
                                             debug_node = mo.Nodes.get(node_id, None)
                                             if debug_node.type == 'SrcSinkObject':
                                                 pid = int(debug_node.name.split('_')[-1])
-                                                print(mo.Nodes[mo.processes[pid]['node']].processName)
+                                                srcsink_counter.update([mo.Nodes[mo.processes[pid]['node']].processName,])
+                                                # print(mo.Nodes[mo.processes[pid]['node']].processName)
                                             if node_id not in nodes_need_updated:
                                                 nodes_need_updated[node_id] = torch.zeros(2).to(device)
                                             nodes_need_updated[node_id][ic_index[iorc]] += s_tags.grad[i]*s_morse_grads[i]*1
@@ -275,7 +281,8 @@ def start_experiment(config):
                                             debug_node = mo.Nodes.get(node_id, None)
                                             if debug_node.type == 'SrcSinkObject':
                                                 pid = int(debug_node.name.split('_')[-1])
-                                                print(mo.Nodes[mo.processes[pid]['node']].processName)
+                                                srcsink_counter.update([mo.Nodes[mo.processes[pid]['node']].processName,])
+                                                # print(mo.Nodes[mo.processes[pid]['node']].processName)
                                             if node_id not in nodes_need_updated:
                                                 nodes_need_updated[node_id] = torch.zeros(2).to(device)
                                             nodes_need_updated[node_id][ic_index[iorc]] += o_tags.grad[i]*o_morse_grads[i]*1
@@ -338,14 +345,15 @@ def start_experiment(config):
                         model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                         optimizers[node_type].step()
 
+            print(srcsink_counter)
             print('total loss is {}'.format(total_loss))
             print('total unseen loss is {}'.format(total_unseen_loss))
-            fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
-            ec.analyzeFile(fAnalyze)
-            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
-            # experiment.print_metrics()
-            # experiment.reset_metrics()
-            # ec.reset()
+            # fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
+            # ec.analyzeFile(fAnalyze)
+            # ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            experiment.print_metrics()
+            experiment.reset_metrics()
+            ec.reset()
 
             # save checkpoint
             experiment.save_checkpoint(node_inits, epoch)
@@ -392,11 +400,11 @@ def start_experiment(config):
         for node_id in tqdm.tqdm(node_features.keys()):
             node_inital_tags[node_id] = get_network_tags(node_features, node_id, node_inits[node_type], device).tolist()
 
-        node_type = 'FileObject'
-        with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
-            node_features = json.load(fin)
-        for node_id in tqdm.tqdm(node_features.keys()):
-            node_inital_tags[node_id] = get_file_tags(node_features, node_id, node_inits[node_type], device).tolist()
+        # node_type = 'FileObject'
+        # with open(os.path.join(args['feature_path'],'{}.json'.format(node_type)),'r') as fin:
+        #     node_features = json.load(fin)
+        # for node_id in tqdm.tqdm(node_features.keys()):
+        #     node_inital_tags[node_id] = get_file_tags(node_features, node_id, node_inits[node_type], device).tolist()
 
         print('Initialization finished!')
         
@@ -421,9 +429,11 @@ def start_experiment(config):
         events = []
         loaded_line = 0
         last_event_str = ''
-        for i in range(args['volume_num']):
-            print("Loading the no.{} volume...".format(i))
-            with open(args['test_data']+'.'+str(i),'r') as fin:
+        volume_list = os.listdir(args['test_data'])
+        volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+        for volume in volume_list:
+            print("Loading the {} ...".format(volume))
+            with open(os.path.join(args['test_data'], volume),'r') as fin:
                 for line in fin:
                     if loaded_line > r_range:
                         break
@@ -473,12 +483,12 @@ def start_experiment(config):
                         pass
 
         
-        ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-        ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
-
         experiment.print_metrics()
         experiment.save_metrics()
         experiment.reset_metrics()
+        
+        ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
+        ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
         ec.reset()
 
         return None

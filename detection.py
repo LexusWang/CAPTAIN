@@ -60,9 +60,11 @@ def start_experiment(config):
 
     loaded_line = 0
     last_event_str = ''
-    for i in range(args['volume_num']):
-        print("Loading the no.{} volume...".format(i))
-        with open(args['test_data']+'.'+str(i),'r') as fin:
+    volume_list = os.listdir(args['test_data'])
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    for volume in volume_list:
+        print("Loading the {} ...".format(volume))
+        with open(os.path.join(args['test_data'], volume),'r') as fin:
             for line in fin:
                 if loaded_line > r_range:
                     break
@@ -145,12 +147,12 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth32.txt', type=str)
-    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E32-trace/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth5.txt', type=str)
+    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E5data/json/", type=str)
     parser.add_argument("--volume_num", nargs='?', default=7, type=int)
-    parser.add_argument("--experiment_prefix", default="Manual-T32", type=str)
+    parser.add_argument("--experiment_prefix", default="Manual-T51", type=str)
     parser.add_argument("--mode", nargs="?", default="test", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default=[10000000,35000000])
+    parser.add_argument("--line_range", nargs=2, type=int, default=[100000000,500000000000])
 
     args = parser.parse_args()
 

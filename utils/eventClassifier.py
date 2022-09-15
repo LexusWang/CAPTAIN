@@ -79,8 +79,11 @@ class eventClassifier:
 
     def analyzeFile(self, f):
         for line in f:
-            l = line.split()
+            # l = line.split()
+            l = line.strip().split()
             # print(l[14]) # subject UUID
+            if len(l) < 13:
+                continue
             if l[12] not in self.reportedProcessUUID.keys():
                 self.reportedProcessUUID[l[12]] = ' '.join([l[6]]+l[13:-1])
                 if len(l[14:-1]) > 5:
