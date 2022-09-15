@@ -8,3 +8,4 @@ experiments/*
 local_data
 pre_load_morses/*
 new_data/*
+eventClassifierTest.py

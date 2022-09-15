@@ -20,13 +20,13 @@ import pickle
 
 def start_detection(config):
     args = config
-    target = '40F52486-45FF-19E4-167C-36E2578B23EF'
+    target = '4E4F26B0-221A-5950-9A22-3A4F5059636A'
     fout = open('/Users/lexus/Documents/research/APT/Data/'+target+'.txt','a')
     mo = Morse()
     
     loaded_line = 0
-    for i in range(7):
-        with open(args['detection_data']+'.'+str(i),'r') as fin:
+    for i in range(2, 3):
+        with open(args['detection_data'], 'r') as fin:
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
@@ -38,17 +38,18 @@ def start_detection(config):
                 record_type = record_type[0].split('.')[-1]
                 if record_type == 'Event':
                     event = parse_event(record_datum)
-                    if event['src'] == target or event['dest'] == target:
-                        print(line[:-1], file = fout)
+                    if event:
+                        if event['src'] == target or event['dest'] == target:
+                            print(line[:-1], file = fout)
                 elif record_type == 'Subject':
                     if record_datum['type'] in {'SUBJECT_PROCESS'}:
-                        subject_node, subject = parse_subject(record_datum)
+                        subject = parse_subject(record_datum)
                         if subject.id == target:
                             print(line[:-1], file = fout)
                 elif record_type == 'Principal':
                     pass
                 elif record_type.endswith('Object'):
-                    object_node, object = parse_object(record_datum, record_type)
+                    object = parse_object(record_datum, record_type)
                     if object.id == target:
                         print(line[:-1], file = fout)
                 elif record_type == 'TimeMarker':
@@ -101,7 +102,7 @@ def parse_lttng_logs(file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run MORSE")
-    parser.add_argument("--detection_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E3/ta1-trace-e3-official-1.json/ta1-trace-e3-official-1.json", type=str)
+    parser.add_argument("--detection_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E31-cadets/ta1-cadets-e3-official.json.2", type=str)
 
     args = parser.parse_args()
 

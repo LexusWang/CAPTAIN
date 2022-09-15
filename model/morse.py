@@ -105,6 +105,8 @@ class Morse:
             src = self.Nodes.get(event['src'], None)
             dest = self.Nodes.get(event['dest'], None)
             if src and dest:
+                if src.id == '674D8313-390A-11E8-BF66-D9AA8AFF4A69' or dest.id == '674D8313-390A-11E8-BF66-D9AA8AFF4A69':
+                    stop = 0
                 if (src.get_pid(), dest.get_name()) not in self.alarm:
                     self.alarm[(src.get_pid(), dest.get_name())] = False
                 alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)

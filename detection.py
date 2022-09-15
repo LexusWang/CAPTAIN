@@ -79,15 +79,31 @@ def start_experiment(config):
                         continue
                     if cdm_events[record_datum['type']] not in UNUSED_SET:
                         event = parse_event(record_datum)
-                        event_str = '{},{},{}'.format(event['src'], event['type'], event['dest'])
-                        if event_str != last_event_str:
-                            # if event['src'] == '4F7334B2-4889-B654-9AC8-84794886D7B6' or event['dest'] == '4F7334B2-4889-B654-9AC8-84794886D7B6':
-                            #     a = 0
-                            last_event_str = event_str
-                            event_id = record_datum['uuid']
-                            gt = ec.classify(event_id)
-                            diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
-                            experiment.update_metrics(diagnois, gt)
+                        if event:
+                            event_str = '{},{},{}'.format(event['src'], event['type'], event['dest'])
+                            if event_str != last_event_str:
+                                last_event_str = event_str
+                                # event_id = record_datum['uuid']
+                                gt = ec.classify(event['uuid'])
+                                if event['uuid'] == 'E3C64B24-4D14-559A-BBB3-34E87DBF25C5':
+                                    stop = 0
+                                # designed for CADETS
+                                try:
+                                    if 'obj_path' in event:
+                                        if mo.Nodes[event['dest']].path == 'Null':
+                                            mo.Nodes[event['dest']].name = event['obj_path']
+                                            mo.Nodes[event['dest']].path = event['obj_path']
+                                            tag = list(match_path(event['obj_path']))
+                                            mo.node_inital_tags[event['dest']] = tag
+
+                                        if mo.Nodes[event['src']].processName == 'Null':
+                                            mo.Nodes[event['src']].processName = event['properties']['map']['exec']
+                                            mo.Nodes[event['dest']].ppid = event['properties']['map']['ppid']
+                                except KeyError:
+                                    pass
+
+                                diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
+                                experiment.update_metrics(diagnois, gt)
                 elif record_type == 'Subject':
                     subject = parse_subject(record_datum)
                     if subject != None:

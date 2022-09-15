@@ -44,7 +44,8 @@ for i, event in enumerate(lttng_special_events):
 
 READ_SET = {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG'], standard_events['EVENT_READ_SOCKET_PARAMS'],standard_events['EVENT_RECVFROM']}
 WRITE_SET = {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG'],standard_events['EVENT_SENDTO'],standard_events['EVENT_WRITE_SOCKET_PARAMS']}
-INJECT_SET = {standard_events['EVENT_MODIFY_PROCESS']}
+# INJECT_SET = {standard_events['EVENT_MODIFY_PROCESS']}
+INJECT_SET = {}
 CHMOD_SET = {standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']}
 SET_UID_SET = {standard_events['EVENT_CHANGE_PRINCIPAL']}
 EXECVE_SET = {standard_events['EVENT_LOADLIBRARY']}

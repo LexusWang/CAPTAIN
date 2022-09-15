@@ -1,4 +1,5 @@
 import numpy as np
+from graph.Event import Event
 
 lttng_sys_event = ['sys_open','sys_openat','sys_close','sys_read','sys_readv','sys_pread',
     'sys_preadv','sys_write','sys_writev','sys_pwrite','sys_pwritev','sys_clone','sys_fork',
@@ -10,19 +11,35 @@ lttng_sched_event = ['sched_switch','sched_process_fork','sched_process_free','s
 
 lttng_lttng_event = ['lttng_statedump_start','lttng_statedump_end','lttng_statedump_process_state','lttng_statedump_file_descriptor']
 
-def parse_event_lttng(datum):
+def parse_event_cadets(datum):
     event = {}
-    if datum.subtype < 512 and datum.subtype >= 1:
-        event['type'] = lttng_sys_event[datum.subtype-1]
-    elif datum.subtype >= 512 and datum.subtype < 1024:
-        event['type'] = lttng_sched_event[datum.subtype-512]
-    elif datum.subtype >= 1024:
-        event['type'] = lttng_lttng_event[datum.subtype-1024]
+    event['uuid'] = datum['uuid']
+    event['type'] = datum['type']
+    event['properties'] = datum['properties']
+    event['timestamp'] = datum['timestampNanos']
+    if event['type'] == 'EVENT_UPDATE':
+        event['src'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        event['dest'] = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm18.UUID']
     else:
-        event['type'] = None
-    event['src'] = datum.srcId
-    event['dest'] = datum.desId
-    event['timestamp'] = datum.time
+        if isinstance(datum['subject'], dict):
+            event['src'] = datum['subject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        else:
+            event['src'] = -1
+        
+        if isinstance(datum['predicateObject'], dict):
+            event['dest'] = datum['predicateObject']['com.bbn.tc.schema.avro.cdm18.UUID']
+        else:
+            event['dest'] = -1
+
+        if isinstance(datum['predicateObjectPath'], dict):
+            event['obj_path'] = datum['predicateObjectPath']['string']
+
+    if event['type'] == 'EVENT_MODIFY_FILE_ATTRIBUTES':
+        if datum['name']['string'] != 'aue_chmod':
+            return None
+        # print(datum['parameters']['array'][0]['valueBytes']['bytes'])
+        event['parameters'] = int(datum['parameters']['array'][0]['valueBytes']['bytes'], 16)
+        
     return event
 
 def parse_event_cdm(datum):
@@ -43,8 +60,8 @@ def parse_event_cdm(datum):
         
     return event
 
-def parse_event(datum, format='cdm'):
+def parse_event(datum, format='cadets'):
     if format == 'cdm':
         return parse_event_cdm(datum)
-    elif format == 'lttng':
-        return parse_event_lttng(datum)
+    elif format == 'cadets':
+        return parse_event_cadets(datum)
