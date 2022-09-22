@@ -13,7 +13,7 @@ class eventClassifier:
             curr_list = []
             for line in f:
                 clean_line = line.strip()
-                if clean_line == "DataLeak" or clean_line == "MkFileExecutable" or clean_line == "FileExec" or clean_line == "MkMemExecutable":
+                if clean_line in {"DataLeak", "MkFileExecutable", "FileExec", "MkMemExecutable", "FileCorruption"}:
                     if curr_alarm:
                         self.__addAlarmUUID(curr_alarm, curr_list)
                     curr_list = []

@@ -71,7 +71,7 @@ def match_network_addr(ip_address, port_):
     if isinstance(port_,dict):
         port = port_['int']
     else:
-        port = port
+        port = port_
     if port in benign_ports:
         itag = 1
         ctag = 1

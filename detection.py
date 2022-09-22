@@ -32,6 +32,7 @@ from pathlib import Path
 import pickle
 
 def start_experiment(config):
+    begin_time = time.time()
     args = config
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args['experiment_prefix'])
 
@@ -61,7 +62,8 @@ def start_experiment(config):
     loaded_line = 0
     last_event_str = ''
     volume_list = os.listdir(args['test_data'])
-    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     for volume in volume_list:
         print("Loading the {} ...".format(volume))
         with open(os.path.join(args['test_data'], volume),'r') as fin:
@@ -79,41 +81,27 @@ def start_experiment(config):
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
-                    if cdm_events[record_datum['type']] not in UNUSED_SET:
-                        event = parse_event(record_datum)
-                        if event:
-                            event_str = '{},{},{}'.format(event['src'], event['type'], event['dest'])
-                            if event_str != last_event_str:
-                                last_event_str = event_str
-                                # event_id = record_datum['uuid']
-                                gt = ec.classify(event['uuid'])
-                                if event['uuid'] == 'E3C64B24-4D14-559A-BBB3-34E87DBF25C5':
-                                    stop = 0
-                                # designed for CADETS
-                                try:
-                                    if 'obj_path' in event:
-                                        if mo.Nodes[event['dest']].path == 'Null':
-                                            mo.Nodes[event['dest']].name = event['obj_path']
-                                            mo.Nodes[event['dest']].path = event['obj_path']
-                                            tag = list(match_path(event['obj_path']))
-                                            mo.node_inital_tags[event['dest']] = tag
+                    event = mo.parse_event(record_datum)
+                    if event:
+                        event_str = '{},{},{}'.format(event.src, event.type, event.dest)
+                        if event_str != last_event_str:
+                            last_event_str = event_str
+                            # event_id = record_datum['uuid']
+                            gt = ec.classify(event.id)
+                            if event.id == 'E3C64B24-4D14-559A-BBB3-34E87DBF25C5':
+                                stop = 0
 
-                                        if mo.Nodes[event['src']].processName == 'Null':
-                                            mo.Nodes[event['src']].processName = event['properties']['map']['exec']
-                                            mo.Nodes[event['dest']].ppid = event['properties']['map']['ppid']
-                                except KeyError:
-                                    pass
-
-                                diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
-                                experiment.update_metrics(diagnois, gt)
+                            diagnois = mo.add_event(event, gt)
+                            # diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
+                            experiment.update_metrics(diagnois, gt)
                 elif record_type == 'Subject':
-                    subject = parse_subject(record_datum)
+                    subject = mo.parse_subject(record_datum)
                     if subject != None:
                         mo.add_subject(subject)
                 elif record_type == 'Principal':
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
-                    object = parse_object(record_datum, record_type)
+                    object = mo.parse_object(record_datum, record_type)
                     if object != None:
                         if object.type == 'FileObject':
                             tag = list(match_path(object.path))
@@ -142,26 +130,25 @@ def start_experiment(config):
     experiment.reset_metrics()
     ec.reset()
 
+    print(time.time()-begin_time)
+
     return None
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", default='/home/weijian/weijian/projects/ATPG/groundTruth5.txt', type=str)
-    parser.add_argument("--test_data", nargs='?', default="/home/weijian/weijian/projects/E5data/json/", type=str)
-    parser.add_argument("--volume_num", nargs='?', default=7, type=int)
-    parser.add_argument("--experiment_prefix", default="Manual-T51", type=str)
-    parser.add_argument("--mode", nargs="?", default="test", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default=[100000000,500000000000])
+    parser.add_argument("--ground_truth_file", default='/Users/lexus/Documents/research/APT/ATPG/groundTruthC33.txt', type=str)
+    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E33-cadets", type=str)
+    parser.add_argument("--experiment_prefix", default="Manual-C33", type=str)
+    parser.add_argument("--line_range", nargs=2, type=int, default=[0,50000000000])
 
     args = parser.parse_args()
 
     config = {
-        "volume_num": args.volume_num,
         "test_data": args.test_data,
         "ground_truth_file": args.ground_truth_file,
         "experiment_prefix": args.experiment_prefix,
-        "mode": args.mode,
+        "mode": 'test',
         "line_range": args.line_range
     }
 

@@ -8,8 +8,7 @@ from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, s
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
 def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
-   if format == 'cdm':
-      event_type = cdm_events[event['type']]
+   event_type = event.type
    intags = None
    newtags = None
    whitelisted = False
@@ -19,10 +18,10 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
 
-   if event_type in LOAD_SET or event_type in EXECVE_SET or event_type in READ_SET:
+   if event_type in {'load', 'execve', 'read'}:
       intags = o.tags()
       
-   if event_type in READ_SET:
+   if event_type in {'read'}:
       assert isinstance(s,Subject) and isinstance(o,Object)
       stg = s.tags()
       otg = o.tags()
@@ -47,9 +46,9 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       s.setSubjTags([citag(stg), etag(stg), sit, sct])
       s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
       s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
-      s.updateTime = event['timestamp']
+      s.updateTime = event.time
 
-   elif event_type in CREATE_SET:
+   elif event_type in {'create'}:
       assert isinstance(s, Subject) and isinstance(o, Object)
       st = s.tags()
       sit = itag(st)
@@ -62,9 +61,9 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setiTagInitID(i_init_id)
       o.setcTagInitID(c_init_id)
       o.set_grad([itag_grad, ctag_grad])
-      o.updateTime = event['timestamp']
+      o.updateTime = event.time
 
-   elif event_type in WRITE_SET:
+   elif event_type in {'write'}:
       assert isinstance(s,Subject) and isinstance(o,Object)
       stg = s.tags()
       it = itag(stg)
@@ -98,7 +97,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
 
       if (o.isIP() == False and o.isMatch("UnknownObject")== False):
          o.setObjTags(newtags)
-         o.updateTime = event['timestamp']
+         o.updateTime = event.time
          if isiTagChanged:
             o.set_itag_grad(itag_grad)
             o.setiTagInitID(i_init_id)
@@ -106,7 +105,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
             o.set_ctag_grad(ctag_grad)
             o.setcTagInitID(c_init_id)
 
-   elif event_type in LOAD_SET:
+   elif event_type in {'load'}:
       if o.isFile():
          stg = s.tags()
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
@@ -130,9 +129,9 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
          s.setSubjTags([cit, etag(stg), it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
          s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
-         s.updateTime = event['timestamp']
+         s.updateTime = event.time
 
-   elif event_type in INJECT_SET:
+   elif event_type in {'inject'}:
       assert isinstance(o,Subject)
       intags = s.tags()
       stg = o.tags()
@@ -181,9 +180,9 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setSubjTags(alltags(cit, et, inv, it, ct))
       o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
       o.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
-      o.updateTime = event['timestamp']
+      o.updateTime = event.time
 
-   elif event_type in EXECVE_SET:
+   elif event_type in {'execve'}:
       assert isinstance(o,Object) and isinstance(s,Subject)
 
       if (o.isMatch("/bin/bash")):
@@ -244,7 +243,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
             s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
          
-         s.updateTime = event['timestamp']
+         s.updateTime = event.time
 
    # elif event_type in SET_UID_SET :
    #    assert isinstance(o,Subject)
@@ -259,25 +258,25 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       
    
    
-   elif event_type in CLONE_SET:
+   elif event_type in {'clone'}:
       assert isinstance(o,Subject) and isinstance(s,Subject)
       o.setSubjTags(s.tags())
       o.set_grad(s.get_grad())
       o.setInitID(s.getInitID())
-      o.updateTime = event['timestamp']
+      o.updateTime = event.time
 
-   elif event_type in UPDATE_SET:
+   elif event_type in {'update'}:
       assert isinstance(o,Object) and isinstance(s,Object)
       initag = s.tags()
       o.setObjTags([initag[2],initag[3]])
       o.set_grad([s.get_itag_grad(), s.get_ctag_grad()])
       o.setiTagInitID(s.getiTagInitID())
       o.setcTagInitID(s.getcTagInitID())
-      o.updateTime = event['timestamp']
+      o.updateTime = event.time
       return
 
    
-   if 0 <= event_type < len(standard_events) and s and o:
+   if event_type in {'chmod', 'set_uid', 'mprotect', 'mmap', 'remove', 'rename', 'clone', 'read', 'load', 'execve', 'inject', 'create', 'write'} and s and o:
       assert isinstance(s,Subject)
       diff = 0
       stg = s.tags()
@@ -285,7 +284,7 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       ct = ctag(stg)
       et = etag(stg)
       citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
-      ts = event['timestamp']
+      ts = event.time
       if (s.updateTime == 0):
          s.updateTime = ts
       elif (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):

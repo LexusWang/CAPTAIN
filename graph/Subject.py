@@ -3,10 +3,11 @@ import numpy as np
 import re
 
 class Subject:
-    def __init__(self, id, type, pid: int = -1, ppid: str = None, cmdLine: str = None, processName: str = None):
+    def __init__(self, id, type, pid, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
         self.id = id
         self.type = type
         self.pid = pid
+        self.parentNode = parentNode
         self.ppid = ppid
         self.cmdLine = cmdLine
         self.processName = processName
