@@ -21,6 +21,6 @@ ec = eventClassifier('groundTruthC31.txt')
 # else:
 #     print("error")
 
-ec.analyzeFile(open('/Users/lexus/Documents/research/APT/ATPG/experiments/Manual-C312022-09-14-12-17-55/test/alarms/alarms-in-test.txt','r'))
+ec.analyzeFile(open('/Users/lexus/Documents/research/APT/ATPG/experiments/Manual-C312022-09-26-16-37-23/test/alarms/alarms-in-test.txt','r'))
 
-ec.summary("../missingTP.txt")
+ec.summary("/Users/lexus/Documents/research/APT/ATPG/experiments/Manual-C312022-09-26-16-37-23/test/metric/ec_summary_test.txt")

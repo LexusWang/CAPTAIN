@@ -1,5 +1,5 @@
 import json
-import torch
+import sys
 import logging
 import random
 import math
@@ -8,11 +8,13 @@ import os
 import gc
 import argparse
 import time
-from utils.utils import *
-from model.loss import get_loss
-from utils.eventClassifier import eventClassifier
-from model.morse import Morse
+
+sys.path.extend(['.', '..', '...'])
+# from utils.utils import *
+# from model.loss import get_loss
+# from utils.eventClassifier import eventClassifier
 from collections import defaultdict
+from graph.Subject import Subject
 
 from numpy import gradient, record
 from parse.eventParsing import parse_event
@@ -24,8 +26,6 @@ import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
-from parse.eventType import lttng_events, cdm_events, standard_events
-from parse.eventType import UNUSED_SET
 import numpy as np
 from pathlib import Path
 import pickle
@@ -33,7 +33,7 @@ import pickle
 def start_experiment(config):
     begin_time = time.time()
     args = config
-    experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args['experiment_prefix'])
+    # experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args['experiment_prefix'])
 
     mo = Morse()
 
@@ -43,12 +43,12 @@ def start_experiment(config):
                         filemode='w+',
                         format='%(asctime)s %(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
-    experiment.save_hyperparameters()
-    ec = eventClassifier(args['ground_truth_file'])
+    # experiment.save_hyperparameters()
+    # ec = eventClassifier(args['ground_truth_file'])
         
     mo.node_inital_tags = {}
-    Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
+    # Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+    # mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
     # close interval
     if args["line_range"]:
@@ -79,19 +79,7 @@ def start_experiment(config):
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
-                    event = mo.parse_event(record_datum, format='trace', cdm_version = 18)
-                    if event:
-                        event_str = '{},{},{}'.format(event.src, event.type, event.dest)
-                        if event_str != last_event_str:
-                            last_event_str = event_str
-                            gt = ec.classify(event.id)
-                            # if event.id in {'9082692A-9506-5FFC-8FE2-5900CC9F70BA', '318602CB-9945-5D02-953F-A97A52F6C15B'}:
-                            #     pdb.set_trace()
-                            diagnois = mo.add_event(event, gt)
-                            # diagnois, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
-                            experiment.update_metrics(diagnois, gt)
-                            if gt != None and diagnois == None:
-                                print(event.id)
+                    event = mo.parse_event(record_datum)
                 elif record_type == 'Subject':
                     subject = mo.parse_subject(record_datum)
                     if subject != None:
@@ -120,11 +108,29 @@ def start_experiment(config):
                 else:
                     pass
 
-    mo.alarm_file.close()
-    experiment.print_metrics()
-    experiment.save_metrics()
-    ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-    ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
+    network_feature = open(os.path.join(args['feature_path'], 'NetFlowObject.csv'), 'w')
+    file_feature = open(os.path.join(args['feature_path'], 'FileObject.csv'), 'w')
+    process_feature = open(os.path.join(args['feature_path'], 'Subject.csv'), 'w')
+    print("Key\tProcessName", file = process_feature)
+    print("Key\tIP\tPort", file=network_feature)
+    print("Key\tPath", file=file_feature)
+
+    for key, value in mo.Nodes.items():
+        if isinstance(value, Subject):
+            print("{}\t{}".format(key, value.processName), file = process_feature)
+        else:
+            if value.type == 'NetFlowObject':
+                print("{}\t{}\t{}".format(key, value.IP, value.port), file=network_feature)
+            elif value.type == 'FileObject':
+                print("{}\t{}".format(key, value.path), file=file_feature)
+    network_feature.close()
+    file_feature.close()
+    process_feature.close()
+    # mo.alarm_file.close()
+    # experiment.print_metrics()
+    # experiment.save_metrics()
+    # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
+    # ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
     print(time.time()-begin_time)
 
@@ -133,18 +139,16 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", default='/Users/lexus/Documents/research/APT/ATPG/groundTruthT32.txt', type=str)
-    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E32-trace", type=str)
-    parser.add_argument("--experiment_prefix", default="Manual-T32", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default=[0, 3000000000])
+    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E31-cadets", type=str)
+    parser.add_argument("--feature_path", default="/Users/lexus/Documents/research/APT/ATPG/results/C31", type=str)
+    parser.add_argument("--line_range", nargs=2, type=int, default=[0,50000000000])
 
     args = parser.parse_args()
 
     config = {
         "test_data": args.test_data,
-        "ground_truth_file": args.ground_truth_file,
-        "experiment_prefix": args.experiment_prefix,
-        "mode": 'test',
+        "feature_path": args.feature_path,
+        # "mode": 'test',
         "line_range": args.line_range
     }
 

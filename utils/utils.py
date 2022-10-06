@@ -1,5 +1,6 @@
 import os
 import torch
+import pdb
 from pathlib import Path
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
@@ -36,6 +37,7 @@ class Experiment:
         self.tp = 0
         self.fp = 0
         self.fn = 0
+        self.tn = 0
 
     def get_experiment_output_path(self):
         return self.results_path
@@ -51,12 +53,17 @@ class Experiment:
 
     def reset_metrics(self):
         self.fn = 0
+        self.tn = 0
         self.tp = 0
         self.fp = 0
     
     def update_metrics(self, pred, gt):
         if pred is None:
-            self.fn += 1
+            if gt is None:
+                self.tn += 1
+            else:
+                self.fn += 1
+                # pdb.set_trace()
         else:
             if pred == gt:
                 self.tp += 1
@@ -75,7 +82,7 @@ class Experiment:
         return 2 * (p * r / (p + r))
 
     def print_metrics(self):
-        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}, tn: {self.tn}")
 
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
@@ -84,6 +91,7 @@ class Experiment:
             f.write(f"tp: {self.tp}")
             f.write(f"fp: {self.fp}")
             f.write(f"fn: {self.fn}")
+            f.write(f"tn: {self.fn}")
             # f.write(f"precision: {self.get_precision()}")
             # f.write(f"recall: {self.get_recall()}")
             # f.write(f"f1: {self.get_f1_score()}")

@@ -27,8 +27,8 @@ class Subject:
 
         self.ciTag_initID = None
         self.eTag_initID = None
-        self.iTag_initID = None
-        self.cTag_initID = None
+        self.iTag_initID = [id,'i']
+        self.cTag_initID = [id,'c']
 
     def dumps(self) -> str:
         json_dict = {}

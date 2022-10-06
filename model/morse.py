@@ -21,6 +21,7 @@ class Morse:
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
+        self.node_inital_tags = {}
         self.format = format
 
 
@@ -70,8 +71,8 @@ class Morse:
         self.morse_grad_tensor = None
 
     
-    def parse_event(self, datum):
-        return parse_event_(self, datum)
+    def parse_event(self, datum, format='cadets', cdm_version = 18):
+        return parse_event_(self, datum, format, cdm_version)
 
     def parse_object(self, datum, object_type):
         return parse_object_(self, datum, object_type)
@@ -101,8 +102,8 @@ class Morse:
         # if event['dest'] in self.Initialized_Nodes:
         #     self.Initialized_Nodes[event['dest']] = True
         if event.type == 'update':
-            src = self.Nodes.get(event.src, None)
-            dest = self.Nodes.get(event.dest, None)
+            src = self.Nodes.get(event.dest, None)
+            dest = self.Nodes.get(event.dest2, None)
             self.propagate(event, src, dest)
             return None, None, None, None, None, None, None, None, None
         if event.type == 'exit':
@@ -120,55 +121,52 @@ class Morse:
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
 
-        if '674D8313-390A-11E8-BF66-D9AA8AFF4A69' in {event.src, event.dest}:
-            stop = 0
-        # if (src.get_pid(), dest.get_name()) not in self.alarm:
-        #     self.alarm[(src.get_pid(), dest.get_name())] = False
-        alarmArg = self.detect_alarm_pre_loss(event, src, dest, gt, self.alarm_file)
-        
-        s_grad_pre = src.get_grad()
-        s_initid_pre = src.getInitID()
-        if dest:
-            o_grad_pre = dest.get_grad()
-            o_initid_pre = dest.getInitID()
-        else:
-            o_grad_pre = None
-            o_initid_pre = None
-
-        self.propagate(event, src, dest)
-        diagnosis, s_loss, o_loss, s_tags, o_tags, grad_before_prop = self.detect_alarm_loss(event, src, dest, alarmArg, gt, self.alarm_file)
-        
-        if grad_before_prop:
-            s_grad = s_grad_pre
-            s_init_id = s_initid_pre
-            o_grad = o_grad_pre
-            o_init_id = o_initid_pre
-        else:
-            s_grad = src.get_grad()
-            s_init_id = src.getInitID()
+        if src:
+            # if (src.get_pid(), dest.get_name()) not in self.alarm:
+            #     self.alarm[(src.get_pid(), dest.get_name())] = False
+            alarmArg = self.detect_alarm_pre_loss(event, src, dest, gt, self.alarm_file)
+            
+            s_grad_pre = src.get_grad()
+            s_initid_pre = src.getInitID()
             if dest:
-                o_grad = dest.get_grad()
-                o_init_id = dest.getInitID()
+                o_grad_pre = dest.get_grad()
+                o_initid_pre = dest.getInitID()
             else:
-                o_grad = None
-                o_init_id = None
+                o_grad_pre = None
+                o_initid_pre = None
 
-        return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
+            self.propagate(event, src, dest)
+            diagnosis, s_loss, o_loss, s_tags, o_tags, grad_before_prop = self.detect_alarm_loss(event, src, dest, alarmArg, gt, self.alarm_file)
+            
+            if grad_before_prop:
+                s_grad = s_grad_pre
+                s_init_id = s_initid_pre
+                o_grad = o_grad_pre
+                o_init_id = o_initid_pre
+            else:
+                s_grad = src.get_grad()
+                s_init_id = src.getInitID()
+                if dest:
+                    o_grad = dest.get_grad()
+                    o_init_id = dest.getInitID()
+                else:
+                    o_grad = None
+                    o_init_id = None
+
+            return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
         
-        # return None, None, None, None, None, None, None, None, None
-
     def add_event(self, event, gt=None):
         if event.type == 'update':
-            src = self.Nodes.get(event.src, None)
-            dest = self.Nodes.get(event.dest, None)
+            src = self.Nodes.get(event.dest, None)
+            dest = self.Nodes.get(event.dest2, None)
             self.propagate(event, src, dest)
-            return None, None, None, None, None, None, None, None, None
+            return None
         if event.type == 'exit':
             try:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False
             except KeyError:
                 # print('Oops! Cannot find Node!')
-                return None, None, None, None, None, None, None, None, None
+                return None
         # if event.src and event.dest:
         #     # self.G.add_edge(event['src'], event['dest'])
         #     src = self.Nodes.get(event.src, None)
@@ -177,23 +175,13 @@ class Morse:
 
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
-
-        # if (src.get_pid(), dest.get_name()) not in self.alarm:
-        #     self.alarm[(src.get_pid(), dest.get_name())] = False
-        alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
-        
-        # s_grad_pre = src.get_grad()
-        # s_initid_pre = src.getInitID()
-        # if dest:
-        #     o_grad_pre = dest.get_grad()
-        #     o_initid_pre = dest.getInitID()
-        # else:
-        #     o_grad_pre = None
-        #     o_initid_pre = None
-
-        self.propagate(event, src, dest)
-        diagnosis = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
-        return diagnosis
+        if src:
+            # if (src.get_pid(), dest.get_name()) not in self.alarm:
+            #     self.alarm[(src.get_pid(), dest.get_name())] = False
+            alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
+            self.propagate(event, src, dest)
+            diagnosis = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
+            return diagnosis
 
     def add_object(self, object):
         # self.G.add_node(object.id)
@@ -268,15 +256,21 @@ class Morse:
 
     def detect_alarm_pre(self,event,s ,o, gt, alarm_file = None):
         return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, gt, self.format, self, alarm_file)
-    
+
+    def set_subject_tags(self, nid):
+        if nid in self.node_inital_tags:
+            sub_tag = [1.0, 1.0]
+            sub_tag.extend(self.node_inital_tags[nid].tolist())
+        else:
+            sub_tag = [1.0, 1.0, 1.0, 1.0]
+        self.Nodes[nid].setSubjTags(sub_tag)
+
     def reset_tags(self):
         nid_list = list(self.Nodes.keys())
         for nid in nid_list:
             if self.Initialized_Nodes[nid] == False:
                 if isinstance(self.Nodes[nid], Subject):
-                    # sub_tag = self.node_inital_tags[nid].tolist()
-                    sub_tag = [1.0, 1.0, 1.0, 1.0]
-                    self.Nodes[nid].setSubjTags(sub_tag)
+                    self.set_subject_tags(nid)
                 else:
                     self.set_object_tags(nid)
         
@@ -284,4 +278,5 @@ class Morse:
         nid_list = list(self.Nodes.keys())
         for nid in nid_list:
             self.Initialized_Nodes[nid] = False
+            self.Nodes[nid].updateTime = 0
         self.alarm = {}

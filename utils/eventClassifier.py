@@ -8,6 +8,7 @@ class eventClassifier:
         self.mkFileExecutableUUID = {}
         self.mkMemExecutableUUID = {}
         self.fileExecUUID = {}
+        self.fileCorruptionUUID = {}
         with open(filePath, 'r') as f:
             curr_alarm = None
             curr_list = []
@@ -37,6 +38,8 @@ class eventClassifier:
             self.fileExecUUID[sublst] = False
         for sublst in self.mkMemExecutableUUID.keys():
             self.mkMemExecutableUUID[sublst] = False
+        for sublst in self.fileCorruptionUUID.keys():
+            self.fileCorruptionUUID[sublst] = False
         self.reportedProcessUUID = {}
         self.reportedProcessName = {}
 
@@ -53,6 +56,9 @@ class eventClassifier:
         for sublst in self.mkMemExecutableUUID.keys():
             if UUID in sublst:
                 return "MkMemExecutable"
+        for sublst in self.fileCorruptionUUID.keys():
+            if UUID in sublst:
+                return "FileCorruption"
         # if UUID in [i for sublst in self.dataLeakUUID.keys() for i in sublst]:
         #     return "DataLeak"
         # elif UUID in [i for sublst in self.mkFileExecutableUUID.keys() for i in sublst]:
@@ -76,6 +82,9 @@ class eventClassifier:
         for sublst in self.mkMemExecutableUUID.keys():
             if UUID in sublst:
                 self.mkMemExecutableUUID[sublst] = True
+        for sublst in self.fileCorruptionUUID.keys():
+            if UUID in sublst:
+                self.fileCorruptionUUID[sublst] = True
 
     def analyzeFile(self, f):
         for line in f:
@@ -122,6 +131,10 @@ class eventClassifier:
                     if not self.mkMemExecutableUUID[sublst]:
                         print("missing MkMemExecutable TP from following eventids:", file = fout)
                         print(sublst, file = fout)
+                for sublst in self.fileCorruptionUUID.keys():
+                    if not self.fileCorruptionUUID[sublst]:
+                        print("missing FileCorruption TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
                 # print("---------------------------------------------------------------", file = fout)
                 # print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes with distinguishing UUIDs:", file = fout)
                 # for x in self.reportedProcessUUID.keys():
@@ -141,3 +154,5 @@ class eventClassifier:
             self.fileExecUUID[tuple(lst)] = False
         elif alarm == "MkMemExecutable":
             self.mkMemExecutableUUID[tuple(lst)] = False
+        elif alarm == "FileCorruption":
+            self.fileCorruptionUUID[tuple(lst)] = False

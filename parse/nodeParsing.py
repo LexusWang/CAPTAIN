@@ -12,7 +12,7 @@ def parse_subject_cdm(self, datum, cdm_version=18):
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
         pid_ = datum['cid']
-        pname_ = datum['properties']['map'].get('name','Null')
+        pname_ = datum['properties']['map'].get('name', None)
 
         parent_ = None
         ppid_ = None
@@ -158,8 +158,6 @@ def parse_subject(self, datum, format='cdm'):
 
 def parse_object(self, datum, object_type, format='cdm'):
     if format == 'cdm':
-        if datum['uuid'] == 'AB93241F-8C74-1352-B48C-6361E213A620':
-            stop = 0
         object = parse_object_cdm(self, datum, object_type)
     elif format == 'lttng':
         object = parse_object_lttng(self, datum, object_type)

@@ -3,7 +3,13 @@ import json
 import pandas as pd
 import torch
 
-feature_path = 'results/features/Subject.json'
+feature_path = "/Users/lexus/Documents/research/APT/ATPG/results/C31/Subject.csv"
+
+df = pd.read_csv(feature_path, delimiter='\t')
+# df = df[df['ProcessName'] != 'Null']
+a = pd.unique(df['ProcessName']).tolist()
+a = 0
+df1 = df.groupby('ProcessName')
 
 with open(feature_path,'r') as fin:
     node_features = json.load(fin)

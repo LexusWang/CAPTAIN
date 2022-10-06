@@ -34,7 +34,7 @@ def ipaddr_to_list(ipaddr):
     
     return return_res
 
-def main():
+def generate_feature_trace():
     feature_path = 'results/features/E51-trace/NetFlowObject.json'
     vector_dir = 'results/features/E51-trace/feature_vectors/'
 
@@ -98,6 +98,61 @@ def main():
     df = pd.DataFrame.from_dict(node_features,orient='index')
     df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
 
+def generate_feature_cadets(feature_path, vector_dir):
+    df = pd.read_csv(feature_path, delimiter='\t', index_col='Key')
+    node_features = df.to_dict(orient='index')
+
+    # node_features = pd.read_json(feature_path, orient='records', lines = True)
+    # print(node_features.columns)
+    
+
+    # with open(feature_path,'r') as fin:
+    #     node_features = json.load(fin)
+
+    # df = pd.DataFrame.from_dict(node_features,orient='index')
+    # a = dict(Counter(df['remotePort'].tolist()))
+    # b = sorted(a.items(),key= lambda x: x[1], reverse=True)
+
+    node_type = 'NetFlowObject'
+
+    # TCP is 1; UDP is 0
+    protocol_map = {17:0,6:1}
+
+    # Unknown IP
+    unknownip = [-1 for i in range(167)]
+
+    # Port type
+    '''
+    21: ftp
+    22: ssh
+    25: smtp Simple Mail Transfer
+    53: domain DNS
+    67: bootps Bootstrap Protocol Server
+    80: www-http
+    123: ntp Network Time Protocol
+    143: imap Internet Messafe Access Protocol
+    443: https
+    5353: mdns Multicast DNS
+    '''
+    port_type = {21:1, 22:2, 25:3, 53:4, 67:5, 80:6, 123:7, 143:8, 443:9, 5353:10}
+
+    nodes_list = list(node_features.keys())
+    for key in tqdm.tqdm(nodes_list):
+        node_features[key]['features'] = []
+        if len(node_features[key]['IP'])>0:
+            node_features[key]['features'].extend(ipaddr_to_list(ipaddress.ip_address(node_features[key]['IP'])))
+        else:
+            node_features[key]['features'].extend(unknownip)
+        del node_features[key]['IP']
+        node_features[key]['features'].append(port_type.get(node_features[key]['Port'],0))
+        del node_features[key]['Port']
+        
+
+    df = pd.DataFrame.from_dict(node_features,orient='index')
+    df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
+
 
 if __name__ == "__main__":
-    main()
+    feature_path = 'results/C32/NetFlowObject.csv'
+    vector_dir = 'results/C32/feature_vectors/'
+    generate_feature_cadets(feature_path, vector_dir)
