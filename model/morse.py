@@ -74,11 +74,11 @@ class Morse:
     def parse_event(self, datum, format='cadets', cdm_version = 18):
         return parse_event_(self, datum, format, cdm_version)
 
-    def parse_object(self, datum, object_type):
-        return parse_object_(self, datum, object_type)
+    def parse_object(self, datum, object_type, format, cdm_version):
+        return parse_object_(self, datum, object_type, format, cdm_version)
 
-    def parse_subject(self, datum):
-        return parse_subject_(self, datum)
+    def parse_subject(self, datum, format, cdm_version):
+        return parse_subject_(self, datum, format, cdm_version)
     
     def forward(self):
         pass

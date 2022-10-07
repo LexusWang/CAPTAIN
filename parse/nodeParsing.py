@@ -77,18 +77,6 @@ def parse_subject_trace(self, datum, cdm_version=18):
     
     return subject
 
-def parse_subject_lttng(self, datum):
-    type_ = 'SUBJECT_PROCESS'
-    pid_ = datum.params[0]
-    ppid_ = datum.params[1]
-    cmdLine_ = datum.params[2]
-    pname_ = datum.params[3]
-    seen_time_ = float(datum.time)
-    subject = Subject(id=datum.Id, time = seen_time_, type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
-    # subject.owner = datum['localPrincipal']
-    
-    return subject
-
 def parse_object_cdm(self, datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
     if object_type == 'FileObject':
@@ -125,41 +113,15 @@ def parse_object_cdm(self, datum, object_type):
 
     return object
 
-def parse_object_lttng(self, datum, object_type):
-    object = Object(type = lttng_object_type[object_type])
-    if object_type == 0:
-        object.path = datum.params[0]
-    elif object_type == 1:
-        pass
-    elif object_type == 2:
-        object.path = datum.params[0]
-    elif object_type == 3:
-        object.path = datum.params[0]
-        # ip Protocol is set to -1
-        object.set_IP(datum.params[1], datum.params[2], -1)
-    elif object_type == 4:
-        object.pipe = [datum.params[0], datum.params[1]]
-    else:
-        # error!
-        pass
-
-    return object
-
-def parse_subject(self, datum, format='cdm'):
+def parse_subject(self, datum, format, cdm_version):
     # subject_node = {}
-    if format == 'cdm':
+    if format in {'trace', 'cadets'}:
         # subject_node['uuid'] = datum['uuid']
-        subject = parse_subject_cdm(self, datum)
-    elif format == 'lttng':
-        # subject_node['uuid'] = datum.Id
-        subject = parse_subject_lttng(self, datum)
-    return subject
+        subject = parse_subject_cdm(self, datum, cdm_version)
+        return subject
 
 
-def parse_object(self, datum, object_type, format='cdm'):
-    if format == 'cdm':
+def parse_object(self, datum, object_type, format, cdm_version):
+    if format in {'trace', 'cadets'}:
         object = parse_object_cdm(self, datum, object_type)
-    elif format == 'lttng':
-        object = parse_object_lttng(self, datum, object_type)
-    
-    return object
+        return object

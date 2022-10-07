@@ -93,13 +93,13 @@ def start_experiment(config):
                             if gt != None and diagnois == None:
                                 print(event.id)
                 elif record_type == 'Subject':
-                    subject = mo.parse_subject(record_datum)
+                    subject = mo.parse_subject(record_datum, format='trace', cdm_version = 18)
                     if subject != None:
                         mo.add_subject(subject)
                 elif record_type == 'Principal':
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type)
+                    object = mo.parse_object(record_datum, record_type, format='trace', cdm_version = 18)
                     if object != None:
                         if object.type == 'FileObject':
                             tag = list(match_path(object.path))
@@ -133,10 +133,10 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", default='/Users/lexus/Documents/research/APT/ATPG/groundTruthT32.txt', type=str)
-    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E32-trace", type=str)
-    parser.add_argument("--experiment_prefix", default="Manual-T32", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default=[0, 3000000000])
+    parser.add_argument("--ground_truth_file", type=str)
+    parser.add_argument("--test_data", nargs='?', type=str)
+    parser.add_argument("--experiment_prefix", type=str)
+    parser.add_argument("--line_range", nargs=2, type=int)
 
     args = parser.parse_args()
 
