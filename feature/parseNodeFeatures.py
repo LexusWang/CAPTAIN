@@ -17,9 +17,6 @@ from collections import defaultdict
 from graph.Subject import Subject
 
 from numpy import gradient, record
-from parse.eventParsing import parse_event
-from parse.nodeParsing import parse_subject, parse_object
-from parse.lttng.recordParsing import read_lttng_record
 from policy.initTags import match_path, match_network_addr
 import sys
 import tqdm
@@ -58,14 +55,15 @@ def start_experiment(config):
         l_range = 0
         r_range = 5000000*args['volume_num']
 
+    data_path = args['test_data']
     loaded_line = 0
     last_event_str = ''
-    volume_list = os.listdir(args['test_data'])
+    volume_list = os.listdir(data_path)
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
     volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
-    for volume in volume_list:
-        print("Loading the {} ...".format(volume))
-        with open(os.path.join(args['test_data'], volume),'r') as fin:
+    for volume_name in volume_list:
+        print("Loading the {} ...".format(volume_name))
+        with open(os.path.join(data_path, volume_name), 'r') as fin:
             for line in fin:
                 if loaded_line > r_range:
                     break
@@ -73,28 +71,22 @@ def start_experiment(config):
                 if loaded_line % 100000 == 0:
                     print("Morse has loaded {} lines.".format(loaded_line))
                 record_datum = json.loads(line)['datum']
-                record_type = list(record_datum.keys())[0]
-                record_datum = record_datum[record_type]
-                record_type = record_type.split('.')[-1]
+                record_type = list(record_datum.keys())
+                record_datum = record_datum[record_type[0]]
+                record_type = record_type[0].split('.')[-1]
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
-                    event = mo.parse_event(record_datum)
+                    event = mo.parse_event(record_datum, format='trace', cdm_version = 18)
                 elif record_type == 'Subject':
-                    subject = mo.parse_subject(record_datum)
+                    subject = mo.parse_subject(record_datum, format='trace', cdm_version = 18)
                     if subject != None:
                         mo.add_subject(subject)
                 elif record_type == 'Principal':
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type)
+                    object = mo.parse_object(record_datum, record_type, format='trace', cdm_version = 18)
                     if object != None:
-                        if object.type == 'FileObject':
-                            tag = list(match_path(object.path))
-                            mo.node_inital_tags[object.id] = tag
-                        elif object.type == 'NetFlowObject':
-                            tag = list(match_network_addr(object.IP, object.port))
-                            mo.node_inital_tags[object.id] = tag
                         mo.add_object(object)
                         mo.set_object_tags(object.id)
                 elif record_type == 'TimeMarker':
@@ -139,9 +131,9 @@ def start_experiment(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E31-cadets", type=str)
-    parser.add_argument("--feature_path", default="/Users/lexus/Documents/research/APT/ATPG/results/C31", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default=[0,50000000000])
+    parser.add_argument("--test_data", nargs='?', default="/Users/lexus/Documents/research/APT/Data/E32-trace", type=str)
+    parser.add_argument("--feature_path", default="/Users/lexus/Documents/research/APT/ATPG/results/T32", type=str)
+    parser.add_argument("--line_range", nargs=2, type=int, default=[0,500000000000])
 
     args = parser.parse_args()
 

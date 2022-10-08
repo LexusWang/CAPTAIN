@@ -7,8 +7,8 @@ from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags
-from policy.alarms import check_alarm, check_alarm_pre, printTime
-from model.loss_1 import check_alarm_loss, check_alarm_pre_loss, printTime
+from policy.alarms import check_alarm, check_alarm_pre
+from model.loss import check_alarm_loss, check_alarm_pre_loss, printTime
 from parse.eventType import UNUSED_SET, EXIT_SET, UPDATE_SET, cdm_events
 from parse.eventParsing import parse_event as parse_event_
 from parse.nodeParsing import parse_object as parse_object_
@@ -91,12 +91,15 @@ class Morse:
         propTags(event, s, o, format=self.format, morse = self)
 
     def add_event_generate_loss(self, event, gt):
+        diagnosis = None
         s_loss = None
         o_loss = None
         s_grad = None
         o_grad = None
         s_init_id = None
         o_init_id = None
+        s_tags = None
+        o_tags = None
         # if event['src'] in self.Initialized_Nodes:
         #     self.Initialized_Nodes[event['src']] = True
         # if event['dest'] in self.Initialized_Nodes:
@@ -153,7 +156,7 @@ class Morse:
                     o_grad = None
                     o_init_id = None
 
-            return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
+        return diagnosis, s_loss, o_loss, s_tags, o_tags, s_grad, o_grad, s_init_id, o_init_id
         
     def add_event(self, event, gt=None):
         if event.type == 'update':

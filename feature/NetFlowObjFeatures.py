@@ -136,23 +136,37 @@ def generate_feature_cadets(feature_path, vector_dir):
     '''
     port_type = {21:1, 22:2, 25:3, 53:4, 67:5, 80:6, 123:7, 143:8, 443:9, 5353:10}
 
+    feature_vectors = {}
+
     nodes_list = list(node_features.keys())
     for key in tqdm.tqdm(nodes_list):
-        node_features[key]['features'] = []
-        if len(node_features[key]['IP'])>0:
-            node_features[key]['features'].extend(ipaddr_to_list(ipaddress.ip_address(node_features[key]['IP'])))
+        f_v = []
+
+        if isinstance(node_features[key]['IP'], str) and len(node_features[key]['IP'])>0:
+            node_features[key]['feature'] = '{}:{}'.format(node_features[key]['IP'], node_features[key]['Port'])
+            f_v.extend(ipaddr_to_list(ipaddress.ip_address(node_features[key]['IP'])))
         else:
-            node_features[key]['features'].extend(unknownip)
+            node_features[key]['feature'] = '{}:{}'.format('unknownIP', node_features[key]['Port'])
+            f_v.extend(unknownip)
+
+        f_v.append(port_type.get(node_features[key]['Port'],0))
+
+        if node_features[key]['feature'] not in feature_vectors:
+            feature_vectors[node_features[key]['feature']] = {}
+            feature_vectors[node_features[key]['feature']]['features'] = f_v[:]
+
         del node_features[key]['IP']
-        node_features[key]['features'].append(port_type.get(node_features[key]['Port'],0))
         del node_features[key]['Port']
         
 
     df = pd.DataFrame.from_dict(node_features,orient='index')
+    df.to_csv(os.path.join(vector_dir,'{}.csv'.format(node_type)))
+
+    df = pd.DataFrame.from_dict(feature_vectors,orient='index')
     df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
 
 
 if __name__ == "__main__":
-    feature_path = 'results/C32/NetFlowObject.csv'
-    vector_dir = 'results/C32/feature_vectors/'
+    feature_path = 'results/T32/NetFlowObject.csv'
+    vector_dir = 'results/T32/feature_vectors/'
     generate_feature_cadets(feature_path, vector_dir)

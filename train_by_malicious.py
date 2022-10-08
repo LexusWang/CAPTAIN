@@ -27,6 +27,7 @@ from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 from parse.eventType import lttng_events, cdm_events, standard_events
 from parse.eventType import UNUSED_SET
+from utils.graphLoader import read_graph_from_files
 import numpy as np
 from pathlib import Path
 import pickle
@@ -48,66 +49,6 @@ def get_file_tags(node_features_dict, node_id, initializer, device):
     # features[10001] = orig_feature[2]
     features = torch.tensor(input_feature).unsqueeze(dim=0).to(device)
     return initializer.initialize(features).squeeze()
-
-def read_graph_from_files(data_path, line_range):
-    volume_list = os.listdir(data_path)
-    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
-    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
-    # close interval
-    if line_range:
-        l_range = line_range[0]
-        r_range = line_range[1]
-    else:
-        l_range = 0
-        r_range = 5000000*len(volume_list)
-    mo = Morse()
-    line_range = []
-    events = []
-    loaded_line = 0
-    last_event_str = ''
-    for volume_name in volume_list:
-        with open(os.path.join(data_path, volume_name), 'r') as fin:
-            for line in fin:
-                if loaded_line > r_range:
-                    break
-                loaded_line += 1
-                if loaded_line % 100000 == 0:
-                    print("Morse has loaded {} lines.".format(loaded_line))
-                record_datum = json.loads(line)['datum']
-                record_type = list(record_datum.keys())
-                record_datum = record_datum[record_type[0]]
-                record_type = record_type[0].split('.')[-1]
-                if record_type == 'Event':
-                    if loaded_line < l_range:
-                        continue
-                    event = mo.parse_event(record_datum)
-                    if event:
-                        event_str = '{},{},{}'.format(event.src, event.type, event.dest)
-                        if event_str != last_event_str:
-                            last_event_str = event_str
-                            events.append((record_datum['uuid'],event))                        
-                elif record_type == 'Subject':
-                    subject = mo.parse_subject(record_datum)
-                    if subject != None:
-                        mo.add_subject(subject)
-                elif record_type == 'Principal':
-                    mo.Principals[record_datum['uuid']] = record_datum
-                elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type)
-                    if object != None:
-                        mo.add_object(object)
-                elif record_type == 'TimeMarker':
-                    pass
-                elif record_type == 'StartMarker':
-                    pass
-                elif record_type == 'UnitDependency':
-                    pass
-                elif record_type == 'Host':
-                    pass
-                else:
-                    pass
-
-    return events, mo
 
 def start_experiment(config):
     args = config
@@ -213,13 +154,14 @@ def start_experiment(config):
         ec = eventClassifier(args['ground_truth_file'])
         ic_index = {'i':0,'c':1}
 
+        loss_func = torch.nn.CrossEntropyLoss()
+
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
             total_loss = 0.0
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
-            batch_num = math.ceil(len(events)/args['batch_size'])
 
             # ============== Initialization ================== #
             model_tags = {}
@@ -257,7 +199,6 @@ def start_experiment(config):
             for event_info in tqdm.tqdm(events):
                 event_id = event_info[0]
                 event = event_info[1]
-
                 gt = ec.classify(event_id)
                 diagnosis, s_loss, o_loss, s_tags, o_tags, s_morse_grads, o_morse_grads, s_init_id, o_init_id = mo.add_event_generate_loss(event, gt)
                 experiment.update_metrics(diagnosis, gt)
@@ -275,7 +216,6 @@ def start_experiment(config):
                     continue
 
                 nodes_need_updated = {}
-                
                 if s_loss:
                     total_loss += s_loss.item()
                     s_loss.to(device)
@@ -355,38 +295,42 @@ def start_experiment(config):
 
             for node_type in ['Subject']:
                 gradients = [torch.zeros(2).unsqueeze(0) for i in range(len(process_name_index))]
-                need_update_index = []
+                # need_update_index = []
                 for nid in model_nids[node_type]:
                     i = process_name_index[node2processName[nid]['ProcessName']]
-                    # if nid in node_gradients:
-                    if False:
+                    if nid in node_gradients:
                         itag, ctag = model_tags[node_type][i].tolist()
                         i_grad, c_grad = node_gradients[nid].tolist()
                         if (itag < 0.8 and i_grad < 0) or (itag > 0.2 and i_grad > 0) or (ctag < 0.8 and c_grad < 0) or (ctag > 0.2 and c_grad > 0):
                             gradients[i] += node_gradients[nid].unsqueeze(0)
-                    else:
-                        if random.randint(0,99) == 3:
-                            predicted_tags = model_tags[node_type][i].clone().detach().requires_grad_(True)
-                            # predicted_tags = torch.tensor(model_tags[node_type][i], requires_grad=True)
-                            loss = torch.mean(torch.square(predicted_tags - target_tags[node_type]))
-                            total_unseen_loss += loss.item()
-                            loss.backward()
-                            gradients[i] += predicted_tags.grad.unsqueeze(0)
+                    # else:
+                    #     if random.randint(0,99) == 3:
+                    #         predicted_tags = model_tags[node_type][i].clone().detach().requires_grad_(True)
+                    #         # predicted_tags = torch.tensor(model_tags[node_type][i], requires_grad=True)
+                    #         # loss = torch.mean(torch.square(predicted_tags - target_tags[node_type]))
+                    #         loss = loss_func(predicted_tags.unsqueeze(dim=0), torch.tensor([1]))
+                    #         total_unseen_loss += loss.item()
+                    #         loss.backward()
+                    #         gradients[i] += predicted_tags.grad.unsqueeze(0)
                 if len(gradients) > 0:
-                    need_update_index = []
+                    # need_update_index = []
                     non_zero_gradients = []
                     for i, item in enumerate(gradients):
                         if item.tolist()[0][0] != 0.0 or item.tolist()[0][1] != 0.0:
                             non_zero_gradients.append(item)
-                            need_update_index.append(i)
-                    # print(gradients)
+                            # need_update_index.append(i)
+                        else:
+                            predicted_tags = model_tags[node_type][i].clone().detach().requires_grad_(True)
+                            # loss = loss_func(predicted_tags.unsqueeze(dim=0), torch.tensor([1]))
+                            loss = torch.mean(torch.square(predicted_tags - target_tags[node_type]))
+                            loss.backward()
+                            non_zero_gradients.append(predicted_tags.grad.unsqueeze(0))
                     gradients = torch.cat(non_zero_gradients, 0).to(device)
                     optimizers[node_type].zero_grad()
-                    model_tags[node_type] = model_tags[node_type][need_update_index]
-                    print(node_inits[node_type].embedding.weight.grad)
+                    # model_tags[node_type] = model_tags[node_type][need_update_index]
                     model_tags[node_type].backward(gradient=gradients, retain_graph=True)
-                    a = node_inits[node_type].embedding.weight.grad.tolist()
-                    print(node_inits[node_type].embedding.weight.grad.tolist())
+                    # a = node_inits[node_type].embedding.weight.grad.tolist()
+                    # print(node_inits[node_type].embedding.weight.grad.tolist())
                     optimizers[node_type].step()
 
             # print(srcsink_counter)
@@ -466,7 +410,6 @@ def start_experiment(config):
 
         volume_list = os.listdir(args['test_data'])
         volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
-
         # close interval
         if args["line_range"]:
             l_range = args["line_range"][0]

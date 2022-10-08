@@ -8,24 +8,28 @@ class Initializer(nn.Module):
         super().__init__()
         self.dtype = torch.float32
         self.embedding = nn.Embedding(input_dim, hidden_dim, dtype=self.dtype)
-        self.hidden_layers = []
+        self.embedding.weight.data.normal_(mean=0.0, std=5.0)
+        # self.hidden_layers = []
         self.af = LeakyReLU()
-        self.fc = Linear(hidden_dim, hidden_dim, dtype=self.dtype)
-        for i in range(no_hidden_layer):
-            self.hidden_layers.append(Linear(hidden_dim, hidden_dim, dtype=self.dtype))
+        # self.fc = Linear(hidden_dim, hidden_dim, dtype=self.dtype)
+        # for i in range(no_hidden_layer):
+        #     self.hidden_layers.append(Linear(hidden_dim, hidden_dim, dtype=self.dtype))
         self.output_layers = Linear(hidden_dim, output_dim, dtype=self.dtype)
+        self.output_layers.weight.data.normal_(mean=0.0, std=5.0)
 
     def initialize(self, features):
         # features.to(self.device)
-        out = self.embedding(features.to(torch.int32))
-        hidden_result = None
-        for i, hl in enumerate(self.hidden_layers):
-            hl.to(features.device)
-            if i == 0:
-                hidden_result = self.af(hl((self.fc(out))))
-            else:
-                hidden_result = self.af(hl(hidden_result))
-        hidden_result = self.output_layers(nn.functional.normalize(hidden_result))
+        out = self.embedding(features.to(torch.int32)).squeeze()
+        out = self.af(out)
+        # hidden_result = None
+        # for i, hl in enumerate(self.hidden_layers):
+        #     hl.to(features.device)
+        #     if i == 0:
+        #         hidden_result = self.af(hl((self.fc(out))))
+        #     else:
+        #         hidden_result = self.af(hl(hidden_result))
+        hidden_result = self.output_layers(nn.functional.normalize(out))
+        # tags = torch.nn.functional.softmax(nn.functional.normalize(hidden_result, p=1.0, dim=1), dim=1)
         tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
         return tags
 
@@ -96,5 +100,6 @@ class NetFlowObj_Initializer(nn.Module):
                 hidden_result = self.relu(hl(hidden_result))
         hidden_result = self.output_layers(nn.functional.normalize(hidden_result))
         # hidden_result = self.output_layers(nn.functional.normalize(self.relu(features)))
+        a = nn.functional.normalize(hidden_result, p=1.0, dim=1)
         tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
         return tags
