@@ -9,7 +9,6 @@ import gc
 import argparse
 import time
 from utils.utils import *
-from model.loss import get_loss
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
 from collections import defaultdict

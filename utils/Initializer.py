@@ -29,8 +29,8 @@ class Initializer(nn.Module):
         #     else:
         #         hidden_result = self.af(hl(hidden_result))
         hidden_result = self.output_layers(nn.functional.normalize(out))
-        # tags = torch.nn.functional.softmax(nn.functional.normalize(hidden_result, p=1.0, dim=1), dim=1)
-        tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
+        tags = torch.nn.functional.softmax(nn.functional.normalize(hidden_result, p=1.0, dim=1), dim = 1)
+        # tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
         return tags
 
 
@@ -66,7 +66,8 @@ class FileObj_Initializer(nn.Module):
                 hidden_result = self.relu(hl(hidden_result))
         hidden_result = self.output_layers(nn.functional.normalize(hidden_result))
         # hidden_result = self.output_layers(nn.functional.normalize(self.relu(features)))
-        tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
+        # tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
+        tags = torch.nn.functional.softmax(nn.functional.normalize(hidden_result, p=1.0, dim=1), dim = 1)
         return tags
 
 class NetFlowObj_Initializer(nn.Module):

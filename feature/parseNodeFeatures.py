@@ -88,7 +88,7 @@ def start_experiment(config):
                     object = mo.parse_object(record_datum, record_type, format='trace', cdm_version = 18)
                     if object != None:
                         mo.add_object(object)
-                        mo.set_object_tags(object.id)
+                        # mo.set_object_tags(object.id)
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -103,9 +103,11 @@ def start_experiment(config):
     network_feature = open(os.path.join(args['feature_path'], 'NetFlowObject.csv'), 'w')
     file_feature = open(os.path.join(args['feature_path'], 'FileObject.csv'), 'w')
     process_feature = open(os.path.join(args['feature_path'], 'Subject.csv'), 'w')
+    src_sink_feature = open(os.path.join(args['feature_path'], 'SrcSinkObject.csv'), 'w')
     print("Key\tProcessName", file = process_feature)
     print("Key\tIP\tPort", file=network_feature)
     print("Key\tPath", file=file_feature)
+    print("Key\tSrcSinkName", file=src_sink_feature)
 
     for key, value in mo.Nodes.items():
         if isinstance(value, Subject):
@@ -115,9 +117,12 @@ def start_experiment(config):
                 print("{}\t{}\t{}".format(key, value.IP, value.port), file=network_feature)
             elif value.type == 'FileObject':
                 print("{}\t{}".format(key, value.path), file=file_feature)
+            elif value.type == 'SrcSinkObject':
+                print("{}\t{}".format(key, value.name), file=src_sink_feature)
     network_feature.close()
     file_feature.close()
     process_feature.close()
+    src_sink_feature.close()
     # mo.alarm_file.close()
     # experiment.print_metrics()
     # experiment.save_metrics()

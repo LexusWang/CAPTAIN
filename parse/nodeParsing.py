@@ -105,7 +105,12 @@ def parse_object_cdm(self, datum, object_type):
         object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
         if object.subtype == cdm_srcsink_type['SRCSINK_UNKNOWN']:
-            object.name = 'UnknownObject_{}_{}'.format(datum['fileDescriptor']['int'],datum['baseObject']['properties']['map']['pid'])
+            pid_ = int(datum['baseObject']['properties']['map']['pid'])
+            try:
+                pname_ = self.Nodes[self.processes[pid_]['node']].processName
+            except KeyError:
+                pname_ = 'unknown'
+            object.name = 'UnknownObject_{}_{}_{}'.format(datum['fileDescriptor']['int'], pid_, pname_)
             object.path = object.name
     else:
         # error!
