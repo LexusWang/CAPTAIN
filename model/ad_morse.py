@@ -7,17 +7,23 @@ from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import initObjectTags, initSubjectTags
 from policy.propTags import propTags
-from policy.alarms import check_alarm, check_alarm_pre, printTime
+from policy.alarms import check_alarm, check_alarm_pre
 
 
 class Morse:
 
-    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
+    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0):
+
         self.batch_size = batch_size
         self.sequence_size = sequence_size
         self.data_loader = data_loader
 
         self.format = format
+
+        # init graph
+        self.G = nx.DiGraph()
+        self.Nodes = {}
+        # self.Objects = {}
 
         # init value
         self.stag_benign = 0.5
@@ -38,21 +44,10 @@ class Morse:
         self.a_b = 0.1
         self.a_e = 0.05
 
-
-        # init graph
-        self.G = nx.DiGraph()
-        self.Nodes = {}
-        self.Principals = {}
-        self.processes = {}
-        # self.Objects = {}
-
         # alarm
         self.alarm = {}
         self.created = {}
         self.alarm_sum = [0, 0]
-
-        # alarm file
-        self.alarm_file = alarm_file
 
         # # scaler w and b
         # self.benign_thresh_model = simple_net.SimpleNet()
@@ -79,6 +74,12 @@ class Morse:
 
         self.simple_net_grad_tensor = None
         self.morse_grad_tensor = None
+
+    def forward(self):
+        pass
+
+    def backward(self):
+        pass
 
 
     # def forward(self, learn):
@@ -295,59 +296,36 @@ class Morse:
         self.suspect_env_model.update_weight(w_grad, b_grad)
 
 
-    # ------------------ save & load ----------- #
-    def save(path):
-        pass
-
-    def load(path):
-        pass
-
     def propagate(self, event, s, o):
-        propTags(event, s, o, format=self.format, morse = self)
+        propTags(event, s, o, format=self.format)
 
     def add_event(self, event):
-        # alarm_file = open(self.alarm_file,'wt')
-        alarm_file = self.alarm_file
-        if event['type'] == 'EVENT_EXIT':
-            try:
-                self.processes[self.Nodes[event['src']].pid]['alive'] = False
-            except KeyError:
-                print('Oops! Cannot find Node!')
-        if event['src'] != -1 and event['dest'] != -1:
-            self.G.add_edge(event['src'], event['dest'])
-            src = self.Nodes.get(event['src'], None)
-            dest = self.Nodes.get(event['dest'], None)
-            if src and dest:
-                # if src.pid == 3300:
-                #     print("Time: {} Event type:{} SubjectName: {} Tags: {} ObjectName: {} Tags: {}".format(printTime(event['timestamp']), event['type'], src.get_name(), src.tags(), dest.get_name(), dest.tags()))
-                if (src.get_pid(), dest.get_name()) not in self.alarm:
-                    self.alarm[(src.get_pid(), dest.get_name())] = False
-                alarmArg = self.detect_alarm_pre(event, src, dest, alarm_file)
-                self.propagate(event, src, dest)
-                self.detect_alarm(event, src, dest, alarmArg, alarm_file)
-            else:
-                a = 0
+        self.G.add_edge(event['src'], event['dest'])
+        src = self.Nodes.get(event['src'], None)
+        dest = self.Nodes.get(event['dest'], None)
+        if src and dest:
+            origtags = self.detect_alarm_pre(event, src, dest)
+            self.propagate(event, src, dest)
+            self.detect_alarm(event, src, dest, origtags)
+        else:
+            a = 0
 
     def add_object(self, object_node, object):
         self.G.add_node(object_node['uuid'])
-        initObjectTags(object,format=self.format)
+        # self.G.nodes[object_node['uuid']]['tags'] = object_node['tags']
+        initObjectTags(object)
         self.Nodes[object_node['uuid']] = object
 
     def add_subject(self, subject_node, subject):
         self.G.add_node(subject_node['uuid'])
-        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
-            a = self.Nodes[self.processes[subject.pid]['node']]
-            subject.setSubjTags(self.Nodes[self.processes[subject.pid]['node']].tags())
-        else:
-            initSubjectTags(subject)
-        self.processes[subject.pid] = {}
-        self.processes[subject.pid]['node'] = subject_node['uuid']
-        self.processes[subject.pid]['alive'] = True
+        # self.G.nodes[subject_node['uuid']]['tags'] = subject_node['tags']
+        initSubjectTags(subject)
         self.Nodes[subject_node['uuid']] = subject
 
-    def detect_alarm(self,event,s ,o, alarmArg, alarm_file = None):
-        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, self.format, self, alarm_file)
+    def detect_alarm(self,event,s ,o, origtags):
+        self.alarm[(s.get_pid(), o.get_name())] = False
+        check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, origtags, format=self.format)
 
-    def detect_alarm_pre(self,event,s ,o, alarm_file = None):
-        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, self.format, self, alarm_file)
+    def detect_alarm_pre(self,event,s ,o):
+        return check_alarm_pre(event, s, o, self.alarm, self.created, self.alarm_sum, format=self.format)
         

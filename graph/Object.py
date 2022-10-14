@@ -1,43 +1,44 @@
+import json
 from policy.floatTags import citag
 import numpy as np
 import re
 
-
-# from globals import GlobalVariable as gv
-
-
 class Object:
-    def __init__(self, id = None, time: int = None, type: str = None, subtype: str = None, pid: int = None, ppid: int = None,
-                 objName: str = None):
+    def __init__(self, id, type, subtype: str = None, pid: int = None, objName: str = None):
         self.id = id
-        self.time = time
         self.type = type
         self.subtype = subtype
-        self.ppid = ppid
         self.name = objName
         self.path = None
-        self.updateTime = 0
-        self.pipe = []
 
-        self.event_list = []
-        self.event_id_list = []
-        self.event_type_list = []
-        self.state_list = []
-        self.morse_grad_list = []
-        self.simple_net_grad_list = []
-        # grad list stores grad of morse
-        self.cur_state = np.zeros([2, 3])
-        self.seq_len = 0
+        self.updateTime = 0
 
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
+        self.iTag_grad: float = 1.0
+        self.cTag_grad: float = 1.0
+
+        self.iTag_initID = [id,'i']
+        self.cTag_initID = [id,'c']
+
+    def dumps(self) -> str:
+        json_dict = {}
+        json_dict['id'] = self.id
+        # json_dict['time'] = self.time
+        json_dict['type'] = self.type
+        json_dict['subtype'] = self.subtype
+        # json_dict['ppid'] = self.ppid
+        json_dict['name'] = self.name
+        json_dict['path'] = self.path
+        return str(json_dict)
+
     def tags(self):
         if self.iTag > 0.5:
-            ciTag = 1
+            ciTag = 1.0
         else:
-            ciTag = 0
-        return [ciTag, ciTag, 0, self.iTag, self.cTag]
+            ciTag = 0.0
+        return [ciTag, ciTag, float(self.iTag), float(self.cTag)]
 
     def setObjTags(self, tags):
         self.iTag = tags[0]
@@ -46,16 +47,19 @@ class Object:
     def isMatch(self, string):
         if self.path == None:
             return False
-        # a = re.search(string, self.path)
         return isinstance(re.search(string, self.path), re.Match)
 
     def isIP(self):
         return self.type in {'NetFlowObject','inet_scoket_file'}
 
-    def set_IP(self, ip, port):
+    def set_IP(self, ip, port, protocol):
         assert self.type in {'NetFlowObject','inet_scoket_file'}
         self.IP = ip
         self.port = port
+        self.Protocol = protocol
+
+    def isFile(self):
+        return self.type in {'FileObject'}
 
     def get_name(self):
         return self.name
@@ -63,4 +67,48 @@ class Object:
     def get_id(self):
         return self.id
 
-        
+    def get_grad(self):
+        return [self.iTag_grad, self.iTag_grad, self.iTag_grad, self.cTag_grad]
+
+    def get_citag_grad(self):
+        return self.iTag_grad
+
+    def get_etag_grad(self):
+        return self.iTag_grad
+
+    def get_itag_grad(self):
+        return self.iTag_grad
+
+    def get_ctag_grad(self):
+        return self.cTag_grad
+
+    def set_itag_grad(self, i_grad):
+        self.iTag_grad = i_grad
+
+    def set_ctag_grad(self, c_grad):
+        self.cTag_grad = c_grad
+
+    def set_grad(self, grads):
+        self.iTag_grad = grads[0]
+        self.cTag_grad = grads[1]
+
+    def setiTagInitID(self, id):
+        self.iTag_initID = id
+
+    def setcTagInitID(self, id):
+        self.cTag_initID = id
+
+    def getInitID(self):
+        return [self.iTag_initID, self.iTag_initID, self.iTag_initID, self.cTag_initID]
+
+    def getciTagInitID(self):
+        return self.iTag_initID
+
+    def geteTagInitID(self):
+        return self.iTag_initID
+
+    def getiTagInitID(self):
+        return self.iTag_initID
+
+    def getcTagInitID(self):
+        return self.cTag_initID

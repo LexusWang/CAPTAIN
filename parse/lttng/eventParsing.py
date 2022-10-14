@@ -15,7 +15,7 @@ def parse_subject_cdm(datum):
         else:
             cmdLine_ = None
         subject = Subject(id=datum['uuid'], time = seen_time_, type = type_, pid = pid_, ppid=int(ppid_), cmdLine = cmdLine_, processName=pname_)
-        subject.owner = datum['localPrincipal']
+        subject.owner = datum['localPrincipal']['com.bbn.tc.schema.avro.cdm20.UUID']
     elif subject_type == 'SUBJECT_THREAD':
         pass
     elif subject_type == 'SUBJECT_UNIT':
@@ -41,7 +41,7 @@ def parse_object_cdm(datum, object_type):
     elif object_type == 'PacketSocketObject':
         pass
     elif object_type == 'NetFlowObject':
-        object.set_IP(datum['remoteAddress'], datum['remotePort'])
+        object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
         pass
     elif object_type == 'SrcSinkObject':

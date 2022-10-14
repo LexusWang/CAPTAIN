@@ -16,7 +16,8 @@ cdm_events_list = ['EVENT_ACCEPT','EVENT_ADD_OBJECT_ATTRIBUTE','EVENT_BIND','EVE
             'EVENT_LOGCLEAR','EVENT_LOGIN','EVENT_LOGOUT','EVENT_LSEEK','EVENT_MMAP','EVENT_MODIFY_FILE_ATTRIBUTES','EVENT_MODIFY_PROCESS',         
             'EVENT_MOUNT','EVENT_MPROTECT','EVENT_OPEN','EVENT_OTHER','EVENT_READ','EVENT_READ_SOCKET_PARAMS','EVENT_RECVFROM','EVENT_RECVMSG',                
             'EVENT_RENAME','EVENT_SENDTO','EVENT_SENDMSG','EVENT_SERVICEINSTALL','EVENT_SHM','EVENT_SIGNAL','EVENT_STARTSERVICE',           
-            'EVENT_TRUNCATE','EVENT_UMOUNT','EVENT_UNIT','EVENT_UNLINK','EVENT_UPDATE','EVENT_WAIT','EVENT_WRITE','EVENT_WRITE_SOCKET_PARAMS']
+            'EVENT_TRUNCATE','EVENT_UMOUNT','EVENT_UNIT','EVENT_UNLINK','EVENT_UPDATE','EVENT_WAIT','EVENT_WRITE','EVENT_WRITE_SOCKET_PARAMS',
+            'EVENT_TEE', 'EVENT_SPLICE', 'EVENT_VMSPLICE', 'EVENT_INIT_MODULE', 'EVENT_FINIT_MODULE']
 
 
 standard_events = {}
@@ -28,10 +29,10 @@ for i, event in enumerate(cdm_events_list):
 
 lttng_common_events = {'sys_open':29,'sys_close':8,'sys_read':31,'sys_write': 48,'sys_clone':7,'sys_fork':17,
     'sys_execve':13,'sys_accept':0,'sys_connect':9,'sys_recvfrom':33,'sys_recvmsg':34,'sys_sendto':36,'sys_sendmsg':37,
-    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45, 'sys_setuid':5}
+    'sys_rename':35,'sys_dup2':12,'sys_create':10,'sys_unlink':45, 'sys_setuid':5, 'sys_chmod':25}
 
 lttng_special_events = ['sys_openat', 'sys_readv','sys_pread', 'sys_preadv', 'sys_writev','sys_pwrite','sys_pwritev',
-'sys_socket', 'sys_renameat', 'sys_chmod','sys_chown','sys_pipe','sys_pipe2','sys_setgid',
+'sys_socket', 'sys_renameat','sys_chown','sys_pipe','sys_pipe2','sys_setgid',
 'sys_unlinkat','sys_unknow','sys_imageload','ipaddr_info','dns_info']
 
 lttng_special_events.extend(lttng_sched_event)
@@ -42,6 +43,33 @@ for i, event in enumerate(lttng_special_events):
     lttng_events[event] = 50 + i
     standard_events[event] = 50 + i
 
+READ_SET = {standard_events['EVENT_READ'],standard_events['EVENT_RECVMSG'], standard_events['EVENT_READ_SOCKET_PARAMS'],standard_events['EVENT_RECVFROM']}
+WRITE_SET = {standard_events['EVENT_WRITE'], standard_events['EVENT_SENDMSG'],standard_events['EVENT_SENDTO'],standard_events['EVENT_WRITE_SOCKET_PARAMS']}
+# INJECT_SET = {standard_events['EVENT_MODIFY_PROCESS']}
+INJECT_SET = {}
+CHMOD_SET = {standard_events['EVENT_MODIFY_FILE_ATTRIBUTES']}
+SET_UID_SET = {standard_events['EVENT_CHANGE_PRINCIPAL']}
+EXECVE_SET = {standard_events['EVENT_LOADLIBRARY']}
+LOAD_SET = {standard_events['EVENT_MMAP']}
+CREATE_SET = {standard_events['EVENT_CREATE_OBJECT']}
+RENAME_SET = {standard_events['EVENT_RENAME']}
+REMOVE_SET = {standard_events['EVENT_UNLINK']}
+CLONE_SET = {standard_events['EVENT_CLONE'], standard_events['EVENT_FORK']}
+MPROTECT_SET = {standard_events['EVENT_MPROTECT']}
+MMAP_SET = {standard_events['EVENT_MMAP']}
+UPDATE_SET = {standard_events['EVENT_UPDATE']}
+EXIT_SET = {standard_events['EVENT_EXIT']}
+UNUSED_SET = {standard_events['EVENT_ACCEPT'],standard_events['EVENT_ADD_OBJECT_ATTRIBUTE'],standard_events['EVENT_BIND'],standard_events['EVENT_BLIND'],
+    standard_events['EVENT_BOOT'],standard_events['EVENT_CHECK_FILE_ATTRIBUTES'],standard_events['EVENT_CLOSE'],standard_events['EVENT_CONNECT'],standard_events['EVENT_CREATE_THREAD'],
+    standard_events['EVENT_DUP'],standard_events['EVENT_FLOWS_TO'],standard_events['EVENT_FCNTL'],
+    standard_events['EVENT_LINK'],standard_events['EVENT_LOGCLEAR'],standard_events['EVENT_LOGIN'],standard_events['EVENT_LOGOUT'],standard_events['EVENT_LSEEK'],
+    standard_events['EVENT_OTHER'], standard_events['EVENT_OPEN'],
+    standard_events['EVENT_SERVICEINSTALL'],standard_events['EVENT_SHM'],standard_events['EVENT_SIGNAL'],standard_events['EVENT_STARTSERVICE'],
+    standard_events['EVENT_TRUNCATE'],
+    standard_events['EVENT_UMOUNT'],standard_events['EVENT_UNIT'],standard_events['EVENT_WAIT'],
+    standard_events['EVENT_TEE'], standard_events['EVENT_SPLICE'], standard_events['EVENT_VMSPLICE'],
+    standard_events['EVENT_INIT_MODULE'], standard_events['EVENT_FINIT_MODULE']}
+# UNUSED_SET = {}
 
 # for key, value in standard_events.items():
 #     print(key+': '+str(value))
