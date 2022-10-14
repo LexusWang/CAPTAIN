@@ -101,7 +101,7 @@ def parse_event_cadets(self, datum, cdm_version):
         else:
             print("MMAP: {}".format(str(datum)))
             event.type = 'mmap'
-            event.parameters = eval(event.properties['arg_mem_flags'])
+            event.parameters = memory_protection(eval(event.properties['protection']))
     elif datum['type'] in CREATE_SET:
         assert event.src and event.dest
         if datum['name']['string'] not in  {'aue_socketpair', 'aue_mkdirat'}:

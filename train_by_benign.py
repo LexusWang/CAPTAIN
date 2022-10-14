@@ -170,6 +170,15 @@ def start_experiment(config):
 
             for node_type in ['NetFlowObject']:
                 model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
+
+                array = model_tags[node_type].tolist()
+                Path(os.path.join(experiment.get_experiment_output_path(), 'tags')).mkdir(parents=True, exist_ok=True)
+                outputfile = open(os.path.join(experiment.get_experiment_output_path(), 'tags/networktags-epoch-{}.csv'.format(epoch)), 'w')
+                print("NetworkFeature\titag-0\titag-1", file = outputfile)
+                for i, item in enumerate(network_feature_index.keys()):
+                    print("{}\t{}\t{}".format(item, array[i][0], array[i][1]), file = outputfile)
+                outputfile.close()
+
                 for nid in network_nid_feature.keys():
                     index = network_feature_index[network_nid_feature[nid]['feature']]
                     if model_tags[node_type][index,:].tolist()[0] > 0.5:
@@ -251,18 +260,30 @@ def start_experiment(config):
 
             for node_type in ['NetFlowObject']:
                 labels = []
-                for network_feature in network_feature_index.keys():
-                    if network_feature in network_feature_labels:
-                        labels.append(round(sum(network_feature_labels[network_feature])/len(network_feature_labels[network_feature])))
-                    else:
-                        labels.append(0)
+                needs_update = []
+                if len(network_feature_labels) > 0:
+                    for network_feature in network_feature_index.keys():
+                        if network_feature in network_feature_labels:
+                            needs_update.append(i)
+                            print(network_feature)
+                            labels.append(round(sum(network_feature_labels[network_feature])/len(network_feature_labels[network_feature])))
+                        else:
+                            sample_para = math.ceil(len(network_feature_index)/(len(network_feature_labels)+1))
+                            if random.randint(0, sample_para) == 1:
+                                needs_update.append(i)
+                                labels.append(0)
+                else:
+                    for network_feature in network_feature_index.keys():
+                        if random.randint(0, 9) == 1:
+                            needs_update.append(i)
+                            labels.append(0)
                 optimizers[node_type].zero_grad()
-                loss = loss_func(model_tags[node_type], torch.tensor(labels))
-                loss.backward()
+                net_loss = loss_func(model_tags[node_type][needs_update], torch.tensor(labels))
+                net_loss.backward()
                 # model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                 optimizers[node_type].step()
 
-            # print(labels)
+            print(labels)
 
             for node_type in ['Subject']:
                 labels = []
@@ -277,14 +298,14 @@ def start_experiment(config):
                             labels.append(0)
 
                 optimizers[node_type].zero_grad()
-                loss = loss_func(model_tags[node_type][needs_update], torch.tensor(labels))
-                loss.backward()
+                src_sink_loss = loss_func(model_tags[node_type][needs_update], torch.tensor(labels))
+                src_sink_loss.backward()
                 # model_tags[node_type].backward(gradient=gradients, retain_graph=True)
                 optimizers[node_type].step()
 
             # print(labels)
 
-            print('total loss is {}'.format(total_loss))
+            print('network loss is {}'.format(net_loss))
             print('total unseen loss is {}'.format(total_unseen_loss))
             mo.alarm_file.close()
             experiment.print_metrics()
@@ -312,6 +333,9 @@ def start_experiment(config):
                             format='%(asctime)s %(levelname)s:%(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p')
         experiment.save_hyperparameters()
+
+        format='cadets'
+        cdm_version = 18
 
         begin_time = time.time()
         mo = Morse()
@@ -418,7 +442,7 @@ def start_experiment(config):
                     if record_type == 'Event':
                         if loaded_line < l_range:
                             continue
-                        event = mo.parse_event(record_datum, format='trace', cdm_version = 18)
+                        event = mo.parse_event(record_datum, format, cdm_version)
                         if event:
                             event_str = '{},{},{}'.format(event.src, event.type, event.dest)
                             if event_str != last_event_str:
@@ -429,13 +453,13 @@ def start_experiment(config):
                                 if gt != None and diagnois == None:
                                     print(event.id)
                     elif record_type == 'Subject':
-                        subject = mo.parse_subject(record_datum, format='trace', cdm_version = 18)
+                        subject = mo.parse_subject(record_datum, format, cdm_version)
                         if subject != None:
                             mo.add_subject(subject)
                     elif record_type == 'Principal':
                         mo.Principals[record_datum['uuid']] = record_datum
                     elif record_type.endswith('Object'):
-                        object = mo.parse_object(record_datum, record_type, format='trace', cdm_version = 18)
+                        object = mo.parse_object(record_datum, record_type, format, cdm_version)
                         if object != None:
                             # if object.type == 'FileObject':
                             #     tag = list(match_path(object.path))
@@ -480,7 +504,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_tag", default="t32-test", type=str)
     parser.add_argument("--experiment_prefix", default="Train_by_benign", type=str)
     parser.add_argument("--no_hidden_layers", default=1, type=int)
-    parser.add_argument("--from_checkpoint", type=str, default='./experiments/Train_by_benign2022-10-09-13-29-29/train/checkpoints/epoch-30')
+    parser.add_argument("--from_checkpoint", type=str)
     parser.add_argument("--line_range", nargs = 2, type=int, default=[10000000,40000000])
 
     args = parser.parse_args()

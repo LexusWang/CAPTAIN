@@ -78,14 +78,19 @@ class NetFlowObj_Initializer(nn.Module):
         super().__init__()
         self.dtype = torch.float32
         self.ip_layer = nn.Linear(167, 24, dtype=self.dtype)
+        self.ip_layer.weight.data.normal_(mean=0.0, std=5.0)
         self.port_embedding = nn.Embedding(11, 6, dtype=self.dtype)
+        self.port_embedding.weight.data.normal_(mean=0.0, std=5.0)
         # self.protocol_embedding = nn.Embedding(2, 2, dtype=self.dtype)
         self.fc = Linear(30, 30,dtype=self.dtype)
         self.relu = ReLU()
         self.hidden_layers = []
         for i in range(no_hidden_layer):
             self.hidden_layers.append(Linear(30, 30, dtype=self.dtype))
+            self.hidden_layers[i].weight.data.normal_(mean=0.0, std=5.0)
+
         self.output_layers = Linear(30, output_dim, dtype=self.dtype)
+        self.output_layers.weight.data.normal_(mean=0.0, std=5.0)
 
     def initialize(self, features):
         # proto_vec = self.protocol_embedding(features[:,0].to(torch.int32))
@@ -101,6 +106,6 @@ class NetFlowObj_Initializer(nn.Module):
                 hidden_result = self.relu(hl(hidden_result))
         hidden_result = self.output_layers(nn.functional.normalize(hidden_result))
         # hidden_result = self.output_layers(nn.functional.normalize(self.relu(features)))
-        a = nn.functional.normalize(hidden_result, p=1.0, dim=1)
-        tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
+        # tags = torch.sigmoid(nn.functional.normalize(hidden_result, p=1.0, dim=1))
+        tags = torch.nn.functional.softmax(nn.functional.normalize(hidden_result, p=1.0, dim=1), dim = 1)
         return tags

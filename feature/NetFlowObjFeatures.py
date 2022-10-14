@@ -143,10 +143,10 @@ def generate_feature_cadets(feature_path, vector_dir):
         f_v = []
 
         if isinstance(node_features[key]['IP'], str) and len(node_features[key]['IP'])>0:
-            node_features[key]['feature'] = '{}:{}'.format(node_features[key]['IP'], node_features[key]['Port'])
+            node_features[key]['feature'] = '{}:{}'.format(node_features[key]['IP'], port_type.get(node_features[key]['Port'],0))
             f_v.extend(ipaddr_to_list(ipaddress.ip_address(node_features[key]['IP'])))
         else:
-            node_features[key]['feature'] = '{}:{}'.format('unknownIP', node_features[key]['Port'])
+            node_features[key]['feature'] = '{}:{}'.format('unknownIP', port_type.get(node_features[key]['Port'],0))
             f_v.extend(unknownip)
 
         f_v.append(port_type.get(node_features[key]['Port'],0))
@@ -167,6 +167,6 @@ def generate_feature_cadets(feature_path, vector_dir):
 
 
 if __name__ == "__main__":
-    feature_path = 'results/T32/NetFlowObject.csv'
-    vector_dir = 'results/T32/feature_vectors/'
+    feature_path = 'results/C32/NetFlowObject.csv'
+    vector_dir = 'results/C32/feature_vectors/'
     generate_feature_cadets(feature_path, vector_dir)

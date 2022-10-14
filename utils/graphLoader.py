@@ -3,7 +3,7 @@ import os
 from utils.utils import *
 from model.morse import Morse
 
-def read_graph_from_files(data_path, line_range):
+def read_graph_from_files(data_path, line_range, format = 'cadets', cdm_version = 18):
     # close interval
     if line_range:
         l_range = line_range[0]
@@ -35,20 +35,20 @@ def read_graph_from_files(data_path, line_range):
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
-                    event = mo.parse_event(record_datum, format='trace', cdm_version = 18)
+                    event = mo.parse_event(record_datum, format, cdm_version)
                     if event:
                         event_str = '{},{},{}'.format(event.src, event.type, event.dest)
                         if event_str != last_event_str:
                             last_event_str = event_str
                             events.append((record_datum['uuid'],event))                        
                 elif record_type == 'Subject':
-                    subject = mo.parse_subject(record_datum, format='trace', cdm_version = 18)
+                    subject = mo.parse_subject(record_datum, format, cdm_version)
                     if subject != None:
                         mo.add_subject(subject)
                 elif record_type == 'Principal':
                     mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type, format='trace', cdm_version = 18)
+                    object = mo.parse_object(record_datum, record_type, format, cdm_version)
                     if object != None:
                         mo.add_object(object)
                 elif record_type == 'TimeMarker':
