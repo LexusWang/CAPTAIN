@@ -22,15 +22,15 @@ class Experiment:
         else:
             self.device = torch.device("cpu")
         self.device = torch.device("cpu")
-        self.results_path = os.path.join(self.experiment_path, self.args['mode'])
+        self.results_path = os.path.join(self.experiment_path, self.args.mode)
         self.checkpoint_path = os.path.join(self.results_path, 'checkpoints')
         Path(self.checkpoint_path).mkdir(parents=True, exist_ok=True)
-        if self.args['mode'] == 'test':
+        if self.args.mode == 'test':
             self.train_results_path = os.path.join(self.experiment_path, 'train')
         Path(self.results_path).mkdir(parents=True, exist_ok=True)
         self.metric_path = os.path.join(self.results_path, "metric")
         Path(self.metric_path).mkdir(parents=True, exist_ok=True)
-        self.pre_load_morses_repo = os.path.join(self.project_path, "pre_load_morses")
+        self.pre_load_morses_repo = os.path.join(self.project_path, "pre_load_graph")
         Path(self.pre_load_morses_repo).mkdir(parents=True, exist_ok=True)
 
         # final metrics
@@ -99,7 +99,7 @@ class Experiment:
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:
-            for arg_item in self.args.items():
+            for arg_item in vars(self.args):
                 f.write(f"{arg_item[0]}: {arg_item[1]}\n")
 
     def save_model(self, model_dict):

@@ -80,15 +80,16 @@ def parse_subject_trace(self, datum, cdm_version=18):
 def parse_object_cdm(self, datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
     if object_type == 'FileObject':
-        object.subtype = cdm_file_object_type[datum['type']]
+        # object.subtype = cdm_file_object_type[datum['type']]
+        object.subtype = datum['type']
         permission = datum['baseObject']['permission']
-        object.name = datum['baseObject']['properties']['map'].get('path','Null')
+        # object.name = datum['baseObject']['properties']['map'].get('path','Null')
         object.path = datum['baseObject']['properties']['map'].get('path','Null')
     elif object_type == 'UnnamedPipeObject':
         permission = datum['baseObject']['permission']
         object.name = 'Pipe_{}'.format(object.id)
         # object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
-        object.path = object.name
+        # object.path = object.name
     elif object_type == 'RegistryKeyObject':
         pass
     elif object_type == 'PacketSocketObject':
@@ -100,18 +101,22 @@ def parse_object_cdm(self, datum, object_type):
             object.set_IP(datum['remoteAddress'], datum['remotePort'], None)
     elif object_type == 'MemoryObject':
         object.name = 'MEM_{}'.format(datum['memoryAddress'])
-        object.path = object.name
+        # object.path = object.name
     elif object_type == 'SrcSinkObject':
-        object.subtype = cdm_srcsink_type[datum['type']]
+        object.subtype = datum['type']
+        # object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
-        if object.subtype == cdm_srcsink_type['SRCSINK_UNKNOWN']:
+        # if object.subtype == cdm_srcsink_type['SRCSINK_UNKNOWN']:
+        if object.subtype == 'SRCSINK_UNKNOWN':
             pid_ = int(datum['baseObject']['properties']['map']['pid'])
             try:
                 pname_ = self.Nodes[self.processes[pid_]['node']].processName
             except KeyError:
                 pname_ = 'unknown'
             object.name = 'UnknownObject_{}_{}_{}'.format(datum['fileDescriptor']['int'], pid_, pname_)
-            object.path = object.name
+            # object.path = object.name
+        else:
+            print(datum)
     else:
         # error!
         pass
