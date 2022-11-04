@@ -41,8 +41,8 @@ def start_experiment(args):
     loaded_line = 0
     last_event_str = ''
     volume_list = os.listdir(args.input_data)
-    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
-    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     
     # close interval
     if args.line_range:
@@ -94,7 +94,8 @@ def start_experiment(args):
                             print(subject.dumps(), file = node_file)
                 elif record_type == 'Principal':
                     record_datum['euid'] = record_datum['properties']['map']['euid']
-                    del record_datum['hostId']
+                    if 'hostId' in record_datum:
+                        del record_datum['hostId']
                     del record_datum['properties']
                     print(json.dumps(record_datum), file = principal_file)
                     # mo.Principals[record_datum['uuid']] = record_datum
