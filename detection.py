@@ -107,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--test_data", nargs='?', type=str)
     parser.add_argument("--experiment_prefix", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int)
+    parser.add_argument("--line_range", nargs=2, type=int, default = None)
     parser.add_argument("--mode", type=str, default='test')
 
     args = parser.parse_args()

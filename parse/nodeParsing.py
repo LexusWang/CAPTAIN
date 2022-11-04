@@ -48,7 +48,7 @@ def parse_subject_trace(self, datum, cdm_version=18):
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
         pid_ = datum['cid']
-        pname_ = datum['properties']['map'].get('name','Null')
+        pname_ = datum['properties']['map'].get('name',None)
         if datum['parentSubject']:
             parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
             a = 0
@@ -83,8 +83,8 @@ def parse_object_cdm(self, datum, object_type):
         # object.subtype = cdm_file_object_type[datum['type']]
         object.subtype = datum['type']
         permission = datum['baseObject']['permission']
-        # object.name = datum['baseObject']['properties']['map'].get('path','Null')
-        object.path = datum['baseObject']['properties']['map'].get('path','Null')
+        # object.name = datum['baseObject']['properties']['map'].get('path',None)
+        object.path = datum['baseObject']['properties']['map'].get('path', None)
     elif object_type == 'UnnamedPipeObject':
         permission = datum['baseObject']['permission']
         object.name = 'Pipe_{}'.format(object.id)
@@ -115,6 +115,8 @@ def parse_object_cdm(self, datum, object_type):
                 pname_ = 'unknown'
             object.name = 'UnknownObject_{}_{}_{}'.format(datum['fileDescriptor']['int'], pid_, pname_)
             # object.path = object.name
+        elif object.subtype == 'SRCSINK_IPC':
+            return None
         else:
             print(datum)
     else:
