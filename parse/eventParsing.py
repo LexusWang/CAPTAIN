@@ -55,7 +55,7 @@ def parse_event_cadets(self, datum, cdm_version):
     try:
         if isinstance(datum['predicateObjectPath'], dict):
             event.obj_path = datum['predicateObjectPath']['string']
-            if self.Nodes[event.dest].path == 'Null':
+            if self.Nodes[event.dest].path == None:
                 self.Nodes[event.dest].name = event.obj_path
                 self.Nodes[event.dest].path = event.obj_path
                 tag = list(match_path(event.obj_path))
