@@ -1,6 +1,7 @@
 # from morse import Morse
 import numpy as np
 import re
+import json
 
 class Subject:
     def __init__(self, id, type, pid, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
@@ -38,7 +39,17 @@ class Subject:
         json_dict['ppid'] = self.ppid
         json_dict['cmdLine'] = self.cmdLine
         json_dict['processName'] = self.processName
-        return str(json_dict)
+        json_dict['owner'] = self.owner
+        return json.dumps(json_dict)
+
+    def load(self, json_dict):
+        # self.id = json_dict['id']
+        self.type = json_dict['type']
+        self.pid = json_dict['pid']
+        self.ppid = json_dict['ppid']
+        self.cmdLine = json_dict['cmdLine']
+        self.processName = json_dict['processName']
+        self.owner = json_dict['owner']
 
     def get_id(self):
         return self.id

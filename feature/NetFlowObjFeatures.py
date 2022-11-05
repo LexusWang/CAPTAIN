@@ -7,6 +7,9 @@ import math
 import tqdm
 import os
 
+# Unknown IP
+unknownip = [-1 for i in range(167)]
+
 def ipaddr_to_list(ipaddr):
     result = []
     default_ipv4 = list(-1*np.ones(32, dtype=int))
@@ -165,6 +168,31 @@ def generate_feature_cadets(feature_path, vector_dir):
     df = pd.DataFrame.from_dict(feature_vectors,orient='index')
     df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
 
+def get_signle_feature_vector(ip, port):
+    # Port type
+    '''
+    21: ftp
+    22: ssh
+    25: smtp Simple Mail Transfer
+    53: domain DNS
+    67: bootps Bootstrap Protocol Server
+    80: www-http
+    123: ntp Network Time Protocol
+    143: imap Internet Messafe Access Protocol
+    443: https
+    5353: mdns Multicast DNS
+    '''
+    port_type = {21:1, 22:2, 25:3, 53:4, 67:5, 80:6, 123:7, 143:8, 443:9, 5353:10}
+
+    f_v = []
+    try:
+        f_v.extend(ipaddr_to_list(ipaddress.ip_address(ip)))
+    except ValueError:
+        f_v.extend(unknownip)
+
+    f_v.append(port_type.get(int(port),0))
+
+    return f_v
 
 if __name__ == "__main__":
     feature_path = 'results/C32/NetFlowObject.csv'

@@ -11,6 +11,7 @@ class Event:
         self.parameters = None
         self.src = None
         self.dest = None
+        self.dest2 = None
         self.obj_path = None
 
     def dumps(self) -> str:
@@ -21,6 +22,17 @@ class Event:
         json_dict['params'] = self.parameters
         json_dict['s'] = self.src
         json_dict['d'] = self.dest
+        json_dict['d2'] = self.dest2
         # json_dict['name'] = self.name
         # json_dict['path'] = self.path
-        return str(json_dict)
+        return json.dumps(json_dict)
+
+    def loads(self, data_str):
+        json_dict = json.loads(data_str)
+        self.id = json_dict['id']
+        self.time = json_dict['time']
+        self.type = json_dict['type']
+        self.parameters = json_dict['params']
+        self.src = json_dict['s']
+        self.dest = json_dict['d']
+        self.dest2 = json_dict['d2']

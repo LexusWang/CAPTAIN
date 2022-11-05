@@ -30,6 +30,10 @@ class Morse:
         self.subj_init = None
         self.obj_inits = None
 
+        #
+        self.tuneNetworkTags = False
+        self.tuneFileTags = False
+
         # decay and attenuation
         self.a_b = 0.1
         self.a_e = 0.05
@@ -231,25 +235,15 @@ class Morse:
                 # else:
                 #     obj_tag = [0.0, 1.0]
         elif self.Nodes[object_id].type in {"NetFlowObject"}:
-            obj_tag = self.node_inital_tags[object_id]
+            if self.tuneNetworkTags:
+                obj_tag = self.node_inital_tags[object_id]
+            else:
+                obj_tag = list(match_network_addr(self.Nodes[object_id].IP, self.Nodes[object_id].port))
         elif self.Nodes[object_id].type in {"FileObject"}:
-            # obj_tag = self.node_inital_tags[object_id]
-
-            obj_tag = list(match_path(self.Nodes[object_id].path))
-
-            # obj_tag_prov = self.node_inital_tags[object_id]
-            # obj_tag = []
-            # if obj_tag_prov[0] > 0.5:
-            #     obj_tag.append(1.0)
-            # else:
-            #     obj_tag.append(0.0)
-
-            # if obj_tag_prov[1] > 0.5:
-            #     obj_tag.append(1.0)
-            # else:
-            #     obj_tag.append(0.0)
-
-            # obj_tag = [1.0, 1.0]
+            if self.tuneFileTags:
+                obj_tag = self.node_inital_tags[object_id]
+            else:
+                obj_tag = list(match_path(self.Nodes[object_id].path))
         else:
             # a = self.Nodes[object_id].type
             # obj_tag = self.node_inital_tags[object_id]

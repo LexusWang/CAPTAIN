@@ -10,21 +10,21 @@ def memory_protection(permission: int):
         raise ValueError("Unvalid permission!!!")
     else:
         if permission == 0:
-            return {'PROT_NONE'}
+            return ['PROT_NONE']
         elif permission == 1:
-            return {'PROT_EXEC'}
+            return ['PROT_EXEC']
         elif permission == 2:
-            return {'PROT_WRITE'}
+            return ['PROT_WRITE']
         elif permission == 3:
-            return {'PROT_WRITE', 'PROT_EXEC'}
+            return ['PROT_WRITE', 'PROT_EXEC']
         elif permission == 4:
-            return {'PROT_READ'}
+            return ['PROT_READ']
         elif permission == 5:
-            return {'PROT_READ', 'PROT_EXEC'}
+            return ['PROT_READ', 'PROT_EXEC']
         elif permission == 6:
-            return {'PROT_READ', 'PROT_WRITE'}
+            return ['PROT_READ', 'PROT_WRITE']
         elif permission == 7:
-            return {'PROT_READ', 'PROT_WRITE', 'PROT_EXEC'}
+            return ['PROT_READ', 'PROT_WRITE', 'PROT_EXEC']
 
 lttng_sys_event = ['sys_open','sys_openat','sys_close','sys_read','sys_readv','sys_pread',
     'sys_preadv','sys_write','sys_writev','sys_pwrite','sys_pwritev','sys_clone','sys_fork',
@@ -55,7 +55,7 @@ def parse_event_cadets(self, datum, cdm_version):
     try:
         if isinstance(datum['predicateObjectPath'], dict):
             event.obj_path = datum['predicateObjectPath']['string']
-            if self.Nodes[event.dest].path == 'Null':
+            if self.Nodes[event.dest].path == None:
                 self.Nodes[event.dest].name = event.obj_path
                 self.Nodes[event.dest].path = event.obj_path
                 tag = list(match_path(event.obj_path))
