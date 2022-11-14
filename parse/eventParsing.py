@@ -1,5 +1,5 @@
 from aifc import Error
-import numpy as np
+import pdb
 from graph.Event import Event
 from policy.initTags import match_path, match_network_addr
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
@@ -51,16 +51,25 @@ def parse_event_cadets(self, datum, cdm_version):
     if isinstance(datum['predicateObject'], dict):
         event.dest = datum['predicateObject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
 
+    if isinstance(datum['predicateObject2'], dict):
+        event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
+
 
     try:
         if isinstance(datum['predicateObjectPath'], dict):
             event.obj_path = datum['predicateObjectPath']['string']
-            if self.Nodes[event.dest].path == None:
+            if self.Nodes[event.dest].path != event.obj_path:
                 self.Nodes[event.dest].name = event.obj_path
                 self.Nodes[event.dest].path = event.obj_path
-                tag = list(match_path(event.obj_path))
-                self.node_inital_tags[event.dest] = tag
-                self.Nodes[event.dest].setObjTags(tag)
+    except KeyError:
+        pass
+
+    try:
+        if isinstance(datum['predicateObject2Path'], dict):
+            event.obj2_path = datum['predicateObject2Path']['string']
+            if self.Nodes[event.dest2].path != event.obj2_path:
+                self.Nodes[event.dest2].name = event.obj2_path
+                self.Nodes[event.dest2].path = event.obj2_path
     except KeyError:
         pass
 
@@ -91,10 +100,16 @@ def parse_event_cadets(self, datum, cdm_version):
         else:
             return None   
     elif datum['type'] in SET_UID_SET:
+        # TO DO
+        # a = self.Nodes.get(event.src, None)
+        # b = self.Nodes.get(event.dest, None)
+        # c = self.Nodes.get(event.dest2, None)
         event.type = 'set_uid'
     elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
-        self.Nodes[event.src].cmdLine = datum['properties']['map']['cmdLine']
+        self.parameters = datum['properties']['map']['cmdLine']
         event.type = 'execve'
+    elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
+        pdb.set_trace()
     elif datum['type'] in {cdm_events['EVENT_MMAP']}:
         if self.Nodes[event.dest].isFile():
             event.type = 'load'
@@ -112,6 +127,9 @@ def parse_event_cadets(self, datum, cdm_version):
         else:
             return None
     elif datum['type'] in RENAME_SET:
+        a = self.Nodes.get(event.src, None)
+        b = self.Nodes.get(event.dest, None)
+        c = self.Nodes.get(event.dest2, None)
         event.type = 'rename'
     elif datum['type'] in REMOVE_SET:
         event.type = 'remove'
@@ -170,9 +188,6 @@ def parse_event_trace(self, datum, cdm_version):
     # except KeyError:
     #     pass
 
-    a = self.Nodes.get(event.src, None)
-    b = self.Nodes.get(event.dest, None)
-
     if datum['type'] in READ_SET:
         if self.Nodes.get(event.dest, None):
             event.type = 'read'
@@ -191,11 +206,8 @@ def parse_event_trace(self, datum, cdm_version):
         event.parameters = int(event.properties['mode'], 8)
     elif datum['type'] in SET_UID_SET:
         event.type = 'set_uid'
-        # TO DO
-        # event.type = 'update_process'
-    # TO DO
-    # elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
-    #     event.type = 'update_process'
+    elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
+        event.type = 'update_process'
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
         event.type = 'execve'
     elif datum['type'] in {cdm_events['EVENT_MMAP']}:
@@ -213,8 +225,8 @@ def parse_event_trace(self, datum, cdm_version):
             return None
     elif datum['type'] in RENAME_SET:
         event.type = 'rename'
-        # TO DO
-        # event.type = 'update_object'
+        # New file name
+        event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
     elif datum['type'] in REMOVE_SET:
         event.type = 'remove'
     elif datum['type'] in CLONE_SET:

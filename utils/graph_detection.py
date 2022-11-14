@@ -6,7 +6,7 @@ from policy.initTags import match_path, match_network_addr
 from graph.Subject import Subject
 from graph.Object import Object
 
-def add_nodes_to_graph(mo, nid, node_data, generate_tags):
+def add_nodes_to_graph(mo, nid, node_data):
     if node_data['type'] == 'SUBJECT_PROCESS':
         subject = Subject(nid, node_data['type'], None)
         subject.load(node_data)

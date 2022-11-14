@@ -1,28 +1,12 @@
 import json
-import logging
 import os
 import argparse
 import time
 from utils.utils import *
-from utils.eventClassifier import eventClassifier
 from model.morse import Morse
-from collections import defaultdict
-
-from numpy import gradient, record
-from parse.eventParsing import parse_event
-from parse.nodeParsing import parse_subject, parse_object
-from parse.lttng.recordParsing import read_lttng_record
 from policy.initTags import match_path, match_network_addr
-import sys
-import tqdm
 import time
-import pandas as pd
 from model.morse import Morse
-from parse.eventType import lttng_events, cdm_events, standard_events
-from parse.eventType import UNUSED_SET
-import numpy as np
-from pathlib import Path
-import pickle
 
 def start_experiment(args):
     begin_time = time.time()
@@ -31,6 +15,7 @@ def start_experiment(args):
     node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')
     principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
+    # record_file = open(os.path.join(args.output_data, 'records.json'), 'w')
 
     network_nodes = {}
     srcsink_nodes = {}

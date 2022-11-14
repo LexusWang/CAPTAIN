@@ -1,34 +1,20 @@
-import json
 import logging
 import os
-import gc
 import argparse
 import time
-from graph.Subject import Subject
 from utils.utils import *
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
-from collections import defaultdict
 
-from numpy import gradient, record
-import sys
-import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
-from parse.eventType import lttng_events, cdm_events, standard_events
 from graph.Event import Event
-from graph.Subject import Subject
-from graph.Object import Object
 from utils.graph_detection import add_nodes_to_graph
-import numpy as np
 from pathlib import Path
-import pickle
 
 def start_experiment(args):
     begin_time = time.time()
-    # format = 'cadets'
-    # cdm_version = 18
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
 
     mo = Morse()
@@ -46,7 +32,6 @@ def start_experiment(args):
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
     mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
-    # a = [json.loads(i) for i in open(, 'r').readlines()]
     nodes = pd.read_json(os.path.join(args.test_data, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
     princicals = pd.read_json(os.path.join(args.test_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
     mo.Principals = princicals
@@ -77,13 +62,13 @@ def start_experiment(args):
 
             if event.src not in mo.Nodes:
                 assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
-                add_nodes_to_graph(mo, event.src, nodes[event.src], generate_tags=True)
+                add_nodes_to_graph(mo, event.src, nodes[event.src])
 
             if isinstance(event.dest, int) and event.dest not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest, nodes[event.dest], generate_tags=True)
+                add_nodes_to_graph(mo, event.dest, nodes[event.dest])
 
             if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest2, nodes[event.dest2], generate_tags=True)
+                add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
             gt = ec.classify(event.id)
             diagnois = mo.add_event(event, gt)
@@ -98,8 +83,6 @@ def start_experiment(args):
     ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
     print(time.time()-begin_time)
-
-    return None
 
 
 if __name__ == '__main__':

@@ -41,7 +41,7 @@ class Morse:
         # init graph
         self.G = nx.DiGraph()
         self.Nodes = {}
-        self.Initialized_Nodes = {}
+        # self.Initialized_Nodes = {}
         self.Principals = {}
         self.processes = {}
         # self.Objects = {}
@@ -61,19 +61,6 @@ class Morse:
 
         self.node_inital_tags = {}
         self.subject_tags = {}
-
-        # self.cur_len = 0
-        # self.cur_batch = []
-        # self.cur_simple_net_grad_list = []
-        # self.cur_morse_grad_list = []
-        # self.cur_event_type_list = []
-        # self.cur_event_list = []
-
-        # self.remain_batch = []
-        # self.remain_event_type_list = []
-        # self.remain_event_list = []
-        # self.remain_simple_net_grad_list = []
-        # self.remain_morse_grad_list = []
 
         self.simple_net_grad_tensor = None
         self.morse_grad_tensor = None
@@ -96,7 +83,7 @@ class Morse:
 
 
     def propagate(self, event, s, o):
-        propTags(event, s, o, format=self.format, morse = self)
+        propTags(event, s, o, morse = self)
 
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
@@ -111,7 +98,7 @@ class Morse:
 
         s_labels = []
         o_labels = []
-        if event.type == 'update':
+        if event.type in {'update'}:
             src = self.Nodes.get(event.dest, None)
             dest = self.Nodes.get(event.dest2, None)
             self.propagate(event, src, dest)
@@ -156,7 +143,12 @@ class Morse:
                         else:
                             o_labels.append([init_ids[i], 1-item])
 
-            self.propagate(event, src, dest)
+            if event.type in {'rename'}:
+                dest2 = self.Nodes.get(event.dest2, None)
+                self.propagate(event, dest, dest2)
+            else:
+                self.propagate(event, src, dest)
+
             diagnosis = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
             s_target, o_target = get_target(event, src, dest, gt)
 
@@ -188,11 +180,11 @@ class Morse:
         return diagnosis, s_labels, o_labels
         
     def add_event(self, event, gt = None):
-        if event.type == 'update':
-            src = self.Nodes.get(event.dest, None)
-            dest = self.Nodes.get(event.dest2, None)
-            self.propagate(event, src, dest)
-            return None
+        # if event.type == 'update':
+        #     src = self.Nodes.get(event.dest, None)
+        #     dest = self.Nodes.get(event.dest2, None)
+        #     self.propagate(event, src, dest)
+        #     return None
         if event.type == 'exit':
             try:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False
@@ -206,7 +198,11 @@ class Morse:
             # if (src.get_pid(), dest.get_name()) not in self.alarm:
             #     self.alarm[(src.get_pid(), dest.get_name())] = False
             alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
-            self.propagate(event, src, dest)
+            if event.type in {'rename', 'update'}:
+                dest2 = self.Nodes.get(event.dest2, None)
+                self.propagate(event, dest, dest2)
+            else:
+                self.propagate(event, src, dest)
             diagnosis = self.detect_alarm(event, src, dest, alarmArg, gt, self.alarm_file)
             return diagnosis
 
@@ -215,7 +211,7 @@ class Morse:
         # initObjectTags(object, self.obj_inits, format=self.format)
         # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
-        self.Initialized_Nodes[object.id] = False
+        # self.Initialized_Nodes[object.id] = False
     
     def set_object_tags(self, object_id):
         if self.Nodes[object_id].type in {"MemoryObject", "UnnamedPipeObject"}:
@@ -253,15 +249,23 @@ class Morse:
     def add_subject(self, subject):
         # self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
-        self.Initialized_Nodes[subject.id] = False
-        if subject.ppid and subject.ppid in self.Nodes:
-            sub_tag = self.Nodes[subject.ppid].tags()
+        # self.Initialized_Nodes[subject.id] = False
+        if subject.pid not in self.processes:
+            self.processes[subject.pid] = {}
+            self.processes[subject.pid]['nid'] = subject.id
+            self.processes[subject.pid]['alive'] = True
+        elif self.processes[subject.pid]['alive'] == False:
+            self.processes[subject.pid]['nid'] = subject.id
+            self.processes[subject.pid]['alive'] = True
+        else:
+            self.processes[subject.pid]['nid'] = subject.id
+            self.processes[subject.pid]['alive'] = True
+
+        if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
+            sub_tag = self.Nodes[self.processes[subject.ppid]['nid']].tags()
         else:
             sub_tag = [1.0, 1.0, 1.0, 1.0]
         self.Nodes[subject.id].setSubjTags(sub_tag)
-        self.processes[subject.pid] = {}
-        self.processes[subject.pid]['node'] = subject.id
-        self.processes[subject.pid]['alive'] = True
 
     def detect_alarm_loss(self,event,s ,o, alarmArg, gt, alarm_file = None):
         return check_alarm_loss(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, gt, self.format, self, alarm_file)
@@ -286,15 +290,15 @@ class Morse:
     def reset_tags(self):
         nid_list = list(self.Nodes.keys())
         for nid in nid_list:
-            if self.Initialized_Nodes[nid] == False:
-                if isinstance(self.Nodes[nid], Subject):
-                    self.set_subject_tags(nid)
-                else:
-                    self.set_object_tags(nid)
+            # if self.Initialized_Nodes[nid] == False:
+            if isinstance(self.Nodes[nid], Subject):
+                self.set_subject_tags(nid)
+            else:
+                self.set_object_tags(nid)
         
     def reset_morse(self):
         nid_list = list(self.Nodes.keys())
         for nid in nid_list:
-            self.Initialized_Nodes[nid] = False
+            # self.Initialized_Nodes[nid] = False
             self.Nodes[nid].updateTime = 0
         self.alarm = {}

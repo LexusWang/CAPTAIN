@@ -1,21 +1,10 @@
 import json
-import logging
 import os
 import argparse
 import time
 from utils.utils import *
 from model.morse import Morse
-from collections import defaultdict
-
-from numpy import gradient, record
-from policy.initTags import match_path, match_network_addr
-import tqdm
 import time
-import pandas as pd
-from model.morse import Morse
-import numpy as np
-from pathlib import Path
-import pickle
 
 def start_experiment(args):
     begin_time = time.time()
@@ -67,9 +56,9 @@ def start_experiment(args):
                     if event:
                         for nid in [event.src, event.dest, event.dest2]:
                             if nid not in node_set:
+                                node_set.add(nid)
                                 node = mo.Nodes.get(nid, None)
                                 if node:
-                                    node_set.add(nid)
                                     print(node.dumps(), file = node_file)
                         try:
                             event.src = uuid_nid_mapping.get(event.src, None)
@@ -89,22 +78,15 @@ def start_experiment(args):
                         subject.id = nodes_num
                         nodes_num += 1
                 elif record_type == 'Principal':
-                    if args.format == 'trace':
-                        record_datum['euid'] = record_datum['properties']['map']['euid']
-                        del record_datum['hostId']
-                        del record_datum['properties']
-                    elif args.format == 'cadets':
-                        record_datum['username'] = record_datum['username']['string']
-                        del record_datum['hostId']
-                        del record_datum['properties']
+                    record_datum['username'] = record_datum['username']['string']
+                    del record_datum['hostId']
+                    del record_datum['properties']
                     print(json.dumps(record_datum), file = principal_file)
-                    # mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
                     object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
                     if object != None:
                         mo.add_object(object)
                         is_new = True
-
                         if object.type == 'FileObject':
                             uuid_nid_mapping[object.id] = nodes_num
                             object.id = nodes_num
@@ -129,16 +111,17 @@ def start_experiment(args):
                                 uuid_nid_mapping[object.id] = nodes_num
                                 object.id = nodes_num
                                 nodes_num += 1
+                                node_set.add(object.id)
+                                print(object.dumps(), file = node_file)
                             else:
                                 uuid_nid_mapping[object.id] = srcsink_nodes[object.name]
                                 object.id = srcsink_nodes[object.name]
-                                is_new = False
                         else:
                             uuid_nid_mapping[object.id] = nodes_num
                             object.id = nodes_num
                             nodes_num += 1
-                        # if is_new:
-                        #     print(object.dumps(), file = node_file)
+                            node_set.add(object.id)
+                            print(object.dumps(), file = node_file)
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':

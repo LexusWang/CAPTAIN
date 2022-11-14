@@ -10,3 +10,4 @@ pre_load_graph/*
 new_data/*
 eventClassifierTest.py
 learn_pytorch.py
+GT/*

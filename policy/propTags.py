@@ -7,7 +7,7 @@ from policy.floatTags import citag, ctag, itag, etag, isRoot
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
 from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
-def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = 'cdm', morse = None):
+def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, morse = None):
    event_type = event.type
    intags = None
    newtags = None
@@ -273,10 +273,24 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, format = '
       o.setiTagInitID(s.getiTagInitID())
       o.setcTagInitID(s.getcTagInitID())
       o.updateTime = event.time
-      return
+
+   elif event_type in {'set_uid'}:
+      assert isinstance(o,Subject) and isinstance(s,Subject)
+      o.setSubjTags(s.tags())
+      o.set_grad(s.get_grad())
+      o.setInitID(s.getInitID())
+      o.updateTime = event.time
+
+   elif event_type in {'rename'}:
+      assert isinstance(o,Object) and isinstance(s,Object)
+      o.setObjTags(s.tags())
+      o.set_grad(s.get_grad())
+      o.setiTagInitID(s.getiTagInitID())
+      o.setcTagInitID(s.getcTagInitID())
+      o.updateTime = event.time
 
    
-   if event_type in {'chmod', 'set_uid', 'mprotect', 'mmap', 'remove', 'rename', 'clone', 'read', 'load', 'execve', 'inject', 'create', 'write'} and s and o:
+   if event_type in {'chmod', 'set_uid', 'mprotect', 'mmap', 'remove', 'clone', 'read', 'load', 'execve', 'inject', 'create', 'write'} and s and o:
       assert isinstance(s,Subject)
       diff = 0
       stg = s.tags()
