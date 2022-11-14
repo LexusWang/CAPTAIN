@@ -23,8 +23,8 @@ def start_experiment(args):
     loaded_line = 0
     last_event_str = ''
     volume_list = os.listdir(args.input_data)
-    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
-    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     
     # close interval
     if args.line_range:
