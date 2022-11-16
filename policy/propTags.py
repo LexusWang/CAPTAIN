@@ -193,51 +193,49 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, morse = No
          cit = citag(stg)
          et = etag(stg)
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
-         ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
+         ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
          # if isTRUSTED(citag(intags)):
          if (isTRUSTED(cit) and isTRUSTED(et)):
-            cit = citag(intags)
-            citag_grad = o.get_itag_grad()
-            s.setSubjTags([cit, et, 1.0, 1.0])
-            s.set_grad([citag_grad, etag_grad, 1.0, 1.0])
-            s.setInitID([o.getiTagInitID(), etag_grad, None, None])
+            s.setSubjTags([citag(o.tags()), et, 1.0, 1.0])
+            s.set_grad([o.get_itag_grad(), etag_grad, 1.0, 1.0])
+            s.setInitID([o.getiTagInitID(), e_init_id, None, None])
          elif (isTRUSTED(cit) and isUNTRUSTED(et)):
-            cit = citag(intags)
+            cit = citag(o.tags())
             citag_grad = o.get_itag_grad()
             ci_init_id = o.getiTagInitID()
 
-            if itag(stg) > itag(intags):
+            if itag(stg) > itag(o.tags()):
                itag_grad = o.get_itag_grad()
                i_init_id = o.getiTagInitID()
-            it = min(itag(stg), itag(intags))
+            it = min(itag(stg), itag(o.tags()))
 
-            if ctag(stg) > ctag(intags):
+            if ctag(stg) > ctag(o.tags()):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
-            ct = min(ctag(stg), ctag(intags))
+            ct = min(ctag(stg), ctag(o.tags()))
 
             s.setSubjTags([cit, et, it, ct])
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
             s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
          else:
-            cit = citag(intags)
+            cit = citag(o.tags())
             citag_grad = 1.0 * o.get_itag_grad()
             ci_init_id = o.getiTagInitID()
 
-            et = 1 - citag(intags)
+            et = 1 - citag(o.tags())
             etag_grad = -1.0 * o.get_itag_grad()
             etag_grad = o.getiTagInitID()
 
-            if itag(stg) > itag(intags):
+            if itag(stg) > itag(o.tags()):
                itag_grad = o.get_itag_grad()
                i_init_id = o.getiTagInitID()
-            it = min(itag(stg), itag(intags))
+            it = min(itag(stg), itag(o.tags()))
 
-            if ctag(stg) > ctag(intags):
+            if ctag(stg) > ctag(o.tags()):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
-            ct = min(ctag(stg), ctag(intags))
+            ct = min(ctag(stg), ctag(o.tags()))
             
             s.setSubjTags([cit, et, it, ct])
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])

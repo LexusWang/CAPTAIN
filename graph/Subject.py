@@ -4,7 +4,7 @@ import re
 import json
 
 class Subject:
-    def __init__(self, id, type, pid, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
+    def __init__(self, id, type, pid: int, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
         self.id = id
         self.type = type
         self.pid = pid

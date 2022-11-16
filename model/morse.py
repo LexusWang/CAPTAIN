@@ -262,10 +262,13 @@ class Morse:
             self.processes[subject.pid]['alive'] = True
 
         if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
-            sub_tag = self.Nodes[self.processes[subject.ppid]['nid']].tags()
+            parent_nid = self.processes[subject.ppid]['nid']
+            self.Nodes[subject.id].setSubjTags(self.Nodes[parent_nid].tags())
+            self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
+            self.Nodes[subject.id].setInitID(self.Nodes[parent_nid].getInitID())
         else:
-            sub_tag = [1.0, 1.0, 1.0, 1.0]
-        self.Nodes[subject.id].setSubjTags(sub_tag)
+            self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
+        
 
     def detect_alarm_loss(self,event,s ,o, alarmArg, gt, alarm_file = None):
         return check_alarm_loss(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, gt, self.format, self, alarm_file)

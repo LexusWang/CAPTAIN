@@ -4,7 +4,7 @@ import numpy as np
 import re
 
 class Object:
-    def __init__(self, id, type, subtype: str = None, pid: int = None, objName: str = None):
+    def __init__(self, id, type, subtype: str = None, objName: str = None):
         self.id = id
         self.type = type
         self.subtype = subtype
@@ -81,7 +81,12 @@ class Object:
         return self.type in {'FileObject'}
 
     def get_name(self):
-        return self.name
+        if self.isFile():
+            return self.path
+        elif self.isIP():
+            return "{}:{}".format(self.IP, self.port)
+        else:
+            return self.name
 
     def get_id(self):
         return self.id

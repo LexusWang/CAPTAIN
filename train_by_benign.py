@@ -3,29 +3,22 @@ import torch
 import logging
 import random
 import math
-import psutil
 import os
-import gc
 import argparse
 import time
 from utils.utils import *
 from collections import Counter
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
-from collections import defaultdict
 
-from numpy import gradient, record
 from feature.NetFlowObjFeatures import get_signle_feature_vector
-from parse.nodeParsing import parse_subject, parse_object
-from parse.lttng.recordParsing import read_lttng_record
-from policy.initTags import match_path, match_network_addr
-import sys
 import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 from graph.Object import Object
+from graph.Subject import Subject
 from utils.graph_detection import add_nodes_to_graph
 from utils.graphLoader import read_events_from_files
 import numpy as np
@@ -60,7 +53,7 @@ def start_experiment(args):
     no_hidden_layers = args.no_hidden_layers
 
     mo = Morse()
-    mo.tuneNetworkTags = True
+    # mo.tuneNetworkTags = True
 
     # ============= Tag Initializer =============== #
     node_inits = {}
@@ -233,13 +226,13 @@ def start_experiment(args):
             for event in tqdm.tqdm(events):
                 if event.src not in mo.Nodes:
                     assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
-                    add_nodes_to_graph(mo, event.src, nodes[event.src], generate_tags=False)
+                    add_nodes_to_graph(mo, event.src, nodes[event.src])
 
                 if isinstance(event.dest, int) and event.dest not in mo.Nodes:
-                    add_nodes_to_graph(mo, event.dest, nodes[event.dest], generate_tags=False)
+                    add_nodes_to_graph(mo, event.dest, nodes[event.dest])
 
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
-                    add_nodes_to_graph(mo, event.dest2, nodes[event.dest2], generate_tags=False)
+                    add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
                 gt = ec.classify(event.id)
                 diagnosis, s_labels, o_labels = mo.add_event_generate_loss(event, gt)
@@ -250,9 +243,15 @@ def start_experiment(args):
 
                 if s_labels:
                     node_gradients.extend(s_labels)
+                    for item in s_labels:
+                        if mo.Nodes[item[0][0]].isFile() and item[0][1] == 'i':
+                            pdb.set_trace()
 
                 if o_labels:
-                    node_gradients.extend(s_labels)
+                    node_gradients.extend(o_labels)
+                    for item in s_labels:
+                        if mo.Nodes[item[0][0]].isFile() and item[0][1] == 'i':
+                            pdb.set_trace()
             
             node_labels = {}
             for item in node_gradients:
@@ -264,19 +263,22 @@ def start_experiment(args):
             network_feature_labels = {}
             src_sink_feature_labels = {}
             for nid, value in node_labels.items():
-                if isinstance(mo.Nodes[nid], Object):
-                    if mo.Nodes[nid].isIP():
-                        network_feature = network_nid_feature[nid]['feature']
-                        if network_feature not in network_feature_labels:
-                            network_feature_labels[network_feature] = []
-                        network_feature_labels[network_feature].extend(value)
-                    elif mo.Nodes[nid].type == 'SrcSinkObject':
-                        if mo.Nodes[nid].name and mo.Nodes[nid].name.startswith('UnknownObject'):
-                            pname = mo.Nodes[nid].name.split('_')[-1]
-                            if pname in mo.subject_tags:
-                                if pname not in src_sink_feature_labels:
-                                    src_sink_feature_labels[pname] = []
-                                src_sink_feature_labels[pname].extend(value)
+                print(mo.Nodes[nid].get_name())
+                # if isinstance(mo.Nodes[nid], Object):
+                #     if mo.Nodes[nid].isIP():
+                #         network_feature = network_nid_feature[nid]['feature']
+                #         if network_feature not in network_feature_labels:
+                #             network_feature_labels[network_feature] = []
+                #         network_feature_labels[network_feature].extend(value)
+                #     elif mo.Nodes[nid].type == 'SrcSinkObject':
+                #         if mo.Nodes[nid].name and mo.Nodes[nid].name.startswith('UnknownObject'):
+                #             pname = mo.Nodes[nid].name.split('_')[-1]
+                #             if pname in mo.subject_tags:
+                #                 if pname not in src_sink_feature_labels:
+                #                     src_sink_feature_labels[pname] = []
+                #                 src_sink_feature_labels[pname].extend(value)
+
+            pdb.set_trace()
 
             target_tags = {'NetFlowObject': torch.tensor([0.0, 1.0]),
                         'FileObject': torch.tensor([1.0, 1.0]),
@@ -334,12 +336,12 @@ def start_experiment(args):
 
             print('network loss is {}'.format(net_loss))
             print('total unseen loss is {}'.format(total_unseen_loss))
+
             mo.alarm_file.close()
             experiment.print_metrics()
             experiment.save_metrics()
             experiment.reset_metrics()
-            fAnalyze = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r')
-            ec.analyzeFile(fAnalyze)
+            ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
             ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             ec.reset()
 
