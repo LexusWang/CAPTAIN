@@ -253,6 +253,14 @@ def start_experiment(args):
                         if mo.Nodes[item[0][0]].isFile() and item[0][1] == 'i':
                             pdb.set_trace()
             
+            mo.alarm_file.close()
+            experiment.print_metrics()
+            experiment.save_metrics()
+            experiment.reset_metrics()
+            ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
+            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            ec.reset()
+            
             node_labels = {}
             for item in node_gradients:
                 if item[0][1] == 'i':
@@ -336,14 +344,6 @@ def start_experiment(args):
 
             print('network loss is {}'.format(net_loss))
             print('total unseen loss is {}'.format(total_unseen_loss))
-
-            mo.alarm_file.close()
-            experiment.print_metrics()
-            experiment.save_metrics()
-            experiment.reset_metrics()
-            ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
-            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
-            ec.reset()
 
             # save checkpoint
             experiment.save_checkpoint(node_inits, epoch)

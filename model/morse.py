@@ -225,7 +225,7 @@ class Morse:
                 if pname in self.subject_tags:
                     obj_tag = self.subject_tags[pname]
                 else:
-                    obj_tag = [0.0, 1.0]
+                    obj_tag = [1.0, 1.0]
                 # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in white_list:
                 #     obj_tag = [1.0, 1.0]
                 # else:

@@ -1,4 +1,5 @@
 import re
+import pdb
 
 # init_otag("[:any:]*passwd", BENIGN, SECRET)
 # init_otag("[:any:]*pwd\.db", BENIGN, SECRET)
@@ -60,22 +61,20 @@ def match_path(path):
 # init_otag("IP:a000[:any:]*", BENIGN, PUBLIC)
 # init_otag("IP:[a-f0-9]+:53[.][0-9]+H", BENIGN, PUBLIC)
 
-# benign_public_ips = [r'127.*',r'160.*']
+# benign_public_ips = [r'128.55.12.10',r'128.55.12.73']
 # benign_ports = set([5353, 53])
 benign_public_ips = []
 benign_ports = set()
 
-def match_network_addr(ip_address, port_):
+def match_network_addr(ip_address, port):
     itag = 0
     ctag = 1
-    if isinstance(port_,dict):
-        port = port_['int']
-    else:
-        port = port_
-    if port in benign_ports:
+
+    if int(port) in benign_ports:
         itag = 1
         ctag = 1
         return itag, ctag
+
     for regexp in benign_public_ips:
         if re.match(regexp,ip_address):
             itag = 1
@@ -110,24 +109,8 @@ def initObjectTags(object, format = 'cdm'):
         elif object.type == 'MemoryObject':
             ctag = 0
             itag = 0
-    elif format == 'lttng':
-        if object.type in {'NetFlowObject','inet_scoket_file'}:
-            ctag = 0
-            print(object.IP)
-            itag, ctag = match_network_addr(object.IP, object.port)
-        elif object.type == 'common_file':
-            path = object.path
-            itag, ctag = match_path(path)
-        elif object.type == 'unix_socket_file':
-            b = 0
-        elif object.type in {'UnnamedPipeObject','pipe_file'}:
-            b = 0
-        elif object.type in {'MemoryObject','share_memory'}:
-            b = 0
 
     object.setObjTags([itag, ctag])
-    if itag + ctag != 2:
-        a = 0
 
 
 #         init_otag("stderr", BENIGN, PUBLIC)

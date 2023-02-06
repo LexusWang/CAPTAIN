@@ -34,7 +34,7 @@ def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
     #     alarms[(s.get_pid(), o.get_name())] = True
     if alarmfile:
         # with open(alarmfile, 'a') as fout:
-        alarm_string = "{} AlarmS {} : Alarm: {} : Object {} ({}) Subject {}  pid={} {}  AlarmE\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_name())
+        alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Object:{} (name:{}), Subject:{} (pid:{}, pname:{}, cmdl:{})\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
         alarmfile.write(alarm_string)
     return an
    
@@ -45,7 +45,7 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
     #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
     if alarmfile:
         # with open(alarmfile, 'a') as fout:
-        alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name())
+        alarm_string = "{}, AlarmSS, Time:{}, Type:{}, Subject:{} (pid={} {}), Subject:{} (pid={} {}\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name())
         alarmfile.write(alarm_string)
     return an
 
@@ -53,7 +53,7 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
 def prtSAlarm(ts, an, s, event_id, alarmfile= None):
     if alarmfile:
         # with open(alarmfile, 'a') as fout:
-        alarm_string = "{} AlarmS {} : Alarm: {} : Subject {} pid={} {} AlarmE\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name())
+        alarm_string = "{}, AlarmS, Time:{}, Type:{}, Subject:{} pid={} {}\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name())
         alarmfile.write(alarm_string)
     return an
 
