@@ -1,5 +1,5 @@
 # from morse import Morse
-import numpy as np
+import math
 import re
 import json
 
@@ -46,7 +46,11 @@ class Subject:
         # self.id = json_dict['id']
         self.type = json_dict['type']
         self.pid = json_dict['pid']
+        if math.isnan(self.pid) == False:
+            self.pid = int(self.pid)
         self.ppid = json_dict['ppid']
+        if math.isnan(self.ppid) == False:
+            self.ppid = int(self.ppid)
         self.cmdLine = json_dict['cmdLine']
         self.processName = json_dict['processName']
         self.owner = json_dict['owner']
@@ -55,7 +59,7 @@ class Subject:
         return self.id
     
     def get_pid(self):
-        return self.pid
+        return int(self.pid)
 
     def get_name(self):
         return self.processName

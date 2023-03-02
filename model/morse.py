@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-import torch
 import sys
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
@@ -10,7 +9,6 @@ from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre
 from model.loss import check_alarm_loss, check_alarm_pre_loss, printTime
 from model.target_label import get_target_pre, get_target
-from parse.eventType import UNUSED_SET, EXIT_SET, UPDATE_SET, cdm_events
 from parse.eventParsing import parse_event as parse_event_
 from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
@@ -23,6 +21,7 @@ class Morse:
         self.sequence_size = sequence_size
         self.data_loader = data_loader
         self.node_inital_tags = {}
+        self.network_ini_tags = {}
         self.format = format
 
 
@@ -41,7 +40,7 @@ class Morse:
         # init graph
         self.G = nx.DiGraph()
         self.Nodes = {}
-        # self.Initialized_Nodes = {}
+        self.srcsink_Nodes = {}
         self.Principals = {}
         self.processes = {}
         # self.Objects = {}
@@ -208,58 +207,40 @@ class Morse:
 
     def add_object(self, object):
         # self.G.add_node(object.id)
-        # initObjectTags(object, self.obj_inits, format=self.format)
-        # object.setObjTags(self.node_inital_tags[object.id].tolist())
         self.Nodes[object.id] = object
-        # self.Initialized_Nodes[object.id] = False
     
     def set_object_tags(self, object_id):
         if self.Nodes[object_id].type in {"MemoryObject", "UnnamedPipeObject"}:
             obj_tag = [1.0, 1.0]
-        elif self.Nodes[object_id].type in {"SrcSinkObject"}:
+        elif self.Nodes[object_id].type == "SrcSinkObject":
             obj_tag = [1.0, 1.0]
             if self.Nodes[object_id].name and self.Nodes[object_id].name.startswith('UnknownObject'):
-                pname = self.Nodes[object_id].name.split('_')[-1]
-                # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in {'sshd', 'firefox', 'xfce4-appfinder'}:
-                # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in {'sshd', 'salt-minion', 'pkexec'}:
-                if pname in self.subject_tags:
-                    obj_tag = self.subject_tags[pname]
+                if self.Nodes[object_id].name not in self.srcsink_Nodes:
+                    self.srcsink_Nodes[self.Nodes[object_id].name] = []
                 else:
-                    obj_tag = [1.0, 1.0]
-                # if pid in self.processes and self.Nodes[self.processes[pid]['node']].processName in white_list:
-                #     obj_tag = [1.0, 1.0]
-                # else:
-                #     obj_tag = [0.0, 1.0]
-        elif self.Nodes[object_id].type in {"NetFlowObject"}:
+                    obj_tag = self.Nodes[self.srcsink_Nodes[self.Nodes[object_id].name][-1]].tags()
+                self.srcsink_Nodes[self.Nodes[object_id].name].append(object_id)
+        elif self.Nodes[object_id].type == "NetFlowObject":
             if self.tuneNetworkTags:
-                obj_tag = self.node_inital_tags[object_id]
+                obj_tag = self.network_ini_tags["{}:{}".format(self.Nodes[object_id].IP, int(self.Nodes[object_id].port))]
             else:
                 obj_tag = list(match_network_addr(self.Nodes[object_id].IP, self.Nodes[object_id].port))
-        elif self.Nodes[object_id].type in {"FileObject"}:
+        elif self.Nodes[object_id].type == "FileObject":
             if self.tuneFileTags:
                 obj_tag = self.node_inital_tags[object_id]
             else:
                 obj_tag = list(match_path(self.Nodes[object_id].path))
         else:
-            # a = self.Nodes[object_id].type
-            # obj_tag = self.node_inital_tags[object_id]
             obj_tag = [1.0, 1.0]
         self.Nodes[object_id].setObjTags(obj_tag)
 
     def add_subject(self, subject):
         # self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
-        # self.Initialized_Nodes[subject.id] = False
         if subject.pid not in self.processes:
             self.processes[subject.pid] = {}
-            self.processes[subject.pid]['nid'] = subject.id
-            self.processes[subject.pid]['alive'] = True
-        elif self.processes[subject.pid]['alive'] == False:
-            self.processes[subject.pid]['nid'] = subject.id
-            self.processes[subject.pid]['alive'] = True
-        else:
-            self.processes[subject.pid]['nid'] = subject.id
-            self.processes[subject.pid]['alive'] = True
+        self.processes[subject.pid]['nid'] = subject.id
+        self.processes[subject.pid]['alive'] = True
 
         if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
             parent_nid = self.processes[subject.ppid]['nid']

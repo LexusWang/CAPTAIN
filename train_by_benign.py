@@ -11,19 +11,26 @@ from collections import Counter
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
 
-from feature.NetFlowObjFeatures import get_signle_feature_vector
+from feature.NetFlowObjFeatures import get_network_feature_vector
 import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
-from graph.Object import Object
-from graph.Subject import Subject
 from utils.graph_detection import add_nodes_to_graph
 from utils.graphLoader import read_events_from_files
 import numpy as np
 from pathlib import Path
 import pickle
+
+def prt_network_tag_prob(file_path, network_nid_index, array):
+    with open(file_path, 'w') as outputfile:
+        print("NetworkFeature\titag-0\titag-1", file = outputfile)
+        for item in network_nid_index.keys():
+            i = network_nid_index[item]
+            print("{}\t{}\t{}".format(item, array[i][0], array[i][1]), file = outputfile)
+    
+
 
 def get_network_tags(node_features_dict, node_id, initializer, device):
     features = torch.tensor(np.array(node_features_dict[node_id]['features'], dtype=np.int16)).unsqueeze(dim=0).to(device)
@@ -46,14 +53,16 @@ def get_file_tags(node_features_dict, node_id, initializer, device):
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
 
-    # if torch.cuda.is_available():
-    #     device = torch.device("cuda:0")
-    device = torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
+
     mode = args.mode
     no_hidden_layers = args.no_hidden_layers
 
     mo = Morse()
-    # mo.tuneNetworkTags = True
+    mo.tuneNetworkTags = True
 
     # ============= Tag Initializer =============== #
     node_inits = {}
@@ -64,7 +73,7 @@ def start_experiment(args):
     # node_inits['MemoryObject'] = Initializer(1,2,no_hidden_layers).to(device)
     # node_inits['PacketSocketObject'] = Initializer(1,2,no_hidden_layers)
     # node_inits['RegistryKeyObject'] = Initializer(1,2,no_hidden_layers)
-    node_inits['Subject'] = Initializer(150, 20, 2, no_hidden_layers).to(device)
+    # node_inits['Subject'] = Initializer(150, 20, 2, no_hidden_layers).to(device)
 
     if (mode == "train"):
         logging.basicConfig(level=logging.INFO,
@@ -107,14 +116,19 @@ def start_experiment(args):
         nodes_df = pd.DataFrame.from_dict(nodes, orient = 'index')
 
         network_df = nodes_df[nodes_df['type'] == 'NetFlowObject'][['ip', 'port']]
-        network_df['feature_vector'] = network_df.apply(lambda x: get_signle_feature_vector(x['ip'], x['port']), axis = 1)
-        # network_df = network_df.drop(columns = ['ip','port'])
-        network_df['feature_index'] = list(range(network_df.shape[0]))
-        model_features['NetFlowObject'] = torch.tensor(np.array(network_df['feature_vector'].values.tolist(), dtype=np.int16)).to(device)
-        network_df = network_df.drop(columns = ['feature_vector'])
-        network_nid_index = network_df.to_dict(orient='index')
-
-        # print(network_df.head)
+        network_df['ip:port'] = network_df.apply(lambda x: '{}:{}'.format(x['ip'], int(x['port'])), axis = 1)
+        network_feature_vectors_index = {}
+        array = []
+        for i, item in enumerate(pd.unique(network_df['ip:port'])):
+            network_info = item.split(':')
+            network_feature_vectors_index[item] = i
+            array.append(get_network_feature_vector(network_info[0], network_info[1]))
+        model_features['NetFlowObject'] = torch.tensor(np.array(array, dtype=np.int16)).to(device)
+        # network_df['feature_vector'] = network_df.apply(lambda x: get_network_feature_vector(x['ip'], x['port']), axis = 1)
+        # network_df['feature_index'] = list(range(network_df.shape[0]))
+        # model_features['NetFlowObject'] = torch.tensor(np.array(network_df['feature_vector'].values.tolist(), dtype=np.int16)).to(device)
+        # network_df = network_df.drop(columns = ['feature_vector'])
+        # network_nid_index = network_df.to_dict(orient='index')
 
         # for node_type in ['NetFlowObject']:
             # network_nid_feature = pd.read_csv(os.path.join(args.feature_path, 'feature_vectors', '{}.csv'.format(node_type)), index_col='Unnamed: 0').to_dict(orient='index')
@@ -129,7 +143,7 @@ def start_experiment(args):
             # model_features[node_type] = torch.tensor(np.array(feature_array, dtype=np.int16)).to(device)
 
         # subject_df = nodes_df[nodes_df['type'] == 'SUBJECT_PROCESS'][['processName', 'cmdLine']]
-        # subject_df['feature_vector'] = network_df.apply(lambda x: get_signle_feature_vector(x['ip'], x['port']), axis = 1)
+        # subject_df['feature_vector'] = network_df.apply(lambda x: get_network_feature_vector(x['ip'], x['port']), axis = 1)
         # network_df = network_df.drop(columns = ['ip','port'])
         # network_df['feature_index'] = list(range(network_df.shape[0]))
         # model_features['NetFlowObject'] = torch.tensor(np.array(network_df['feature_vector'].values.tolist(), dtype=np.int16)).to(device)
@@ -167,11 +181,11 @@ def start_experiment(args):
         #     model_features[node_type] = torch.tensor(feature_array, dtype=torch.int16).to(device)
         
         ec = eventClassifier(args.ground_truth_file)
-        ic_index = {'i':0,'c':1}
+        # ic_index = {'i':0,'c':1}
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
-            total_loss = 0.0
+            # total_loss = 0.0
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
@@ -182,21 +196,20 @@ def start_experiment(args):
 
             node_type = 'NetFlowObject'
             model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
-            array = model_tags[node_type].tolist()
             Path(os.path.join(experiment.get_experiment_output_path(), 'tags')).mkdir(parents=True, exist_ok=True)
-            outputfile = open(os.path.join(experiment.get_experiment_output_path(), 'tags/networktags-epoch-{}.csv'.format(epoch)), 'w')
-            print("NetworkFeature\titag-0\titag-1", file = outputfile)
-            for item in network_nid_index.keys():
-                i = network_nid_index[item]['feature_index']
-                print("{}:{}\t{}\t{}".format(network_nid_index[item]['ip'], network_nid_index[item]['port'], array[i][0], array[i][1]), file = outputfile)
-            outputfile.close()
+            prt_network_tag_prob(os.path.join(experiment.get_experiment_output_path(), 'tags', 'network-itag-epoch{}.csv'.format(epoch)), network_feature_vectors_index, model_tags[node_type].tolist())
 
-            for nid in network_nid_index.keys():
-                index = network_nid_index[item]['feature_index']
-                if model_tags[node_type][index,:].tolist()[0] > 0.5:
-                    mo.node_inital_tags[nid] = [0.0, 1.0]
+            # for nid in network_nid_index.keys():
+            #     index = network_nid_index[item]['feature_index']
+            #     if model_tags[node_type][index,:].tolist()[0] > 0.5:
+            #         mo.node_inital_tags[nid] = [0.0, 1.0]
+            #     else:
+            #         mo.node_inital_tags[nid] = [1.0, 1.0]
+            for key, value in network_feature_vectors_index.items():
+                if model_tags[node_type][value,:].tolist()[0] > 0.5:
+                    mo.network_ini_tags[key] = [0.0, 1.0]
                 else:
-                    mo.node_inital_tags[nid] = [1.0, 1.0]
+                    mo.network_ini_tags[key] = [1.0, 1.0]
 
             # subject_tags = {}
             # for node_type in ['Subject']:
@@ -225,7 +238,6 @@ def start_experiment(args):
             node_gradients = []
             for event in tqdm.tqdm(events):
                 if event.src not in mo.Nodes:
-                    assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
                     add_nodes_to_graph(mo, event.src, nodes[event.src])
 
                 if isinstance(event.dest, int) and event.dest not in mo.Nodes:
@@ -244,13 +256,13 @@ def start_experiment(args):
                 if s_labels:
                     node_gradients.extend(s_labels)
                     for item in s_labels:
-                        if mo.Nodes[item[0][0]].isFile() and item[0][1] == 'i':
+                        if item[0][1] == 'i':
                             pdb.set_trace()
 
                 if o_labels:
                     node_gradients.extend(o_labels)
                     for item in s_labels:
-                        if mo.Nodes[item[0][0]].isFile() and item[0][1] == 'i':
+                        if item[0][1] == 'i':
                             pdb.set_trace()
             
             mo.alarm_file.close()
@@ -525,7 +537,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_data", type=str)
     parser.add_argument("--test_data", type=str)
     parser.add_argument("--epoch", default=100, type=int)
-    parser.add_argument("--device", nargs='?', default="cuda", type=str)
+    parser.add_argument("--device", nargs='?', default="cpu", type=str)
     parser.add_argument("--learning_rate", nargs='?', default=2.0, type=float)
     parser.add_argument("--mode", type=str)
     parser.add_argument("--trained_model_timestamp", nargs="?", default=None, type=str)

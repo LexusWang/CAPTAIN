@@ -18,6 +18,8 @@ def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
 
     mo = Morse()
+    mo.tuneNetworkTags = False
+    mo.tuneFileTags = False
 
     print("Begin preparing testing...")
     logging.basicConfig(level=logging.INFO,

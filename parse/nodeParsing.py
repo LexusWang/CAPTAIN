@@ -13,7 +13,6 @@ def parse_subject_cdm(self, datum, cdm_version=18):
         type_ = datum['type']
         pid_ = datum['cid']
         pname_ = datum['properties']['map'].get('name', None)
-
         parent_ = None
         ppid_ = None
         if datum['parentSubject']:
@@ -37,7 +36,6 @@ def parse_subject_cdm(self, datum, cdm_version=18):
     elif subject_type == 'SUBJECT_BASIC_BLOCK':
         pass
     else:
-        # error!
         pass
     
     return subject
@@ -79,6 +77,8 @@ def parse_subject_trace(self, datum, cdm_version=18):
 
 def parse_object_cdm(self, datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
+    if isinstance(datum['baseObject']['epoch'], dict):
+        object.epoch = datum['baseObject']['epoch']['int']
     if object_type == 'FileObject':
         # object.subtype = cdm_file_object_type[datum['type']]
         object.subtype = datum['type']
@@ -126,9 +126,7 @@ def parse_object_cdm(self, datum, object_type):
     return object
 
 def parse_subject(self, datum, format, cdm_version):
-    # subject_node = {}
     if format in {'trace', 'cadets'}:
-        # subject_node['uuid'] = datum['uuid']
         subject = parse_subject_cdm(self, datum, cdm_version)
         return subject
 

@@ -163,10 +163,13 @@ def parse_event_trace(self, datum, cdm_version):
     event.properties = datum['properties']['map']
 
     if isinstance(datum['subject'], dict):
-        event.src = datum['subject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
+        event.src = list(datum['subject'].values())[0]
     
     if isinstance(datum['predicateObject'], dict):
-        event.dest = datum['predicateObject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
+        event.dest = list(datum['predicateObject'].values())[0]
+
+    if isinstance(datum['predicateObject2'], dict):
+        event.dest2 = list(datum['predicateObject2'].values())[0]
 
 
     # try:
@@ -198,6 +201,7 @@ def parse_event_trace(self, datum, cdm_version):
         if self.Nodes.get(event.dest, None):
             event.type = 'write'
         else:
+            # TO DO: How to deal with unknown object
             return None
     elif datum['type'] in INJECT_SET:
         event.type = 'inject'
@@ -214,7 +218,6 @@ def parse_event_trace(self, datum, cdm_version):
         if self.Nodes[event.dest].isFile():
             event.type = 'load'
         else:
-            # print("MMAP: {}".format(str(datum)))
             event.type = 'mmap'
             event.parameters = memory_protection(eval(event.properties['protection']))
     elif datum['type'] in CREATE_SET:
@@ -225,21 +228,15 @@ def parse_event_trace(self, datum, cdm_version):
             return None
     elif datum['type'] in RENAME_SET:
         event.type = 'rename'
-        # New file name
-        event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
     elif datum['type'] in REMOVE_SET:
         event.type = 'remove'
     elif datum['type'] in CLONE_SET:
         event.type = 'clone'
     elif datum['type'] in MPROTECT_SET:
-        # a = self.Nodes[event.dest]
-        # assert event.dest == None
-        # b = self.Nodes[event.src]
         event.type = 'mprotect'
         event.parameters = memory_protection(eval(event.properties['protection']))
     elif datum['type'] in UPDATE_SET:
         event.type = 'update'
-        event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
     elif datum['type'] in EXIT_SET:
         event.type = 'exit'
     else:

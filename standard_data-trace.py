@@ -17,8 +17,8 @@ def start_experiment(args):
     principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
     # record_file = open(os.path.join(args.output_data, 'records.json'), 'w')
 
-    network_nodes = {}
-    srcsink_nodes = {}
+    # network_nodes = {}
+    # srcsink_nodes = {}
 
     uuid_nid_mapping = {}
     nodes_num = 0
@@ -70,13 +70,13 @@ def start_experiment(args):
                     if subject != None:
                         mo.add_subject(subject)
 
-                        is_new = True
+                        # is_new = True
                         uuid_nid_mapping[subject.id] = nodes_num
                         subject.id = nodes_num
                         nodes_num += 1
 
-                        if is_new:
-                            print(subject.dumps(), file = node_file)
+                        # if is_new:
+                        print(subject.dumps(), file = node_file)
                 elif record_type == 'Principal':
                     if args.format == 'trace':
                         record_datum['euid'] = record_datum['properties']['map']['euid']
@@ -91,48 +91,41 @@ def start_experiment(args):
                 elif record_type.endswith('Object'):
                     object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
                     if object != None:
-                        if object.type == 'FileObject':
-                            tag = list(match_path(object.path))
-                            mo.node_inital_tags[object.id] = tag
-                        elif object.type == 'NetFlowObject':
-                            tag = list(match_network_addr(object.IP, object.port))
-                            mo.node_inital_tags[object.id] = tag
                         mo.add_object(object)
-                        # mo.set_object_tags(object.id)
 
-                        is_new = True
+                        # is_new = True
 
-                        if object.type == 'FileObject':
-                            uuid_nid_mapping[object.id] = nodes_num
-                            object.id = nodes_num
-                            nodes_num += 1
-                        elif object.type == 'NetFlowObject':
-                            network_feature = '{}:{}'.format(object.IP, object.port)
-                            if network_feature not in network_nodes:
-                                network_nodes[network_feature] = nodes_num
-                                uuid_nid_mapping[object.id] = nodes_num
-                                object.id = nodes_num
-                                nodes_num += 1
-                            else:
-                                uuid_nid_mapping[object.id] = network_nodes[network_feature]
-                                object.id = network_nodes[network_feature]
-                                is_new = False
-                        elif object.type == 'SrcSinkObject':
-                            if object.name not in srcsink_nodes:
-                                srcsink_nodes[object.name] = nodes_num
-                                uuid_nid_mapping[object.id] = nodes_num
-                                object.id = nodes_num
-                                nodes_num += 1
-                            else:
-                                uuid_nid_mapping[object.id] = srcsink_nodes[object.name]
-                                object.id = srcsink_nodes[object.name]
-                                is_new = False
-                        else:
-                            uuid_nid_mapping[object.id] = nodes_num
-                            object.id = nodes_num
-                            nodes_num += 1
-                        if is_new:
-                            print(object.dumps(), file = node_file)
+                        # if object.type == 'NetFlowObject':
+                        #     network_feature = '{}:{}'.format(object.IP, object.port)
+                        #     if network_feature not in network_nodes:
+                        #         network_nodes[network_feature] = nodes_num
+                        #         uuid_nid_mapping[object.id] = nodes_num
+                        #         object.id = nodes_num
+                        #         nodes_num += 1
+                        #     else:
+                        #         uuid_nid_mapping[object.id] = network_nodes[network_feature]
+                        #         object.id = network_nodes[network_feature]
+                        #         is_new = False
+                        # elif object.type == 'SrcSinkObject':
+                        #     if object.name not in srcsink_nodes:
+                        #         srcsink_nodes[object.name] = nodes_num
+                        #         uuid_nid_mapping[object.id] = nodes_num
+                        #         object.id = nodes_num
+                        #         nodes_num += 1
+                        #     else:
+                        #         uuid_nid_mapping[object.id] = srcsink_nodes[object.name]
+                        #         object.id = srcsink_nodes[object.name]
+                        #         is_new = False
+                        # else:
+                        #     uuid_nid_mapping[object.id] = nodes_num
+                        #     object.id = nodes_num
+                        #     nodes_num += 1
+                        # if is_new:
+                        
+                        uuid_nid_mapping[object.id] = nodes_num
+                        object.id = nodes_num
+                        nodes_num += 1
+                        print(object.dumps(), file = node_file)
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -151,16 +144,27 @@ def start_experiment(args):
 
     return None
 
+def get_integer(string):
+    if string.endswith('K'):
+        return int(string[:-1])*1000
+    elif string.endswith('M'):
+        return int(string[:-1])*1000000
+    else:
+        return int(string)
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="train or test the model")
+    parser = argparse.ArgumentParser(description="Data Standardize")
     parser.add_argument("--input_data", type=str)
     parser.add_argument("--output_data", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int)
+    parser.add_argument("--line_range", nargs=2, type=str)
     parser.add_argument("--format", type=str)
     parser.add_argument("--cdm_version", type=int)
 
     args = parser.parse_args()
+
+    args.line_range[0] = get_integer(args.line_range[0])
+    args.line_range[1] = get_integer(args.line_range[1])
 
     start_experiment(args)
 

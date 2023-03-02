@@ -1,16 +1,16 @@
 import json
 from policy.floatTags import citag
-import numpy as np
+import math
 import re
 
 class Object:
-    def __init__(self, id, type, subtype: str = None, objName: str = None):
+    def __init__(self, id, type, epoch: int = None, subtype: str = None, objName: str = None):
         self.id = id
         self.type = type
+        self.epoch = epoch
         self.subtype = subtype
         self.name = objName
         self.path = None
-
         self.updateTime = 0
 
         self.iTag: float = 0.0
@@ -25,7 +25,7 @@ class Object:
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
-        # json_dict['time'] = self.time
+        json_dict['epoch'] = self.epoch
         json_dict['type'] = self.type
         json_dict['subtype'] = self.subtype
         if self.type == 'NetFlowObject':
@@ -39,14 +39,16 @@ class Object:
         return json.dumps(json_dict)
 
     def load(self, json_dict):
-        # json_dict = {}
-        # self.id = json_dict['id']
-        # json_dict['time'] = self.time
         self.type = json_dict['type']
+        self.epoch = json_dict['epoch']
+        if math.isnan(self.epoch) == False:
+            self.epoch = int(self.epoch)
         self.subtype = json_dict['subtype']
         if self.type == 'NetFlowObject':
             self.IP = json_dict['ip']
             self.port = json_dict['port']
+            if math.isnan(self.port) == False:
+                self.port = int(self.port)
         elif self.type == 'FileObject':
             self.path = json_dict['path']
         else:

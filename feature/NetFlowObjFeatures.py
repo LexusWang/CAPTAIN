@@ -8,7 +8,7 @@ import tqdm
 import os
 
 # Unknown IP
-unknownip = [-1 for i in range(167)]
+unknownip = list(-1*np.ones(167, dtype=int))
 
 def ipaddr_to_list(ipaddr):
     result = []
@@ -168,7 +168,7 @@ def generate_feature_cadets(feature_path, vector_dir):
     df = pd.DataFrame.from_dict(feature_vectors,orient='index')
     df.to_json(os.path.join(vector_dir,'{}.json'.format(node_type)), orient='index')
 
-def get_signle_feature_vector(ip, port):
+def get_network_feature_vector(ip, port):
     # Port type
     '''
     21: ftp
