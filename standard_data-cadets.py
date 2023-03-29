@@ -5,8 +5,14 @@ import time
 from utils.utils import *
 from model.morse import Morse
 import time
+import avro.schema
+from avro.datafile import DataFileReader, DataFileWriter
+from avro.io import DatumReader, DatumWriter
 
 def start_experiment(args):
+    # schema_json = json.loads(open("/Users/lexus/Documents/research/APT/Data/raw/E3/schema/TCCDMDatum.avsc", "rb").read())
+    # a = schema_json['fields'][0]['type']
+    # schema = avro.schema.parse(open("/Users/lexus/Documents/research/APT/Data/raw/E3/schema/TCCDMDatum.avsc", "rb").read())
     begin_time = time.time()
     mo = Morse()
 
@@ -14,17 +20,15 @@ def start_experiment(args):
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')
     principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
 
-    network_nodes = {}
-    srcsink_nodes = {}
-
     uuid_nid_mapping = {}
     nodes_num = 0
+    principal_id = {}
 
     loaded_line = 0
     last_event_str = ''
-    volume_list = os.listdir(args.input_data)
-    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
-    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
+    volume_list = [file for file in os.listdir(args.input_data) if file.startswith('.') == False]
+    # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
+    volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     
     # close interval
     if args.line_range:
@@ -52,7 +56,11 @@ def start_experiment(args):
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
-                    event = mo.parse_event(record_datum, args.format, args.cdm_version)
+                    event, node_updates = mo.parse_event(record_datum, args.format, args.cdm_version)
+                    for key, value in node_updates.items():
+                        if key in node_set:
+                            update_evnt = {'type': 'UPDATE', 'nid': uuid_nid_mapping[key], 'value': value}
+                            print(json.dumps(update_evnt), file = edge_file)
                     if event:
                         for nid in [event.src, event.dest, event.dest2]:
                             if nid not in node_set:
@@ -86,42 +94,9 @@ def start_experiment(args):
                     object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
                     if object != None:
                         mo.add_object(object)
-                        is_new = True
-                        if object.type == 'FileObject':
-                            uuid_nid_mapping[object.id] = nodes_num
-                            object.id = nodes_num
-                            nodes_num += 1
-                        elif object.type == 'NetFlowObject':
-                            node_set.add(object.id)
-                            network_feature = '{}:{}'.format(object.IP, object.port)
-                            if network_feature not in network_nodes:
-                                network_nodes[network_feature] = nodes_num
-                                uuid_nid_mapping[object.id] = nodes_num
-                                object.id = nodes_num
-                                nodes_num += 1
-                            else:
-                                uuid_nid_mapping[object.id] = network_nodes[network_feature]
-                                object.id = network_nodes[network_feature]
-                                is_new = False
-                            if is_new:
-                                print(object.dumps(), file = node_file)
-                        elif object.type == 'SrcSinkObject':
-                            if object.name not in srcsink_nodes:
-                                srcsink_nodes[object.name] = nodes_num
-                                uuid_nid_mapping[object.id] = nodes_num
-                                object.id = nodes_num
-                                nodes_num += 1
-                                node_set.add(object.id)
-                                print(object.dumps(), file = node_file)
-                            else:
-                                uuid_nid_mapping[object.id] = srcsink_nodes[object.name]
-                                object.id = srcsink_nodes[object.name]
-                        else:
-                            uuid_nid_mapping[object.id] = nodes_num
-                            object.id = nodes_num
-                            nodes_num += 1
-                            node_set.add(object.id)
-                            print(object.dumps(), file = node_file)
+                        uuid_nid_mapping[object.id] = nodes_num
+                        object.id = nodes_num
+                        nodes_num += 1
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -142,7 +117,7 @@ def start_experiment(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="train or test the model")
+    parser = argparse.ArgumentParser(description="Data Standardize")
     parser.add_argument("--input_data", type=str)
     parser.add_argument("--output_data", type=str)
     parser.add_argument("--line_range", nargs=2, type=int)

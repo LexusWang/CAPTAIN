@@ -4,9 +4,7 @@ import argparse
 import time
 from utils.utils import *
 from model.morse import Morse
-from policy.initTags import match_path, match_network_addr
 import time
-from model.morse import Morse
 
 def start_experiment(args):
     begin_time = time.time()
@@ -15,10 +13,6 @@ def start_experiment(args):
     node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')
     principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
-    # record_file = open(os.path.join(args.output_data, 'records.json'), 'w')
-
-    # network_nodes = {}
-    # srcsink_nodes = {}
 
     uuid_nid_mapping = {}
     nodes_num = 0
@@ -35,7 +29,7 @@ def start_experiment(args):
         r_range = args.line_range[1]
     else:
         l_range = 0
-        r_range = 5000000*len(volume_list)
+        r_range = 5e7*len(volume_list)
     
     for volume in volume_list:
         print("Loading the {} ...".format(volume))
@@ -69,13 +63,9 @@ def start_experiment(args):
                     subject = mo.parse_subject(record_datum, args.format, args.cdm_version)
                     if subject != None:
                         mo.add_subject(subject)
-
-                        # is_new = True
                         uuid_nid_mapping[subject.id] = nodes_num
                         subject.id = nodes_num
                         nodes_num += 1
-
-                        # if is_new:
                         print(subject.dumps(), file = node_file)
                 elif record_type == 'Principal':
                     if args.format == 'trace':
@@ -87,41 +77,10 @@ def start_experiment(args):
                         del record_datum['hostId']
                         del record_datum['properties']
                     print(json.dumps(record_datum), file = principal_file)
-                    # mo.Principals[record_datum['uuid']] = record_datum
                 elif record_type.endswith('Object'):
                     object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
                     if object != None:
                         mo.add_object(object)
-
-                        # is_new = True
-
-                        # if object.type == 'NetFlowObject':
-                        #     network_feature = '{}:{}'.format(object.IP, object.port)
-                        #     if network_feature not in network_nodes:
-                        #         network_nodes[network_feature] = nodes_num
-                        #         uuid_nid_mapping[object.id] = nodes_num
-                        #         object.id = nodes_num
-                        #         nodes_num += 1
-                        #     else:
-                        #         uuid_nid_mapping[object.id] = network_nodes[network_feature]
-                        #         object.id = network_nodes[network_feature]
-                        #         is_new = False
-                        # elif object.type == 'SrcSinkObject':
-                        #     if object.name not in srcsink_nodes:
-                        #         srcsink_nodes[object.name] = nodes_num
-                        #         uuid_nid_mapping[object.id] = nodes_num
-                        #         object.id = nodes_num
-                        #         nodes_num += 1
-                        #     else:
-                        #         uuid_nid_mapping[object.id] = srcsink_nodes[object.name]
-                        #         object.id = srcsink_nodes[object.name]
-                        #         is_new = False
-                        # else:
-                        #     uuid_nid_mapping[object.id] = nodes_num
-                        #     object.id = nodes_num
-                        #     nodes_num += 1
-                        # if is_new:
-                        
                         uuid_nid_mapping[object.id] = nodes_num
                         object.id = nodes_num
                         nodes_num += 1
@@ -163,8 +122,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    args.line_range[0] = get_integer(args.line_range[0])
-    args.line_range[1] = get_integer(args.line_range[1])
+    if args.line_range:
+        args.line_range[0] = get_integer(args.line_range[0])
+        args.line_range[1] = get_integer(args.line_range[1])
 
     start_experiment(args)
 

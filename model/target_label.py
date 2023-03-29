@@ -9,7 +9,7 @@ from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
-from policy.alarms import AlarmArguments, printTime, getTime, prtSOAlarm, prtSAlarm, prtSSAlarm
+from policy.alarms import AlarmArguments, getTime, prtSOAlarm, prtSAlarm, prtSSAlarm
 # from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
 # from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET, MMAP_SET
 

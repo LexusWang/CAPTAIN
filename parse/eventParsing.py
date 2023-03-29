@@ -39,10 +39,8 @@ lttng_lttng_event = ['lttng_statedump_start','lttng_statedump_end','lttng_stated
 def parse_event_cadets(self, datum, cdm_version):
     event = Event(datum['uuid'], datum['timestampNanos'])
     datum['type'] = cdm_events[datum['type']]
+    node_updates = {}
 
-    if datum['type'] in UNUSED_SET:
-        return None
-    
     event.properties = datum['properties']['map']
 
     if isinstance(datum['subject'], dict):
@@ -61,6 +59,7 @@ def parse_event_cadets(self, datum, cdm_version):
             if self.Nodes[event.dest].path != event.obj_path:
                 self.Nodes[event.dest].name = event.obj_path
                 self.Nodes[event.dest].path = event.obj_path
+                node_updates[event.dest] = {'name':event.obj_path}
     except KeyError:
         pass
 
@@ -70,6 +69,7 @@ def parse_event_cadets(self, datum, cdm_version):
             if self.Nodes[event.dest2].path != event.obj2_path:
                 self.Nodes[event.dest2].name = event.obj2_path
                 self.Nodes[event.dest2].path = event.obj2_path
+                node_updates[event.dest2] = {'name':event.obj2_path}
     except KeyError:
         pass
 
@@ -77,6 +77,7 @@ def parse_event_cadets(self, datum, cdm_version):
         if 'exec' in event.properties:
             if self.Nodes[event.src].processName != event.properties['exec']:
                 self.Nodes[event.src].processName = event.properties['exec']
+                node_updates[event.src] = {'exec':event.properties['exec']}
     except KeyError:
         pass
 
@@ -85,12 +86,12 @@ def parse_event_cadets(self, datum, cdm_version):
             event.type = 'read'
         else:
             # TO DO: How to deal with unknown object
-            return None
+            return None, node_updates
     elif datum['type'] in WRITE_SET:
         if self.Nodes.get(event.dest, None):
             event.type = 'write'
         else:
-            return None
+            return None, node_updates
     elif datum['type'] in INJECT_SET:
         event.type = 'inject'
     elif datum['type'] in CHMOD_SET:
@@ -98,7 +99,7 @@ def parse_event_cadets(self, datum, cdm_version):
             event.type = 'chmod'
             event.parameters = int(datum['parameters']['array'][0]['valueBytes']['bytes'], 16)
         else:
-            return None   
+            return None, node_updates  
     elif datum['type'] in SET_UID_SET:
         # TO DO
         # a = self.Nodes.get(event.src, None)
@@ -123,9 +124,9 @@ def parse_event_cadets(self, datum, cdm_version):
             if self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None):
                 event.type = 'create'
             else:
-                return None
+                return None, node_updates
         else:
-            return None
+            return None, node_updates
     elif datum['type'] in RENAME_SET:
         a = self.Nodes.get(event.src, None)
         b = self.Nodes.get(event.dest, None)
@@ -148,9 +149,9 @@ def parse_event_cadets(self, datum, cdm_version):
     elif datum['type'] in EXIT_SET:
         event.type = 'exit'
     else:
-        return None
+        return None, node_updates
     
-    return event
+    return event, node_updates
 
 def parse_event_trace(self, datum, cdm_version):
     event = Event(datum['uuid'], datum['timestampNanos'])
@@ -243,9 +244,3 @@ def parse_event_trace(self, datum, cdm_version):
         return None
     
     return event
-
-def parse_event(self, datum, format, cdm_version):
-    if format == 'trace':
-        return parse_event_trace(self, datum, cdm_version)
-    elif format == 'cadets':
-        return parse_event_cadets(self, datum, cdm_version)

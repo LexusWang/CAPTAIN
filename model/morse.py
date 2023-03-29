@@ -7,9 +7,9 @@ from graph.Object import Object
 from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre
-from model.loss import check_alarm_loss, check_alarm_pre_loss, printTime
+from model.loss import check_alarm_loss, check_alarm_pre_loss
 from model.target_label import get_target_pre, get_target
-from parse.eventParsing import parse_event as parse_event_
+from parse.eventParsing import parse_event_trace, parse_event_cadets
 from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
 
@@ -65,8 +65,13 @@ class Morse:
         self.morse_grad_tensor = None
 
     
-    def parse_event(self, datum, format='cadets', cdm_version = 18):
-        return parse_event_(self, datum, format, cdm_version)
+    # def parse_event(self, datum, format='cadets', cdm_version = 18):
+    #     return parse_event_(self, datum, format, cdm_version)
+    def parse_event(self, datum, format, cdm_version):
+        if format == 'trace':
+            return parse_event_trace(self, datum, cdm_version)
+        elif format == 'cadets':
+            return parse_event_cadets(self, datum, cdm_version)
 
     def parse_object(self, datum, object_type, format, cdm_version):
         return parse_object_(self, datum, object_type, format, cdm_version)
@@ -113,8 +118,8 @@ class Morse:
         dest = self.Nodes.get(event.dest, None)
 
         if src:
-            # if (src.get_pid(), dest.get_name()) not in self.alarm:
-            #     self.alarm[(src.get_pid(), dest.get_name())] = False
+            if (src.get_pid(), dest.get_name()) not in self.alarm:
+                self.alarm[(src.get_pid(), dest.get_name())] = False
             alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
             s_target, o_target = get_target_pre(event, src, dest, gt)
             
@@ -179,11 +184,6 @@ class Morse:
         return diagnosis, s_labels, o_labels
         
     def add_event(self, event, gt = None):
-        # if event.type == 'update':
-        #     src = self.Nodes.get(event.dest, None)
-        #     dest = self.Nodes.get(event.dest2, None)
-        #     self.propagate(event, src, dest)
-        #     return None
         if event.type == 'exit':
             try:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False
@@ -194,8 +194,8 @@ class Morse:
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
         if src:
-            # if (src.get_pid(), dest.get_name()) not in self.alarm:
-            #     self.alarm[(src.get_pid(), dest.get_name())] = False
+            if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
+                self.alarm[(src.get_pid(), dest.get_name())] = False
             alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
             if event.type in {'rename', 'update'}:
                 dest2 = self.Nodes.get(event.dest2, None)

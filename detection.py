@@ -1,11 +1,11 @@
 import logging
 import os
 import argparse
+import json
 import time
 from utils.utils import *
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
-
 import time
 import pandas as pd
 from model.morse import Morse
@@ -56,27 +56,36 @@ def start_experiment(args):
             loaded_line += 1
             if loaded_line % 100000 == 0:
                 print("Morse has loaded {} lines.".format(loaded_line))
-            event = Event(None, None)
-            event.loads(line)
+            edge_datum = json.loads(line)
+            if edge_datum['type'] == 'UPDATE':
+                updated_value = edge_datum['value']
+                if 'exec' in updated_value:
+                    mo.Nodes[eval(line)['nid']].processName = updated_value['exec']
+                elif 'name' in updated_value:
+                    mo.Nodes[eval(line)['nid']].name = updated_value['name']
+                    mo.Nodes[eval(line)['nid']].path = updated_value['name']
+            else:
+                event = Event(None, None)
+                event.loads(line)
 
-            if loaded_line < l_range:
-                continue
+                if loaded_line < l_range:
+                    continue
 
-            if event.src not in mo.Nodes:
-                assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
-                add_nodes_to_graph(mo, event.src, nodes[event.src])
+                if event.src not in mo.Nodes:
+                    assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
+                    add_nodes_to_graph(mo, event.src, nodes[event.src])
 
-            if isinstance(event.dest, int) and event.dest not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest, nodes[event.dest])
+                if isinstance(event.dest, int) and event.dest not in mo.Nodes:
+                    add_nodes_to_graph(mo, event.dest, nodes[event.dest])
 
-            if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
+                if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
+                    add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-            gt = ec.classify(event.id)
-            diagnois = mo.add_event(event, gt)
-            experiment.update_metrics(diagnois, gt)
-            if gt != None and diagnois == None:
-                print(event.id)
+                gt = ec.classify(event.id)
+                diagnois = mo.add_event(event, gt)
+                experiment.update_metrics(diagnois, gt)
+                if gt != None and diagnois == None:
+                    print(event.id)
                     
     mo.alarm_file.close()
     experiment.print_metrics()

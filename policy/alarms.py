@@ -1,27 +1,16 @@
 import time
 import sys
 sys.path.extend(['.','..','...'])
-import torch
-
-# import floatTags
 from graph.Subject import Subject
 from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
-# from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-# from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET, MMAP_SET
 
 class AlarmArguments():
    
    def __init__(self) -> None:
        self.rootprinc = None
-
-def printTime(ts):
-   # Transfer time to ET
-   time_local = time.localtime((ts/1000000000) + 3600)
-   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
-   print(dt, end='')
 
 def getTime(ts):
    # Transfer time to ET
@@ -30,13 +19,13 @@ def getTime(ts):
    return dt
 
 def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
-    # if not alarms[(s.get_pid(), o.get_name())]:
-    #     alarms[(s.get_pid(), o.get_name())] = True
-    if alarmfile:
-        # with open(alarmfile, 'a') as fout:
-        alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Object:{} (name:{}), Subject:{} (pid:{}, pname:{}, cmdl:{})\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
-        alarmfile.write(alarm_string)
-    return an
+      if not alarms[(s.get_pid(), o.get_name())]:
+         alarms[(s.get_pid(), o.get_name())] = True
+      if alarmfile:
+         # with open(alarmfile, 'a') as fout:
+         alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Object:{} (name:{}), Subject:{} (pid:{}, pname:{}, cmdl:{})\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
+         alarmfile.write(alarm_string)
+      return an
    
 
 def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
@@ -84,16 +73,16 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm',
       assert isinstance(o,Object) and isinstance(s,Subject)
       if o.isMatch("null") == False:
          if (itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5):
-               # if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_sum[1] = alarm_sum[1] + 1
-               alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), o.get_name())]:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
 
    if event_type in {'rename'} :
       if o.isMatch("null")==False:
          if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5:
-               # if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_sum[1] = alarm_sum[1] + 1
-               alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), o.get_name())]:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
 
    if event_type in {'chmod'}:
       ositag = itag(o.tags())
@@ -101,9 +90,9 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm',
       prm = event.parameters
       if ((prm & int('0111',8)) != 0):
          if ositag < 0.5:
-               # if (alarms[(s.get_pid(), o.get_name())] == False):
-               alarm_sum[1] = alarm_sum[1] + 1
-               alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), o.get_name())]:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
    
    return alarmarg
 
@@ -131,9 +120,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
 
    if event_type in {'execve'}:
       if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
-         # if not alarms[(s.get_pid(), o.get_name())]:
-         alarm_sum[1] = alarm_sum[1] + 1
-         alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event.id, alarm_file)
+         if not alarms[(s.get_pid(), o.get_name())]:
+            alarm_sum[1] = alarm_sum[1] + 1
+            alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event.id, alarm_file)
    #   if gt == "FileExec":
    #       s_target_ = torch.tensor([0.0, s_tags[1], s_tags[2], s_tags[3]])
    #   else:
@@ -142,9 +131,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
    if event_type in {'load'}:
       if o.isFile():
          if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(s.tags()))):
-               # if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_sum[1] = alarm_sum[1] + 1
-               alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), o.get_name())]:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarm_result = prtSOAlarm(ts,"FileExec", s, o, alarms, event.id, alarm_file)
          # if gt == "FileExec":
          #     s_target_ = torch.tensor([0.0, s_tags[1], s_tags[2], s_tags[3]])
          # else:
@@ -164,9 +153,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
       if (not o.isIP() and not o.isMatch("UnknownObject") and not o.isMatch("Pipe\[") and not o.isMatch("pipe") and not o.isMatch("null")):
          if (itag(alarmarg.origtags) > 0.5 and itag(o.tags()) <= 0.5):
                if not created.get((s.get_pid(), o.get_name()), False):
-                  # if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
-                  alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
+                  if not alarms[(s.get_pid(), o.get_name())]:
+                     alarm_sum[1] = alarm_sum[1] + 1
+                     alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
          # if gt == "FileCorruption":
          #     o_target_ = torch.tensor([o_tags[0], o_tags[1], 0.0, o_tags[3]])
          # else:
@@ -176,9 +165,9 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
       if o.isIP():
          if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
                if itag(o.tags()) < 0.5:
-                  # if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
-                  alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, alarm_file)
+                  if not alarms[(s.get_pid(), o.get_name())]:
+                     alarm_sum[1] = alarm_sum[1] + 1
+                     alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, alarm_file)
          # if gt == "DataLeak":
          #     s_target_ = torch.tensor([s_tags[0], s_tags[1], 0.0, 0.0])
          #     o_target_ = torch.tensor([o_tags[0], o_tags[1], 0.0, o_tags[3]])
@@ -213,9 +202,13 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
          # if ((prm & int('01',8)) == int('01',8)):
          if 'PROT_EXEC' in set(event.parameters):
                if it < 0.5:
-                  # if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
-                  alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event.id, alarm_file)
+                  if o:
+                     if not alarms[(s.get_pid(), o.get_name())]:
+                        alarm_sum[1] = alarm_sum[1] + 1
+                        alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event.id, alarm_file)
+                  else:
+                     alarm_sum[1] = alarm_sum[1] + 1
+                     alarm_result = prtSAlarm(ts, "MkMemExecutable", s, event.id, alarm_file)
             #  if gt == "MkMemExecutable":
             #      s_target_ = torch.tensor([s_tags[0], s_tags[1], 0.0, s_tags[3]])
             #  else:
@@ -227,9 +220,13 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
       # if ((prm & int('01',8)) == int('01',8)):
       if 'PROT_EXEC' in set(event.parameters):
          if it < 0.5:
-               # if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_sum[1] = alarm_sum[1] + 1
-               alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event.id, alarm_file)
+               if o:
+                  if not alarms[(s.get_pid(), o.get_name())]:
+                     alarm_sum[1] = alarm_sum[1] + 1
+                     alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event.id, alarm_file)
+               else:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarm_result = prtSAlarm(ts, "MkMemExecutable", s, event.id, alarm_file)
    
    
    return alarm_result

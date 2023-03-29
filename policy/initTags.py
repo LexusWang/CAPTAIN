@@ -33,23 +33,24 @@ special_group = []
 def match_path(path):
     itag = 1
     ctag = 1
-    for regexp in benign_public_group:
-        if re.match(regexp,path):
-            itag = 1
-            ctag = 1
+    if path:
+        for regexp in benign_public_group:
+            if re.match(regexp,path):
+                itag = 1
+                ctag = 1
 
-    for regexp in benign_secret_group:
-        if re.match(regexp,path):
-            ctag = 0
+        for regexp in benign_secret_group:
+            if re.match(regexp,path):
+                ctag = 0
 
-    for regexp in untrusted_public_group:
-        if re.match(regexp,path):
-            itag = 0
+        for regexp in untrusted_public_group:
+            if re.match(regexp,path):
+                itag = 0
 
-    for regexp in special_group:
-        if re.match(regexp,path):
-            itag = 1
-            ctag = 1
+        for regexp in special_group:
+            if re.match(regexp,path):
+                itag = 1
+                ctag = 1
     
     return itag, ctag
 

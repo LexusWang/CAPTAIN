@@ -10,21 +10,18 @@ def parse_subject_cdm(self, datum, cdm_version=18):
     subject_type = datum['type']
     subject = None
     if subject_type == 'SUBJECT_PROCESS':
-        type_ = datum['type']
-        pid_ = datum['cid']
-        pname_ = datum['properties']['map'].get('name', None)
+        pname_ = datum['properties'].get('name', None)
         parent_ = None
         ppid_ = None
         if datum['parentSubject']:
             parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
             ppid_ = self.Nodes[parent_].pid
 
-        # seen_time_ = float(datum['properties']['map'].get('seen time',0))
         if isinstance(datum['cmdLine'], dict):
-            cmdLine_ = datum['cmdLine'].get('string')
+            cmdLine_ = datum['cmdLine']
         else:
             cmdLine_ = None
-        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid = ppid_, parentNode = parent_, cmdLine = cmdLine_, processName=pname_)
+        subject = Subject(id=datum['uuid'], type = datum['type'], pid = datum['cid'], ppid = ppid_, parentNode = parent_, cmdLine = cmdLine_, processName=pname_)
         if isinstance(datum['localPrincipal'], dict):
             subject.owner = datum['localPrincipal']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
