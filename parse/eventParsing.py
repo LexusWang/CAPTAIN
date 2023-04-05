@@ -52,7 +52,6 @@ def parse_event_cadets(self, datum, cdm_version):
     if isinstance(datum['predicateObject2'], dict):
         event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
 
-
     try:
         if isinstance(datum['predicateObjectPath'], dict):
             event.obj_path = datum['predicateObjectPath']['string']
@@ -107,7 +106,7 @@ def parse_event_cadets(self, datum, cdm_version):
         # c = self.Nodes.get(event.dest2, None)
         event.type = 'set_uid'
     elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
-        self.parameters = datum['properties']['map']['cmdLine']
+        event.parameters = datum['properties']['map']['cmdLine']
         event.type = 'execve'
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
         pdb.set_trace()
