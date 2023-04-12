@@ -6,6 +6,7 @@ from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
+import pdb
 
 class AlarmArguments():
    

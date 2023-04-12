@@ -29,10 +29,14 @@ class Event:
 
     def loads(self, data_str):
         json_dict = json.loads(data_str)
-        self.id = json_dict['id']
-        self.time = json_dict['time']
         self.type = json_dict['type']
-        self.parameters = json_dict['params']
-        self.src = json_dict['s']
-        self.dest = json_dict['d']
-        self.dest2 = json_dict['d2']
+        if self.type == "UPDATE":
+            self.value = json_dict['value']
+            self.nid = json_dict['nid']
+        else:
+            self.id = json_dict['id']
+            self.time = json_dict['time']
+            self.parameters = json_dict['params']
+            self.src = json_dict['s']
+            self.dest = json_dict['d']
+            self.dest2 = json_dict['d2']

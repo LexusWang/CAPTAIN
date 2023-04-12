@@ -9,6 +9,15 @@ import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
 
+def sanity_check(event):
+    if event.type == 'execve':
+        if event.src and event.dest:
+            return True
+        else:
+            return False
+
+    return True
+
 def start_experiment(args):
     # schema_json = json.loads(open("/Users/lexus/Documents/research/APT/Data/raw/E3/schema/TCCDMDatum.avsc", "rb").read())
     # a = schema_json['fields'][0]['type']
@@ -30,22 +39,18 @@ def start_experiment(args):
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
     volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     
-    # close interval
-    if args.line_range:
-        l_range = args.line_range[0]
-        r_range = args.line_range[1]
-    else:
-        l_range = 0
-        r_range = 5000000*len(volume_list)
-
     node_set = set()
+
+    envt_num = 0
+    edge_num = 0
+    node_num = 0
     
     for volume in volume_list:
         print("Loading the {} ...".format(volume))
         with open(os.path.join(args.input_data, volume),'r') as fin:
             for line in fin:
-                if loaded_line > r_range:
-                    break
+                # if loaded_line > r_range:
+                #     break
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
                     print("Morse has loaded {} lines.".format(loaded_line))
@@ -54,8 +59,9 @@ def start_experiment(args):
                 record_datum = record_datum[record_type]
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Event':
-                    if loaded_line < l_range:
-                        continue
+                    # if loaded_line < l_range:
+                    #     continue
+                    envt_num += 1
                     event, node_updates = mo.parse_event(record_datum, args.format, args.cdm_version)
                     for key, value in node_updates.items():
                         if key in node_set:
@@ -68,6 +74,7 @@ def start_experiment(args):
                                 node = mo.Nodes.get(nid, None)
                                 if node:
                                     print(node.dumps(), file = node_file)
+                                    node_num += 1
                         try:
                             event.src = uuid_nid_mapping.get(event.src, None)
                             event.dest = uuid_nid_mapping.get(event.dest, None)
@@ -75,7 +82,9 @@ def start_experiment(args):
                             event_str = '{},{},{}'.format(event.src, event.type, event.dest)
                             if event_str != last_event_str and event.src:
                                 last_event_str = event_str
-                                print(event.dumps(), file = edge_file)
+                                if sanity_check(event):
+                                    print(event.dumps(), file = edge_file)
+                                    edge_num += 1
                         except KeyError:
                             pass
                 elif record_type == 'Subject':
@@ -111,9 +120,10 @@ def start_experiment(args):
     node_file.close()
     edge_file.close()
     principal_file.close()
-    print(time.time()-begin_time)
-
-    return None
+    print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
+    print("#Events: {}".format(envt_num))
+    print("#Nodes: {}".format(node_num))
+    print("#Edges: {}".format(edge_num))
 
 
 if __name__ == '__main__':

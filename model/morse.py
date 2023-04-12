@@ -118,7 +118,7 @@ class Morse:
         dest = self.Nodes.get(event.dest, None)
 
         if src:
-            if (src.get_pid(), dest.get_name()) not in self.alarm:
+            if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
             alarmArg = self.detect_alarm_pre(event, src, dest, gt, self.alarm_file)
             s_target, o_target = get_target_pre(event, src, dest, gt)

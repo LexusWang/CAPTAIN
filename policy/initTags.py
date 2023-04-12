@@ -25,6 +25,7 @@ benign_public_group = []
 # init_otag("/media/[:any:]*", UNTRUSTED, PUBLIC)
 
 # untrusted_public_group = [r'/tmp.*',r'/media/.*']
+# untrusted_public_group = [r'www.hbo.com/.*']
 untrusted_public_group = []
 
 # special_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*']
@@ -62,9 +63,9 @@ def match_path(path):
 # init_otag("IP:a000[:any:]*", BENIGN, PUBLIC)
 # init_otag("IP:[a-f0-9]+:53[.][0-9]+H", BENIGN, PUBLIC)
 
-# benign_public_ips = [r'128.55.12.10',r'128.55.12.73']
+benign_public_ips = [r'128\.55\..*', r'127\.0\..*']
 # benign_ports = set([5353, 53])
-benign_public_ips = []
+# benign_public_ips = []
 benign_ports = set()
 
 def match_network_addr(ip_address, port):

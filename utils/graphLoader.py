@@ -1,32 +1,33 @@
 import json
-import os
+import pdb
 from utils.utils import *
 from model.morse import Morse
 from graph.Event import Event
 
-def read_events_from_files(edge_file, line_range):
+def read_events_from_files(edge_file, time_range):
     # close interval
-    if line_range:
-        l_range = line_range[0]
-        r_range = line_range[1]
+    if time_range:
+        detection_start_time = time_range[0]
+        detection_end_time = time_range[1]
     else:
-        l_range = 0
-        r_range = 1e20
+        detection_start_time = 0
+        detection_end_time = 1e21
 
     events = []
     loaded_line = 0
     with open(edge_file, 'r') as fin:
         for line in fin:
-            if loaded_line > r_range:
-                break
-            loaded_line += 1
-            if loaded_line % 100000 == 0:
-                print("Morse has loaded {} events.".format(loaded_line))
+            edge_datum = json.loads(line)
+            if edge_datum['type'] != 'UPDATE':
+                if edge_datum['time'] < detection_start_time:
+                    continue
+                if edge_datum['time'] > detection_end_time:
+                    break
+                loaded_line += 1
+                if loaded_line % 100000 == 0:
+                    print("Morse has loaded {} edges.".format(loaded_line))
             event = Event(None, None)
             event.loads(line)
             events.append(event)
-
-            if loaded_line < l_range:
-                continue
 
     return events

@@ -3,6 +3,7 @@ import os
 import argparse
 import json
 import time
+from datetime import datetime
 from utils.utils import *
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
@@ -12,6 +13,7 @@ from model.morse import Morse
 from graph.Event import Event
 from utils.graph_detection import add_nodes_to_graph
 from pathlib import Path
+import pdb
 
 def start_experiment(args):
     begin_time = time.time()
@@ -35,41 +37,43 @@ def start_experiment(args):
     mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
     nodes = pd.read_json(os.path.join(args.test_data, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
-    princicals = pd.read_json(os.path.join(args.test_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
-    mo.Principals = princicals
+    mo.Principals = pd.read_json(os.path.join(args.test_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
 
     loaded_line = 0
     edge_file = os.path.join(args.test_data, 'edges.json')
 
     # close interval
-    if args.line_range:
-        l_range = args.line_range[0]
-        r_range = args.line_range[1]
+    if args.time_range:
+        detection_start_time = args.time_range[0]
+        detection_end_time = args.time_range[1]
     else:
-        l_range = 0
-        r_range = 1e20
+        detection_start_time = 0
+        detection_end_time = 1e21
 
     with open(edge_file, 'r') as fin:
         for line in fin:
-            if loaded_line > r_range:
-                break
             loaded_line += 1
             if loaded_line % 100000 == 0:
-                print("Morse has loaded {} lines.".format(loaded_line))
+                print("Morse has loaded {} edges.".format(loaded_line))
             edge_datum = json.loads(line)
             if edge_datum['type'] == 'UPDATE':
                 updated_value = edge_datum['value']
-                if 'exec' in updated_value:
-                    mo.Nodes[eval(line)['nid']].processName = updated_value['exec']
-                elif 'name' in updated_value:
-                    mo.Nodes[eval(line)['nid']].name = updated_value['name']
-                    mo.Nodes[eval(line)['nid']].path = updated_value['name']
+                try:
+                    if 'exec' in updated_value:
+                        mo.Nodes[eval(line)['nid']].processName = updated_value['exec']
+                    elif 'name' in updated_value:
+                        mo.Nodes[eval(line)['nid']].name = updated_value['name']
+                        mo.Nodes[eval(line)['nid']].path = updated_value['name']
+                except KeyError:
+                    pass
             else:
                 event = Event(None, None)
                 event.loads(line)
 
-                if loaded_line < l_range:
+                if event.time < detection_start_time:
                     continue
+                elif event.time > detection_end_time:
+                    break
 
                 if event.src not in mo.Nodes:
                     assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
@@ -93,7 +97,7 @@ def start_experiment(args):
     ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
     ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
-    print(time.time()-begin_time)
+    print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
 
 
 if __name__ == '__main__':
@@ -101,10 +105,13 @@ if __name__ == '__main__':
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--test_data", nargs='?', type=str)
     parser.add_argument("--experiment_prefix", type=str)
-    parser.add_argument("--line_range", nargs=2, type=int, default = None)
+    parser.add_argument("--time_range", nargs=2, type=str, default = None)
     parser.add_argument("--mode", type=str, default='test')
 
     args = parser.parse_args()
+    if args.time_range:
+        args.time_range[0] = (datetime.timestamp(datetime.strptime(args.time_range[0], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
+        args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
 
     start_experiment(args)
 

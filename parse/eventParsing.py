@@ -109,12 +109,12 @@ def parse_event_cadets(self, datum, cdm_version):
         event.parameters = datum['properties']['map']['cmdLine']
         event.type = 'execve'
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
-        pdb.set_trace()
+        # pdb.set_trace()
+        return None, node_updates
     elif datum['type'] in {cdm_events['EVENT_MMAP']}:
         if self.Nodes[event.dest].isFile():
             event.type = 'load'
         else:
-            print("MMAP: {}".format(str(datum)))
             event.type = 'mmap'
             event.parameters = memory_protection(eval(event.properties['protection']))
     elif datum['type'] in CREATE_SET:

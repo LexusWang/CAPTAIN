@@ -83,14 +83,16 @@ def parse_object_cdm(self, datum, object_type):
         # object.name = datum['baseObject']['properties']['map'].get('path',None)
         object.path = datum['baseObject']['properties']['map'].get('path', None)
     elif object_type == 'UnnamedPipeObject':
-        permission = datum['baseObject']['permission']
-        object.name = 'Pipe_{}'.format(object.id)
+        # permission = datum['baseObject']['permission']
+        # object.name = 'Pipe_{}'.format(object.id)
+
         # object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
         # object.path = object.name
+        return None
     elif object_type == 'RegistryKeyObject':
-        pass
+        return None
     elif object_type == 'PacketSocketObject':
-        pass
+        return None
     elif object_type == 'NetFlowObject':
         try:
             object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
@@ -122,6 +124,40 @@ def parse_object_cdm(self, datum, object_type):
 
     return object
 
+
+def parse_object_cadets(self, datum, object_type):
+    object = Object(id=datum['uuid'], type = object_type)
+    if isinstance(datum['baseObject']['epoch'], dict):
+        object.epoch = datum['baseObject']['epoch']['int']
+    if object_type == 'FileObject':
+        object.subtype = datum['type']
+        permission = datum['baseObject']['permission']
+        object.path = datum['baseObject']['properties']['map'].get('path', None)
+    elif object_type == 'NetFlowObject':
+        try:
+            object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
+        except TypeError:
+            object.set_IP(datum['remoteAddress'], datum['remotePort'], None)
+    elif object_type == 'UnnamedPipeObject':
+        return None
+    elif object_type == 'RegistryKeyObject':
+        return None
+    elif object_type == 'PacketSocketObject':
+        return None
+    elif object_type == 'MemoryObject':
+        object.name = 'MEM_{}'.format(datum['memoryAddress'])
+    elif object_type == 'SrcSinkObject':
+        object.subtype = datum['type']
+        if object.subtype in {'SRCSINK_UNKNOWN', 'SRCSINK_IPC'}:
+            return None
+        else:
+            print('New SrcSink Object Type!!!')
+            print(datum)
+    else:
+        pass
+
+    return object
+
 def parse_subject(self, datum, format, cdm_version):
     if format in {'trace', 'cadets'}:
         subject = parse_subject_cdm(self, datum, cdm_version)
@@ -129,6 +165,8 @@ def parse_subject(self, datum, format, cdm_version):
 
 
 def parse_object(self, datum, object_type, format, cdm_version):
-    if format in {'trace', 'cadets'}:
+    if format in {'trace'}:
         object = parse_object_cdm(self, datum, object_type)
+    elif format in {'cadets'}:
+        object = parse_object_cadets(self, datum, object_type)
         return object
