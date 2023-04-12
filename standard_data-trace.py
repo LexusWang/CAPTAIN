@@ -19,7 +19,7 @@ def start_experiment(args):
 
     loaded_line = 0
     last_event_str = ''
-    volume_list = os.listdir(args.input_data)
+    volume_list = [file for file in os.listdir(args.input_data) if file.startswith('.') == False]
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
     volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     
@@ -30,13 +30,17 @@ def start_experiment(args):
     else:
         l_range = 0
         r_range = 5e7*len(volume_list)
+
+    envt_num = 0
+    edge_num = 0
+    node_num = 0
     
     for volume in volume_list:
         print("Loading the {} ...".format(volume))
         with open(os.path.join(args.input_data, volume),'r') as fin:
             for line in fin:
-                if loaded_line > r_range:
-                    break
+                # if loaded_line > r_range:
+                #     break
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
                     print("Morse has loaded {} lines.".format(loaded_line))
@@ -47,6 +51,7 @@ def start_experiment(args):
                 if record_type == 'Event':
                     if loaded_line < l_range:
                         continue
+                    envt_num += 1
                     event = mo.parse_event(record_datum, args.format, args.cdm_version)
                     if event:
                         try:
@@ -68,14 +73,9 @@ def start_experiment(args):
                         nodes_num += 1
                         print(subject.dumps(), file = node_file)
                 elif record_type == 'Principal':
-                    if args.format == 'trace':
-                        record_datum['euid'] = record_datum['properties']['map']['euid']
-                        del record_datum['hostId']
-                        del record_datum['properties']
-                    elif args.format == 'cadets':
-                        record_datum['username'] = record_datum['username']['string']
-                        del record_datum['hostId']
-                        del record_datum['properties']
+                    record_datum['euid'] = record_datum['properties']['map']['euid']
+                    del record_datum['hostId']
+                    del record_datum['properties']
                     print(json.dumps(record_datum), file = principal_file)
                 elif record_type.endswith('Object'):
                     object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
@@ -99,9 +99,10 @@ def start_experiment(args):
     node_file.close()
     edge_file.close()
     principal_file.close()
-    print(time.time()-begin_time)
-
-    return None
+    print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
+    print("#Events: {}".format(envt_num))
+    print("#Nodes: {}".format(node_num))
+    print("#Edges: {}".format(edge_num))
 
 def get_integer(string):
     if string.endswith('K'):

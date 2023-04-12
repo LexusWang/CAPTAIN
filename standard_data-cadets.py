@@ -31,7 +31,6 @@ def start_experiment(args):
 
     uuid_nid_mapping = {}
     nodes_num = 0
-    principal_id = {}
 
     loaded_line = 0
     last_event_str = ''
