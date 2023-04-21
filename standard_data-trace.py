@@ -5,6 +5,7 @@ import time
 from utils.utils import *
 from model.morse import Morse
 import time
+import pdb
 
 def start_experiment(args):
     begin_time = time.time()
@@ -22,6 +23,7 @@ def start_experiment(args):
     volume_list = [file for file in os.listdir(args.input_data) if file.startswith('.') == False]
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[1])+0.1*int(x.split('.')[3]))
     volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
+
     
     # close interval
     if args.line_range:

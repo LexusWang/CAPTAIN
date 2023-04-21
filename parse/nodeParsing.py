@@ -3,6 +3,7 @@ from graph.Object import Object
 from graph.Subject import Subject
 from parse.cdm.FileObjectType import file_object_type as cdm_file_object_type
 from parse.cdm.SRCSINKType import srcsink_type as cdm_srcsink_type
+import pdb
 
 lttng_object_type = ['common_file', 'share_memory', 'unix_socket_file', 'inet_scoket_file', 'pipe_file']
 
@@ -74,6 +75,8 @@ def parse_subject_trace(self, datum, cdm_version=18):
 
 def parse_object_cdm(self, datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
+    # if datum['uuid'] == 'ADA7293B-7DD9-D1A4-CF58-9D9C2F1E96B2':
+    #     pdb.set_trace()
     if isinstance(datum['baseObject']['epoch'], dict):
         object.epoch = datum['baseObject']['epoch']['int']
     if object_type == 'FileObject':
@@ -83,11 +86,6 @@ def parse_object_cdm(self, datum, object_type):
         # object.name = datum['baseObject']['properties']['map'].get('path',None)
         object.path = datum['baseObject']['properties']['map'].get('path', None)
     elif object_type == 'UnnamedPipeObject':
-        # permission = datum['baseObject']['permission']
-        # object.name = 'Pipe_{}'.format(object.id)
-
-        # object.name = 'Pipe[{}-{}]'.format(datum['sourceFileDescriptor']['int'], datum['sinkFileDescriptor']['int'])
-        # object.path = object.name
         return None
     elif object_type == 'RegistryKeyObject':
         return None
@@ -103,18 +101,8 @@ def parse_object_cdm(self, datum, object_type):
         # object.path = object.name
     elif object_type == 'SrcSinkObject':
         object.subtype = datum['type']
-        # object.subtype = cdm_srcsink_type[datum['type']]
         permission = datum['baseObject']['permission']
-        # if object.subtype == cdm_srcsink_type['SRCSINK_UNKNOWN']:
-        if object.subtype == 'SRCSINK_UNKNOWN':
-            pid_ = int(datum['baseObject']['properties']['map']['pid'])
-            try:
-                pname_ = self.Nodes[self.processes[pid_]['node']].processName
-            except KeyError:
-                pname_ = 'unknown'
-            object.name = 'UnknownObject_{}_{}_{}'.format(datum['fileDescriptor']['int'], pid_, pname_)
-            # object.path = object.name
-        elif object.subtype == 'SRCSINK_IPC':
+        if object.subtype in {'SRCSINK_UNKNOWN', 'SRCSINK_IPC'}:
             return None
         else:
             print(datum)
@@ -169,4 +157,4 @@ def parse_object(self, datum, object_type, format, cdm_version):
         object = parse_object_cdm(self, datum, object_type)
     elif format in {'cadets'}:
         object = parse_object_cadets(self, datum, object_type)
-        return object
+    return object

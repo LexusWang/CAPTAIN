@@ -159,7 +159,6 @@ def parse_event_trace(self, datum, cdm_version):
     if datum['type'] in UNUSED_SET:
         return None
     
-    # event['type'] = datum['type']
     event.properties = datum['properties']['map']
 
     if isinstance(datum['subject'], dict):
@@ -215,7 +214,7 @@ def parse_event_trace(self, datum, cdm_version):
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
         event.type = 'execve'
     elif datum['type'] in {cdm_events['EVENT_MMAP']}:
-        if self.Nodes[event.dest].isFile():
+        if self.Nodes.get(event.dest, None) and self.Nodes[event.dest].isFile():
             event.type = 'load'
         else:
             event.type = 'mmap'
