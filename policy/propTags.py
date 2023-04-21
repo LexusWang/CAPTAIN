@@ -1,13 +1,10 @@
-from ctypes import c_bool
 from graph.Subject import Subject
 from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag, ctag, itag, etag, isRoot
-from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
-from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, CLONE_SET, UPDATE_SET
 
-def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, morse = None):
+def propTags(event, s, o, o2, whitelisted = False, att = 0.2, decay = 0):
    event_type = event.type
    intags = None
    newtags = None
@@ -264,13 +261,13 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, morse = No
       o.updateTime = event.time
 
    elif event_type in {'update'}:
-      assert isinstance(o,Object) and isinstance(s,Object)
-      initag = s.tags()
-      o.setObjTags([initag[2],initag[3]])
-      o.set_grad([s.get_itag_grad(), s.get_ctag_grad()])
-      o.setiTagInitID(s.getiTagInitID())
-      o.setcTagInitID(s.getcTagInitID())
-      o.updateTime = event.time
+      assert isinstance(o,Object) and isinstance(o2,Object)
+      initag = o.tags()
+      o2.setObjTags([initag[2],initag[3]])
+      o2.set_grad([o.get_itag_grad(), o.get_ctag_grad()])
+      o2.setiTagInitID(o.getiTagInitID())
+      o2.setcTagInitID(o.getcTagInitID())
+      o2.updateTime = event.time
 
    elif event_type in {'set_uid'}:
       assert isinstance(o,Subject) and isinstance(s,Subject)
@@ -280,12 +277,12 @@ def propTags(event, s, o, whitelisted = False, att = 0.2, decay = 16, morse = No
       o.updateTime = event.time
 
    elif event_type in {'rename'}:
-      assert isinstance(o,Object) and isinstance(s,Object)
-      o.setObjTags(s.tags())
-      o.set_grad(s.get_grad())
-      o.setiTagInitID(s.getiTagInitID())
-      o.setcTagInitID(s.getcTagInitID())
-      o.updateTime = event.time
+      assert isinstance(o,Object) and isinstance(o2,Object)
+      o2.setObjTags(o.tags())
+      o2.set_grad(o.get_grad())
+      o2.setiTagInitID(o.getiTagInitID())
+      o2.setcTagInitID(o.getcTagInitID())
+      o2.updateTime = event.time
 
    
    if event_type in {'chmod', 'set_uid', 'mprotect', 'mmap', 'remove', 'clone', 'read', 'load', 'execve', 'inject', 'create', 'write'} and s and o:

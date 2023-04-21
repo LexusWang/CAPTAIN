@@ -1,7 +1,7 @@
 import json
 import torch
 import logging
-import random
+from datetime import datetime
 import math
 import os
 import argparse
@@ -62,7 +62,6 @@ def start_experiment(args):
     no_hidden_layers = args.no_hidden_layers
 
     mo = Morse()
-    mo.tuneNetworkTags = True
 
     # ============= Tag Initializer =============== #
     node_inits = {}
@@ -96,7 +95,7 @@ def start_experiment(args):
             with open(pre_loaded_path, 'rb') as f:
                 events, nodes, princicals = pickle.load(f)
         else:
-            events = read_events_from_files(os.path.join(args.train_data, 'edges.json'), args.line_range)
+            events = read_events_from_files(os.path.join(args.train_data, 'edges.json'), args.time_range)
             nodes = pd.read_json(os.path.join(args.train_data, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
             princicals = pd.read_json(os.path.join(args.train_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
             # cache the loaded morse and events for next run
@@ -104,78 +103,6 @@ def start_experiment(args):
                 pickle.dump([events, nodes, princicals], f)
 
         mo.Principals = princicals
-        model_nids = {}
-        model_features = {}
-
-        nodes_df = pd.DataFrame.from_dict(nodes, orient = 'index')
-
-        network_df = nodes_df[nodes_df['type'] == 'NetFlowObject'][['ip', 'port']]
-        network_df['ip:port'] = network_df.apply(lambda x: '{}:{}'.format(x['ip'], int(x['port'])), axis = 1)
-        network_feature_vectors_index = {}
-        array = []
-        for i, item in enumerate(pd.unique(network_df['ip:port'])):
-            network_info = item.split(':')
-            network_feature_vectors_index[item] = i
-            array.append(get_network_feature_vector(network_info[0], network_info[1]))
-        model_features['NetFlowObject'] = torch.tensor(np.array(array, dtype=np.int16)).to(device)
-        # network_df['feature_vector'] = network_df.apply(lambda x: get_network_feature_vector(x['ip'], x['port']), axis = 1)
-        # network_df['feature_index'] = list(range(network_df.shape[0]))
-        # model_features['NetFlowObject'] = torch.tensor(np.array(network_df['feature_vector'].values.tolist(), dtype=np.int16)).to(device)
-        # network_df = network_df.drop(columns = ['feature_vector'])
-        # network_nid_index = network_df.to_dict(orient='index')
-
-        # for node_type in ['NetFlowObject']:
-            # network_nid_feature = pd.read_csv(os.path.join(args.feature_path, 'feature_vectors', '{}.csv'.format(node_type)), index_col='Unnamed: 0').to_dict(orient='index')
-            # with open(os.path.join(args.feature_path, 'feature_vectors', '{}.json'.format(node_type)),'r') as fin:
-                # node_features = json.load(fin)
-            # target_features = pd.DataFrame.from_dict(node_features,orient='index')
-            # network_feature_index = {}
-            # for item in target_features.index.tolist():
-            #     index = len(network_feature_index)
-            #     network_feature_index[item] = index
-            # feature_array = target_features['features'].values.tolist()
-            # model_features[node_type] = torch.tensor(np.array(feature_array, dtype=np.int16)).to(device)
-
-        # subject_df = nodes_df[nodes_df['type'] == 'SUBJECT_PROCESS'][['processName', 'cmdLine']]
-        # subject_df['feature_vector'] = network_df.apply(lambda x: get_network_feature_vector(x['ip'], x['port']), axis = 1)
-        # network_df = network_df.drop(columns = ['ip','port'])
-        # network_df['feature_index'] = list(range(network_df.shape[0]))
-        # model_features['NetFlowObject'] = torch.tensor(np.array(network_df['feature_vector'].values.tolist(), dtype=np.int16)).to(device)
-        # print(network_df.head)
-        
-        # for node_type in ['Subject']:
-        #     target_features = pd.read_csv(os.path.join(args.feature_path,'{}.csv'.format(node_type)), delimiter='\t', index_col='Key')
-        #     node2processName = target_features.to_dict(orient='index')
-        #     process_name_list = sorted(pd.unique(target_features['ProcessName']).tolist())
-        #     process_name_index = {}
-        #     for i, item in enumerate(process_name_list):
-        #         process_name_index[item] = i
-        #     model_nids[node_type] = target_features.index.tolist()
-        #     feature_array = [[i] for i in range(len(process_name_index))]
-        #     model_features[node_type] = torch.tensor(np.array(feature_array, dtype=np.int16)).to(device)
-            
-        # for node_type in ['FileObject']:
-        #     with open(os.path.join(args.feature_path,'{}.json'.format(node_type)),'r') as fin:
-        #         node_features = json.load(fin)
-        #     if len(node_features) > 0:
-        #         target_features = pd.DataFrame.from_dict(node_features,orient='index')
-        #         model_nids[node_type] = target_features.index.tolist()
-        #         ori_feature_array = target_features['features'].values.tolist()
-        #         oh_index = [item[0] for item in ori_feature_array]
-        #         feature_array = []
-        #         for i, item in enumerate(ori_feature_array):
-        #             input_feature = np.zeros(10002,dtype=np.int16)
-        #             input_feature[oh_index[i]] = 1
-        #             input_feature[10000] = item[1]
-        #             input_feature[10001] = item[2]
-        #             feature_array.append(list(input_feature))
-        #     else:
-        #         model_nids[node_type] = []
-        #         feature_array = []
-        #     model_features[node_type] = torch.tensor(feature_array, dtype=torch.int16).to(device)
-        
-        ec = eventClassifier(args.ground_truth_file)
-        # ic_index = {'i':0,'c':1}
 
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
@@ -188,43 +115,6 @@ def start_experiment(args):
             model_tags = {}
             node_inital_tags = {}
 
-            # node_type = 'NetFlowObject'
-            # model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
-            # Path(os.path.join(experiment.get_experiment_output_path(), 'tags')).mkdir(parents=True, exist_ok=True)
-            # prt_network_tag_prob(os.path.join(experiment.get_experiment_output_path(), 'tags', 'network-itag-epoch{}.csv'.format(epoch)), network_feature_vectors_index, model_tags[node_type].tolist())
-
-            # for nid in network_nid_index.keys():
-            #     index = network_nid_index[item]['feature_index']
-            #     if model_tags[node_type][index,:].tolist()[0] > 0.5:
-            #         mo.node_inital_tags[nid] = [0.0, 1.0]
-            #     else:
-            #         mo.node_inital_tags[nid] = [1.0, 1.0]
-
-            # for key, value in network_feature_vectors_index.items():
-            #     if model_tags[node_type][value,:].tolist()[0] > 0.5:
-            #         mo.network_ini_tags[key] = [0.0, 1.0]
-            #     else:
-            #         mo.network_ini_tags[key] = [1.0, 1.0]
-
-            # subject_tags = {}
-            # for node_type in ['Subject']:
-            #     model_tags[node_type] = node_inits[node_type].initialize(model_features[node_type]).squeeze()
-                
-            #     array = model_tags[node_type].tolist()
-            #     Path(os.path.join(experiment.get_experiment_output_path(), 'tags')).mkdir(parents=True, exist_ok=True)
-            #     outputfile = open(os.path.join(experiment.get_experiment_output_path(), 'tags/subtags-epoch-{}.csv'.format(epoch)), 'w')
-            #     print("ProcessName\titag-0\titag-1", file = outputfile)
-            #     for i, item in enumerate(process_name_list):
-            #         print("{}\t{}\t{}".format(item, array[i][0], array[i][1]), file = outputfile)
-            #     outputfile.close()
-
-            #     for pname in process_name_index.keys():
-            #         index = process_name_index[pname]
-            #         if model_tags[node_type][index,:].tolist()[0] > 0.5:
-            #             subject_tags[pname] = [0.0, 1.0]
-            #         else:
-            #             subject_tags[pname] = [1.0, 1.0]
-                        
             # mo.node_inital_tags = node_inital_tags
             # mo.subject_tags = subject_tags
             mo.reset_tags()
@@ -232,6 +122,16 @@ def start_experiment(args):
             # ============= Dectection =================== #
             node_gradients = []
             for event in tqdm.tqdm(events):
+                if event.type == 'UPDATE':
+                    try:
+                        if 'exec' in event.value:
+                            mo.Nodes[event.nid].processName = event.value['exec']
+                        elif 'name' in event.value:
+                            mo.Nodes[event.nid].name = event.value['name']
+                            mo.Nodes[event.nid].path = event.value['name']
+                    except KeyError:
+                        pass
+                    continue
                 if event.src not in mo.Nodes:
                     add_nodes_to_graph(mo, event.src, nodes[event.src])
 
@@ -241,32 +141,32 @@ def start_experiment(args):
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
                     add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-                gt = ec.classify(event.id)
-                diagnosis, s_labels, o_labels = mo.add_event_generate_loss(event, gt)
-                experiment.update_metrics(diagnosis, gt)
+                # gt = ec.classify(event.id)
+                diagnosis, s_labels, o_labels = mo.add_event_generate_loss(event, None)
+                experiment.update_metrics(diagnosis, None)
 
                 if diagnosis == None:
                     continue
 
                 if s_labels:
                     node_gradients.extend(s_labels)
-                    for item in s_labels:
-                        if item[0][1] == 'i':
-                            pdb.set_trace()
+                    # for item in s_labels:
+                    #     if item[0][1] == 'i':
+                    #         pdb.set_trace()
 
                 if o_labels:
                     node_gradients.extend(o_labels)
-                    for item in s_labels:
-                        if item[0][1] == 'i':
-                            pdb.set_trace()
+                    # for item in s_labels:
+                    #     if item[0][1] == 'i':
+                    #         pdb.set_trace()
             
             mo.alarm_file.close()
             experiment.print_metrics()
             experiment.save_metrics()
             experiment.reset_metrics()
-            ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
-            ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
-            ec.reset()
+            # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
+            # ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
+            # ec.reset()
             
             node_labels = {}
             for item in node_gradients:
@@ -277,10 +177,14 @@ def start_experiment(args):
 
             network_feature_labels = {}
             src_sink_feature_labels = {}
-            for nid, value in node_labels.items():
-                print(mo.Nodes[nid].get_name())
 
-        #     pdb.set_trace()
+            wlz_list = []
+            for nid, value in node_labels.items():
+                wlz_list.append(mo.Nodes[nid].get_name())
+
+            print(Counter(wlz_list))
+
+            pdb.set_trace()
 
         #     target_tags = {'NetFlowObject': torch.tensor([0.0, 1.0]),
         #                 'FileObject': torch.tensor([1.0, 1.0]),
@@ -528,27 +432,12 @@ if __name__ == '__main__':
     parser.add_argument("--experiment_prefix", type=str)
     parser.add_argument("--no_hidden_layers", default=1, type=int)
     parser.add_argument("--checkpoint", type=str)
-    parser.add_argument("--line_range", nargs = 2, type=int)
+    parser.add_argument("--time_range", nargs=2, type=str, default = None)
 
     args = parser.parse_args()
-
-    # config = {
-    #     "learning_rate": args.learning_rate,
-    #     "epoch": args.epoch,
-    #     "lr_imb": args.lr_imb,
-    #     "train_data": args.train_data,
-    #     "test_data": args.test_data,
-    #     "mode": args.mode,
-    #     "device": args.device,
-    #     "ground_truth_file": args.ground_truth_file,
-    #     "feature_path": args.feature_path,
-    #     "data_tag": args.data_tag,
-    #     "no_hidden_layers": args.no_hidden_layers,
-    #     "experiment_prefix": args.experiment_prefix,
-    #     "trained_model_timestamp": args.trained_model_timestamp,
-    #     "checkpoint": args.checkpoint,
-    #     "line_range": args.line_range
-    # }
+    if args.time_range:
+        args.time_range[0] = (datetime.timestamp(datetime.strptime(args.time_range[0], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
+        args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
 
     start_experiment(args)
 

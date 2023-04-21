@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 class eventClassifier:
     def __init__(self, filePath):
@@ -88,24 +89,28 @@ class eventClassifier:
 
     def analyzeFile(self, f):
         for line in f:
-            # l = line.split()
-            l = line.strip().split()
-            # print(l[14]) # subject UUID
-            if len(l) < 13:
-                continue
-            if l[12] not in self.reportedProcessUUID.keys():
-                self.reportedProcessUUID[l[12]] = ' '.join([l[6]]+l[13:-1])
-                if len(l[14:-1]) > 5:
-                    p_name = ' '.join(l[14:19])
-                else:
-                    p_name = ' '.join(l[14:-1])
-                if p_name in self.reportedProcessName.keys():
-                    self.reportedProcessName[p_name] += 1
-                else:
-                    self.reportedProcessName[p_name] = 1
+            l = line.strip().split(',')
             self.tally(l[0])
             if(self.classify(l[0])):
                 print(self.classify(l[0]), "alarm detected")
+
+            subject_info = re.search(r'Subject:([0-9]*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', l[4])
+            suuid = subject_info.group(1)
+            spid = subject_info.group(2)
+            spname = subject_info.group(3)
+            scmdl = subject_info.group(4)
+
+            if suuid not in self.reportedProcessUUID.keys():
+                # self.reportedProcessUUID[suuid] = ' '.join([l[6]]+l[13:-1])
+                self.reportedProcessUUID[suuid] = ' '.join(spname+scmdl)
+                # if len(l[14:-1]) > 5:
+                #     p_name = ' '.join(l[14:19])
+                # else:
+                #     p_name = ' '.join(l[14:-1])
+                if spname in self.reportedProcessName.keys():
+                    self.reportedProcessName[spname] += 1
+                else:
+                    self.reportedProcessName[spname] = 1
 
     def summary(self, outFile=None):
         if outFile:

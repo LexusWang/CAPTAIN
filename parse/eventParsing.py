@@ -207,6 +207,7 @@ def parse_event_trace(self, datum, cdm_version):
     elif datum['type'] in CHMOD_SET:
         event.type = 'chmod'
         event.parameters = int(event.properties['mode'], 8)
+        pdb.set_trace()
     elif datum['type'] in SET_UID_SET:
         event.type = 'set_uid'
     elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
@@ -214,11 +215,14 @@ def parse_event_trace(self, datum, cdm_version):
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
         event.type = 'execve'
     elif datum['type'] in {cdm_events['EVENT_MMAP']}:
-        if self.Nodes.get(event.dest, None) and self.Nodes[event.dest].isFile():
-            event.type = 'load'
+        if self.Nodes.get(event.dest, None):
+            if self.Nodes[event.dest].isFile():
+                event.type = 'load'
+            else:
+                event.type = 'mmap'
+                event.parameters = memory_protection(eval(event.properties['protection']))
         else:
-            event.type = 'mmap'
-            event.parameters = memory_protection(eval(event.properties['protection']))
+            return None
     elif datum['type'] in CREATE_SET:
         assert event.src and event.dest
         if self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None):

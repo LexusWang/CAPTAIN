@@ -16,7 +16,6 @@ def start_experiment(args):
     principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
 
     uuid_nid_mapping = {}
-    nodes_num = 0
 
     loaded_line = 0
     last_event_str = ''
@@ -25,17 +24,17 @@ def start_experiment(args):
     volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
 
     
-    # close interval
-    if args.line_range:
-        l_range = args.line_range[0]
-        r_range = args.line_range[1]
-    else:
-        l_range = 0
-        r_range = 5e7*len(volume_list)
+    # # close interval
+    # if args.line_range:
+    #     l_range = args.line_range[0]
+    #     r_range = args.line_range[1]
+    # else:
+    #     l_range = 0
+    #     r_range = 5e7*len(volume_list)
 
     envt_num = 0
     edge_num = 0
-    node_num = 0
+    nodes_num = 0
     
     for volume in volume_list:
         print("Loading the {} ...".format(volume))
@@ -51,8 +50,8 @@ def start_experiment(args):
                 record_datum = record_datum[record_type]
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Event':
-                    if loaded_line < l_range:
-                        continue
+                    # if loaded_line < l_range:
+                    #     continue
                     envt_num += 1
                     event = mo.parse_event(record_datum, args.format, args.cdm_version)
                     if event:
@@ -63,6 +62,7 @@ def start_experiment(args):
                             event_str = '{},{},{}'.format(event.src, event.type, event.dest)
                             if event_str != last_event_str and event.src:
                                 last_event_str = event_str
+                                edge_num += 1
                                 print(event.dumps(), file = edge_file)
                         except KeyError:
                             pass
@@ -103,31 +103,31 @@ def start_experiment(args):
     principal_file.close()
     print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
     print("#Events: {}".format(envt_num))
-    print("#Nodes: {}".format(node_num))
+    print("#Nodes: {}".format(nodes_num))
     print("#Edges: {}".format(edge_num))
 
-def get_integer(string):
-    if string.endswith('K'):
-        return int(string[:-1])*1000
-    elif string.endswith('M'):
-        return int(string[:-1])*1000000
-    else:
-        return int(string)
+# def get_integer(string):
+#     if string.endswith('K'):
+#         return int(string[:-1])*1000
+#     elif string.endswith('M'):
+#         return int(string[:-1])*1000000
+#     else:
+#         return int(string)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Data Standardize")
     parser.add_argument("--input_data", type=str)
     parser.add_argument("--output_data", type=str)
-    parser.add_argument("--line_range", nargs=2, type=str)
+    # parser.add_argument("--line_range", nargs=2, type=str)
     parser.add_argument("--format", type=str)
     parser.add_argument("--cdm_version", type=int)
 
     args = parser.parse_args()
 
-    if args.line_range:
-        args.line_range[0] = get_integer(args.line_range[0])
-        args.line_range[1] = get_integer(args.line_range[1])
+    # if args.line_range:
+    #     args.line_range[0] = get_integer(args.line_range[0])
+    #     args.line_range[1] = get_integer(args.line_range[1])
 
     start_experiment(args)
 

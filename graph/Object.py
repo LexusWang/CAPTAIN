@@ -19,8 +19,8 @@ class Object:
         self.iTag_grad: float = 1.0
         self.cTag_grad: float = 1.0
 
-        self.iTag_initID = [id,'i']
-        self.cTag_initID = [id,'c']
+        self.iTag_initID = (id,'i')
+        self.cTag_initID = (id,'c')
 
     def dumps(self) -> str:
         json_dict = {}
@@ -86,7 +86,8 @@ class Object:
         if self.isFile():
             return self.path
         elif self.isIP():
-            return "{}:{}".format(self.IP, self.port)
+            # return "{}:{}".format(self.IP, self.port)
+            return "{}".format(self.IP)
         else:
             return self.name
 

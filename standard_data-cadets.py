@@ -5,9 +5,9 @@ import time
 from utils.utils import *
 from model.morse import Morse
 import time
-import avro.schema
-from avro.datafile import DataFileReader, DataFileWriter
-from avro.io import DatumReader, DatumWriter
+# import avro.schema
+# from avro.datafile import DataFileReader, DataFileWriter
+# from avro.io import DatumReader, DatumWriter
 
 def sanity_check(event):
     if event.type == 'execve':

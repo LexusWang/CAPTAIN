@@ -10,51 +10,19 @@ from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
 from policy.alarms import AlarmArguments, getTime, prtSOAlarm, prtSAlarm, prtSSAlarm
-# from parse.eventType import SET_UID_SET, lttng_events, cdm_events, standard_events
-# from parse.eventType import READ_SET, LOAD_SET, EXECVE_SET, WRITE_SET, INJECT_SET, CREATE_SET, RENAME_SET, MPROTECT_SET, REMOVE_SET, CHMOD_SET, MMAP_SET
 
 def get_target_pre(event, s, o, gt):
     ts = event.time
     event_type = event.type
 
-    # s_loss, o_loss = torch.zeros(4, requires_grad=True), torch.zeros(4, requires_grad=True)
-    # if s:
-    #     s_tags = torch.tensor(s.tags(),requires_grad=True)
-    # if o:
-    #     o_tags = torch.tensor(o.tags(),requires_grad=True)
-    # else:
-    #     o_tags = None
-
     s_target_ = None
     o_target_ = None
 
-    # alarmarg = AlarmArguments()
-    # alarmarg.origtags = None
-    # alarmarg.pre_alarm = None
-    # alarmarg.s_loss = None
-    # alarmarg.o_loss = None
-    # alarmarg.s_tags = None
-    # alarmarg.o_tags = None
-
-    # if event_type in {'read', 'load', 'execve', 'inject', 'mprotect'}:
-    #    alarmarg.origtags = s.tags()
-
-    # if event_type in {'write'}:
-    #    alarmarg.origtags = o.tags()
-
-    # if event_type in {'inject'}:
-    #    alarmarg.origtags = o.tags()
-
-    # if event_type in {'set_uid'}:
-    #     if (itag(s.tags()) < 0.5):
-    #         alarmarg.rootprinc = isRoot(morse.Principals[s.owner])
-
-    if event_type in {'remove'}:
+    if event_type in {'remove', 'rename'}:
         assert isinstance(o,Object) and isinstance(s,Subject)
         if o.isMatch("null") == False:
             # if (itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5):
             #     # if not alarms[(s.get_pid(), o.get_name())]:
-            #     alarm_sum[1] = alarm_sum[1] + 1
             #     alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
             if gt == "FileCorruption":
                 s_target_ = [None, None, 0, None]
@@ -62,44 +30,18 @@ def get_target_pre(event, s, o, gt):
             else:
                 s_target_ = [None, None, 1, None]
                 o_target_ = [None, None, 0, None]
-  
-
-    if event_type in {'rename'} :
-        if o.isMatch("null")==False:
-            # if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5:
-            #     # if not alarms[(s.get_pid(), o.get_name())]:
-            #     alarm_sum[1] = alarm_sum[1] + 1
-            #     alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
-            if gt == "FileCorruption":
-                s_target_ = [None, None, 0, None]
-                o_target_ = [None, None, 1, None]
-            else:
-                s_target_ = [None, None, 1, None]
-                o_target_ = [None, None, 0, None]
-
 
     if event_type in {'chmod'}:
-        ositag = itag(o.tags())
         prm = event.parameters
         if ((prm & int('0111',8)) != 0):
-            # if ositag < 0.5:
+            # if itag(o.tags()) < 0.5:
             #     # if (alarms[(s.get_pid(), o.get_name())] == False):
-            #     alarm_sum[1] = alarm_sum[1] + 1
             #     alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
             if gt == "MkFileExecutable":
                 o_target_ = [None, None, 0, None]
             else:
                 o_target_ = [None, None, 1, None]
 
-    # if isinstance(s_target_, torch.Tensor):
-    #     s_loss = s_tags - s_target_
-    #     alarmarg.s_loss = torch.mean(torch.square(s_loss))
-    #     alarmarg.s_tags = s_tags
-    # if isinstance(o_target_, torch.Tensor):
-    #     o_loss = o_tags - o_target_
-    #     alarmarg.o_loss = torch.mean(torch.square(o_loss))
-    #     alarmarg.o_tags = o_tags
-    
     return s_target_, o_target_
 
 

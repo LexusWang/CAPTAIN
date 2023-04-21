@@ -15,7 +15,7 @@ class AlarmArguments():
 
 def getTime(ts):
    # Transfer time to ET
-   time_local = time.localtime((ts/1000000000) + 3600)
+   time_local = time.localtime((ts/1e9) - 4*3600)
    dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
    return dt
 
@@ -24,7 +24,7 @@ def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
          alarms[(s.get_pid(), o.get_name())] = True
       if alarmfile:
          # with open(alarmfile, 'a') as fout:
-         alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Object:{} (name:{}), Subject:{} (pid:{}, pname:{}, cmdl:{})\n".format(event_id, getTime(ts), an, o.get_id(),o.get_name(), s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
+         alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Object:{} (name:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(), o.get_id(),o.get_name())
          alarmfile.write(alarm_string)
       return an
    
@@ -35,7 +35,7 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
     #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
     if alarmfile:
         # with open(alarmfile, 'a') as fout:
-        alarm_string = "{}, AlarmSS, Time:{}, Type:{}, Subject:{} (pid={} {}), Subject:{} (pid={} {}\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name())
+        alarm_string = "{}, AlarmSS, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Subject:{} (pid:{} pname:{} cmdl:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name(), ss.get_name())
         alarmfile.write(alarm_string)
     return an
 
@@ -43,19 +43,19 @@ def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
 def prtSAlarm(ts, an, s, event_id, alarmfile= None):
     if alarmfile:
         # with open(alarmfile, 'a') as fout:
-        alarm_string = "{}, AlarmS, Time:{}, Type:{}, Subject:{} pid={} {}\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name())
+        alarm_string = "{}, AlarmS, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
         alarmfile.write(alarm_string)
     return an
 
-def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm', morse = None, alarm_file = None):
+def check_alarm_pre(event, s, o, alarms, morse = None, alarm_file = None):
    ts = event.time
    event_type = event.type
 
    alarmarg = AlarmArguments()
    alarmarg.origtags = None
    alarmarg.pre_alarm = None
-   alarmarg.s_tags = None
-   alarmarg.o_tags = None
+   # alarmarg.s_tags = None
+   # alarmarg.o_tags = None
 
    if event_type in {'read', 'load', 'execve', 'inject', 'mprotect'}:
       alarmarg.origtags = s.tags()
@@ -70,29 +70,17 @@ def check_alarm_pre(event, s, o, alarms, created, alarm_sum, gt, format = 'cdm',
       if (itag(s.tags()) < 0.5):
          alarmarg.rootprinc = isRoot(morse.Principals[s.owner])
 
-   if event_type in {'remove'}:
-      assert isinstance(o,Object) and isinstance(s,Subject)
-      if o.isMatch("null") == False:
-         if (itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5):
-               if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
-                  alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
-
-   if event_type in {'rename'} :
-      if o.isMatch("null")==False:
-         if itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5:
-               if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
+   if event_type in {'remove', 'rename'}:
+      if o.isMatch("null") == False: 
+         if (itag(o.tags()) > 0.5 and itag(s.tags()) < 0.5): 
+               if not alarms[(s.get_pid(), o.get_name())]: 
                   alarmarg.pre_alarm = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
 
    if event_type in {'chmod'}:
-      ositag = itag(o.tags())
-      # prm = permbits(event)
       prm = event.parameters
       if ((prm & int('0111',8)) != 0):
-         if ositag < 0.5:
+         if itag(o.tags()) < 0.5:
                if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_sum[1] = alarm_sum[1] + 1
                   alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
    
    return alarmarg
