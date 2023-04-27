@@ -207,7 +207,6 @@ def parse_event_trace(self, datum, cdm_version):
     elif datum['type'] in CHMOD_SET:
         event.type = 'chmod'
         event.parameters = int(event.properties['mode'], 8)
-        pdb.set_trace()
     elif datum['type'] in SET_UID_SET:
         event.type = 'set_uid'
     elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
@@ -246,3 +245,8 @@ def parse_event_trace(self, datum, cdm_version):
         return None
     
     return event
+
+
+
+def parse_event_linux(self, datum):
+    pass

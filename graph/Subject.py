@@ -31,6 +31,8 @@ class Subject:
         self.iTag_initID = (id,'i')
         self.cTag_initID = (id,'c')
 
+        self.propagation_chain = {'i':[], 'c':[]}
+
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id

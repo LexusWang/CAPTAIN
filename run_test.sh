@@ -1,4 +1,9 @@
 # !/bin/bash
+## Data Preparation
+## TRACE
+python standard_data-trace.py --input_data ../data/raw/E3-trace-1 --output_data ../data/T31 --format trace --cdm_version 18
+python standard_data-trace.py --input_data ../data/raw/E3-trace-2 --output_data ../data/T32 --format trace --cdm_version 18
+
 # TRACE
 python train_by_benign.py --ground_truth_file ../data/GT/groundTruthT31.txt --train_data ../data/T31 --mode train --data_tag t31-train --experiment_prefix TrainT31 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 

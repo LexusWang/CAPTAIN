@@ -7,7 +7,7 @@ import pdb
 
 lttng_object_type = ['common_file', 'share_memory', 'unix_socket_file', 'inet_scoket_file', 'pipe_file']
 
-def parse_subject_cdm(self, datum, cdm_version=18):
+def parse_subject_cadets(self, datum, cdm_version=18):
     subject_type = datum['type']
     subject = None
     if subject_type == 'SUBJECT_PROCESS':
@@ -45,18 +45,17 @@ def parse_subject_trace(self, datum, cdm_version=18):
         type_ = datum['type']
         pid_ = datum['cid']
         pname_ = datum['properties']['map'].get('name',None)
+        parent_ = None
+        ppid_ = None
         if datum['parentSubject']:
             parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
-            a = 0
-        else:
-            parent_ = datum['parentSubject']
-        # ppid_ = datum['properties']['map']['ppid']
-        # seen_time_ = float(datum['properties']['map'].get('seen time',0))
+            # ppid_ = self.Nodes[parent_].pid
+        ppid_ = datum['properties']['map']['ppid']
         if isinstance(datum['cmdLine'], dict):
             cmdLine_ = datum['cmdLine'].get('string')
         else:
             cmdLine_ = None
-        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid=parent_, cmdLine = cmdLine_, processName=pname_)
+        subject = Subject(id=datum['uuid'], type = type_, pid = pid_, ppid = ppid_, parentNode = parent_, cmdLine = cmdLine_, processName=pname_)
         if isinstance(datum['localPrincipal'], dict):
             subject.owner = datum['localPrincipal']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
@@ -147,10 +146,10 @@ def parse_object_cadets(self, datum, object_type):
     return object
 
 def parse_subject(self, datum, format, cdm_version):
-    if format in {'trace', 'cadets'}:
-        subject = parse_subject_cdm(self, datum, cdm_version)
-        return subject
-
+    if format in {'cadets'}:
+        return parse_subject_cadets(self, datum, cdm_version)
+    elif format in {'trace'}:
+        return parse_subject_trace(self, datum, cdm_version)
 
 def parse_object(self, datum, object_type, format, cdm_version):
     if format in {'trace'}:

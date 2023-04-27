@@ -11,44 +11,15 @@ from collections import Counter
 from utils.eventClassifier import eventClassifier
 from model.morse import Morse
 
-from feature.NetFlowObjFeatures import get_network_feature_vector
 import tqdm
 import time
 import pandas as pd
 from model.morse import Morse
-from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 from utils.graph_detection import add_nodes_to_graph
 from utils.graphLoader import read_events_from_files
 import numpy as np
 from pathlib import Path
 import pickle
-
-def prt_network_tag_prob(file_path, network_nid_index, array):
-    with open(file_path, 'w') as outputfile:
-        print("NetworkFeature\titag-0\titag-1", file = outputfile)
-        for item in network_nid_index.keys():
-            i = network_nid_index[item]
-            print("{}\t{}\t{}".format(item, array[i][0], array[i][1]), file = outputfile)
-    
-
-
-def get_network_tags(node_features_dict, node_id, initializer, device):
-    features = torch.tensor(np.array(node_features_dict[node_id]['features'], dtype=np.int16)).unsqueeze(dim=0).to(device)
-    return initializer.initialize(features).squeeze()
-
-def get_file_tags(node_features_dict, node_id, initializer, device):
-    orig_feature = node_features_dict[node_id]['features']
-    input_feature = np.zeros(10002,dtype=np.int16)
-    input_feature[orig_feature[0]] = 1
-    input_feature[10000] = orig_feature[1]
-    input_feature[10001] = orig_feature[2]
-    # features = list(np.zeros(10002,dtype=np.int16))
-    # for index in orig_feature[0]:
-    #     features[index] = 1
-    # features[10000] = orig_feature[1]
-    # features[10001] = orig_feature[2]
-    features = torch.tensor(input_feature).unsqueeze(dim=0).to(device)
-    return initializer.initialize(features).squeeze()
 
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
@@ -85,21 +56,19 @@ def start_experiment(args):
             with open(os.path.join(pre_loaded_path, 'morse.pkl'), "wb") as f:
                 pickle.dump([events, nodes, princicals], f)
 
+        #edge tuning
+        mo.white_name_set = {'162.97.114.199', '67.28.122.168', '209.132.177.50', '216.163.248.17', '12.149.161.245', '128.55.12.10', '204.2.179.67', '64.191.208.114', '208.17.90.10', '203.192.141.18', '10.0.4.1', '64.4.125.136', '128.55.12.122', '129.33.46.231', '0.0.0.0', '216.9.245.101', '64.86.71.27', '158.28.238.9', '8.15.32.34', '66.252.21.131', '208.75.170.1', '128.55.12.73', '65.214.39.18', '83.222.15.109'}
         mo.Principals = princicals
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
-            # total_loss = 0.0
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
             mo.reset_morse()
-
-            # ============== Initialization ================== #
-            model_tags = {}
-            node_inital_tags = {}
             mo.reset_tags()
 
             # ============= Dectection =================== #
             node_gradients = []
+            propagation_chains = []
             for event in tqdm.tqdm(events):
                 if event.type == 'UPDATE':
                     try:
@@ -120,8 +89,7 @@ def start_experiment(args):
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
                     add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-                # gt = ec.classify(event.id)
-                diagnosis, s_labels, o_labels = mo.add_event_generate_loss(event, None)
+                diagnosis, s_labels, o_labels, pc = mo.add_event_generate_loss(event, None)
                 experiment.update_metrics(diagnosis, None)
 
                 if diagnosis == None:
@@ -132,6 +100,8 @@ def start_experiment(args):
 
                 if o_labels:
                     node_gradients.extend(o_labels)
+
+                propagation_chains.extend(pc)
             
             mo.alarm_file.close()
             experiment.print_metrics()
@@ -140,29 +110,43 @@ def start_experiment(args):
             # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
             # ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
             # ec.reset()
-            
-            node_labels = {}
+
+            pc_event_counter = Counter()
+            for item in propagation_chains:
+                pc_event_counter.update(item)
+
+            print(pc_event_counter)
+            pdb.set_trace()
+
+            benign_nid_labels = {}
+            public_nid_labels = {}
             for item in node_gradients:
-                if item[0] not in node_labels:
-                    node_labels[item[0]] = []
-                node_labels[item[0]].append(item[1])
-                # if item[0][1] == 'i':
-                #     if item[0][0] not in node_labels:
-                #         node_labels[item[0][0]] = []
-                #     node_labels[item[0][0]].append(item[1])
+                if item[0][1] == 'i':
+                    if item[0] not in benign_nid_labels:
+                        benign_nid_labels[item[0]] = []
+                    benign_nid_labels[item[0]].append(item[1])
+                elif item[0][1] == 'c':
+                    if item[0] not in public_nid_labels:
+                        public_nid_labels[item[0]] = []
+                    public_nid_labels[item[0]].append(item[1])
+                
+            benign_node_dict = {}
+            for node, value in benign_nid_labels.items():
+                if mo.Nodes[node[0]].get_name() not in benign_node_dict:
+                    benign_node_dict[mo.Nodes[node[0]].get_name()] = []
+                benign_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
 
-            wlz_dict = {}
-            for node, value in node_labels.items():
-                if mo.Nodes[node[0]].get_name() not in wlz_dict:
-                    wlz_dict[mo.Nodes[node[0]].get_name()] = []
-                wlz_dict[mo.Nodes[node[0]].get_name()].extend(value)
+            public_node_dict = {}
+            for node, value in public_nid_labels.items():
+                if mo.Nodes[node[0]].get_name() not in public_node_dict:
+                    public_node_dict[mo.Nodes[node[0]].get_name()] = []
+                public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
 
-            for key, item in wlz_dict.items():
+            for key, item in benign_node_dict.items():
                 if len(item) > 10 and sum(item)/len(item) > 0.9:
                     mo.white_name_set.add(key)
             
             print(mo.white_name_set)
-            pdb.set_trace()
 
         return None
 
@@ -198,8 +182,11 @@ def start_experiment(args):
 
         mo.Principals = princicals
         # mo.white_name_set = {'128.55.12.56', '128.55.12.10', '193.40.5.73', '127.0.0.1', '207.25.80.123', '207.46.73.59', '128.55.12.118', '128.55.12.166', '212.60.66.243', '207.46.73.60', '128.55.12.55', '216.87.162.115', '194.90.181.242', '128.55.12.167', '128.55.12.110', '212.190.125.38', '/home/user/.bash_history', '83.150.97.73', '66.252.21.131', '162.99.3.50', '69.20.49.234', '128.55.12.67'}
-        mo.white_name_set = {'128.55.12.122', '128.55.12.73', '10.0.4.1', '128.55.12.10', '8.15.32.34', '64.4.125.136', '208.17.90.10', '208.75.170.1', '0.0.0.0', '66.252.21.131', '67.28.122.168'}
-
+        # mo.white_name_set = {'128.55.12.122', '128.55.12.73', '10.0.4.1', '128.55.12.10', '8.15.32.34', '64.4.125.136', '208.17.90.10', '208.75.170.1', '0.0.0.0', '66.252.21.131', '67.28.122.168'}
+        # Trace
+        mo.white_name_set = {'162.97.114.199', '67.28.122.168', '209.132.177.50', '216.163.248.17', '12.149.161.245', '128.55.12.10', '204.2.179.67', '64.191.208.114', '208.17.90.10', '203.192.141.18', '10.0.4.1', '64.4.125.136', '128.55.12.122', '129.33.46.231', '0.0.0.0', '216.9.245.101', '64.86.71.27', '158.28.238.9', '8.15.32.34', '66.252.21.131', '208.75.170.1', '128.55.12.73', '65.214.39.18', '83.222.15.109'}
+        
+        
         for event in tqdm.tqdm(events):
             if event.type == 'UPDATE':
                 try:

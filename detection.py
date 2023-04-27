@@ -98,6 +98,7 @@ def start_experiment(args):
     ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
     print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
+    print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
 
 
 if __name__ == '__main__':
@@ -110,8 +111,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.time_range:
-        args.time_range[0] = (datetime.timestamp(datetime.strptime(args.time_range[0], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
-        args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%d-%H:%M:%S'))-3600)*1e9
+        args.time_range[0] = (datetime.timestamp(datetime.strptime(args.time_range[0], '%Y-%m-%dT%H:%M:%S%z')))*1e9
+        args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%dT%H:%M:%S%z')))*1e9
 
     start_experiment(args)
 

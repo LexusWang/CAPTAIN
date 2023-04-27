@@ -22,6 +22,8 @@ class Object:
         self.iTag_initID = (id,'i')
         self.cTag_initID = (id,'c')
 
+        self.propagation_chain = {'i':[], 'c':[]}
+
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
@@ -64,6 +66,12 @@ class Object:
     def setObjTags(self, tags):
         self.iTag = tags[0]
         self.cTag = tags[1]
+
+    def setObjiTag(self, itag):
+        self.iTag = itag
+
+    def setObjcTag(self, ctag):
+        self.cTag = ctag
 
     def isMatch(self, string):
         if self.path == None:
