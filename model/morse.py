@@ -8,7 +8,7 @@ from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags
 from policy.alarms import check_alarm, check_alarm_pre
 from model.target_label import get_target_pre, get_target
-from parse.eventParsing import parse_event_trace, parse_event_cadets
+from parse.eventParsing import parse_event_trace, parse_event_cadets, parse_event_linux
 from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
 
@@ -44,6 +44,8 @@ class Morse:
             return parse_event_trace(self, datum, cdm_version)
         elif format == 'cadets':
             return parse_event_cadets(self, datum, cdm_version)
+        elif format == 'linux':
+            return parse_event_linux(self, datum, cdm_version)
 
     def parse_object(self, datum, object_type, format, cdm_version):
         return parse_object_(self, datum, object_type, format, cdm_version)

@@ -249,4 +249,10 @@ def parse_event_trace(self, datum, cdm_version):
 
 
 def parse_event_linux(self, datum):
-    pass
+    subject = None
+    object = None
+    object2 = None
+    event = None
+    a = datum['arguments']
+
+    return subject, object, object2, event
