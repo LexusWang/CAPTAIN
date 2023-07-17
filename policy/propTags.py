@@ -3,6 +3,7 @@ from graph.Object import Object
 from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag, ctag, itag, etag, isRoot
+import pdb
 
 def propTags(event, s, o, o2, att = 0.2, decay = 0):
    event_type = event.type
@@ -340,7 +341,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       if (s.updateTime == 0):
          s.updateTime = ts
       elif (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
-         diff = (ts - s.updateTime) / 4000000000
+         diff = (ts - s.updateTime) / 4e9
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.75
          temp = pow(dpc, diff)
@@ -356,7 +357,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          s.updateTime = ts
       
       elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))):
-         diff = (ts - s.updateTime) / 4000000000
+         diff = (ts - s.updateTime) / 4e9
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.45
          temp = pow(dpc, diff)

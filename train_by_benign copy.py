@@ -84,6 +84,8 @@ def start_experiment(args):
                         elif 'name' in event.value:
                             mo.Nodes[event.nid].name = event.value['name']
                             mo.Nodes[event.nid].path = event.value['name']
+                        elif 'cmdl' in event.value:
+                            mo.Nodes[event.nid].cmdLine = event.value['cmdl']
                     except KeyError:
                         pass
                     continue
@@ -196,6 +198,8 @@ def start_experiment(args):
                     elif 'name' in event.value:
                         mo.Nodes[event.nid].name = event.value['name']
                         mo.Nodes[event.nid].path = event.value['name']
+                    elif 'cmdl' in event.value:
+                        mo.Nodes[event.nid].cmdLine = event.value['cmdl']
                 except KeyError:
                     pass
                 continue

@@ -1,40 +1,17 @@
-import logging
 import os
 import argparse
 import json
-import time
 from datetime import datetime
 from utils.utils import *
-from utils.eventClassifier import eventClassifier
 from model.morse import Morse
-import time
 import pandas as pd
 from model.morse import Morse
 from graph.Event import Event
 from utils.graph_detection import add_nodes_to_graph
-from pathlib import Path
 import pdb
 
 def start_experiment(args):
-    begin_time = time.time()
-    experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
-
     mo = Morse()
-    mo.tuneNetworkTags = False
-    mo.tuneFileTags = False
-
-    print("Begin preparing testing...")
-    logging.basicConfig(level=logging.INFO,
-                        filename='debug.log',
-                        filemode='w+',
-                        format='%(asctime)s %(levelname)s:%(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-    experiment.save_hyperparameters()
-    ec = eventClassifier(args.ground_truth_file)
-        
-    mo.node_inital_tags = {}
-    Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
     nodes = pd.read_json(os.path.join(args.test_data, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
     mo.Principals = pd.read_json(os.path.join(args.test_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
@@ -53,9 +30,13 @@ def start_experiment(args):
     with open(edge_file, 'r') as fin:
         for line in fin:
             loaded_line += 1
-            if loaded_line % 100000 == 0:
-                print("Morse has loaded {} edges.".format(loaded_line))
             edge_datum = json.loads(line)
+            if loaded_line == 1:
+                if "time" in edge_datum:
+                    print(int(edge_datum["time"]))
+                else:
+                    loaded_line = 0
+                # print("Morse has loaded {} edges.".format(loaded_line))
             if edge_datum['type'] == 'UPDATE':
                 updated_value = edge_datum['value']
                 try:
@@ -87,33 +68,34 @@ def start_experiment(args):
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
                     add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-                gt = ec.classify(event.id)
-                diagnosis = mo.add_event(event, gt)
-                experiment.update_metrics(diagnosis, gt)
-                if gt == 'MkFileExecutable' and diagnosis == None:
-                    print(event.id)
-                    pdb.set_trace()
-                    
-    print(mo.secret_src)
-    print(mo.secret_dest)
-    print(mo.secret_dest2)
-    mo.alarm_file.close()
-    experiment.print_metrics()
-    experiment.save_metrics()
-    ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-    ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
+                # if mo.Nodes[event.src].pid == 66539:
+                #     print(event.dumps())
+                #     print(mo.Nodes[event.src].dumps())
+                #     print(mo.Nodes[event.dest].dumps())
 
-    print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
-    print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
+                # if '/root/fish.sh' in mo.Nodes[event.dest].get_name():
+                #     print(event.dumps())
+                #     print(mo.Nodes[event.src].dumps())
+                #     print(mo.Nodes[event.dest].dumps())
 
+                # if event.type == 'write':
+                #     # if mo.Nodes[event.src] == 'chown root /root/discovery.sh':
+                #     # pdb.set_trace()
+                #     # if mo.Nodes[event.src].cmdLine and "wget http://192.168.1.31:8089/FileUpLoad/Files/pub.sh" in mo.Nodes[event.src].cmdLine:
+                #     if '192.168.1.119' in mo.Nodes[event.dest].get_name():
+                #         print(event.id)
+                #         # print(event.dumps())
+                #         # print(mo.Nodes[event.src].dumps())
+                #         # print(mo.Nodes[event.dest].dumps())
+                #         # pdb.set_trace()
+            if "time" in edge_datum.keys():
+                finish_time = int(edge_datum["time"])
+    print(finish_time)            
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
-    parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--test_data", nargs='?', type=str)
-    parser.add_argument("--experiment_prefix", type=str)
     parser.add_argument("--time_range", nargs=2, type=str, default = None)
-    parser.add_argument("--mode", type=str, default='test')
 
     args = parser.parse_args()
     if args.time_range:
@@ -121,4 +103,3 @@ if __name__ == '__main__':
         args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%dT%H:%M:%S%z')))*1e9
 
     start_experiment(args)
-

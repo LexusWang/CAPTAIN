@@ -43,14 +43,14 @@ def parse_subject_trace(self, datum, cdm_version=18):
     subject = None
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
-        pid_ = datum['cid']
+        pid_ = int(datum['cid'])
         pname_ = datum['properties']['map'].get('name',None)
         parent_ = None
         ppid_ = None
         if datum['parentSubject']:
             parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
             # ppid_ = self.Nodes[parent_].pid
-        ppid_ = datum['properties']['map']['ppid']
+        ppid_ = int(datum['properties']['map']['ppid'])
         if isinstance(datum['cmdLine'], dict):
             cmdLine_ = datum['cmdLine'].get('string')
         else:

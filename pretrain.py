@@ -54,7 +54,7 @@ def get_network_label(node_features_dict, node_id, initializer, device):
     return label
 
 def get_file_label(node_features_dict, node_id, initializer, device):
-    label = torch.tensor(match_path(node_features_dict[node_id]['path']), dtype=torch.float)
+    label = torch.tensor((node_features_dict[node_id]['path']), dtype=torch.float)
     return label
 
 def stratify_sampling(node_labels, sampling_num):

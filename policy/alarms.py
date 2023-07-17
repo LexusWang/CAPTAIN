@@ -79,6 +79,8 @@ def check_alarm_pre(event, s, o, alarms, morse = None, alarm_file = None):
    if event_type in {'chmod'}:
       prm = event.parameters
       if ((prm & int('0111',8)) != 0):
+         # if '/root/discovery.sh' in o.get_name():
+         #    pdb.set_trace()
          if itag(o.tags()) < 0.5:
                if not alarms[(s.get_pid(), o.get_name())]:
                   alarmarg.pre_alarm = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
@@ -153,10 +155,10 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, format = 
 
       if o.isIP():
          if (itag(s.tags()) < 0.5 and ctag(s.tags()) < 0.5):
-               if itag(o.tags()) < 0.5:
-                  if not alarms[(s.get_pid(), o.get_name())]:
-                     alarm_sum[1] = alarm_sum[1] + 1
-                     alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, alarm_file)
+            if itag(o.tags()) < 0.5:
+               if not alarms[(s.get_pid(), o.get_name())]:
+                  alarm_sum[1] = alarm_sum[1] + 1
+                  alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, alarm_file)
          # if gt == "DataLeak":
          #     s_target_ = torch.tensor([s_tags[0], s_tags[1], 0.0, 0.0])
          #     o_target_ = torch.tensor([o_tags[0], o_tags[1], 0.0, o_tags[3]])

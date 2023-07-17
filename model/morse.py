@@ -21,6 +21,11 @@ class Morse:
         self.data_loader = data_loader
         self.format = format
 
+        # debug
+        self.secret_src = 0
+        self.secret_dest = 0
+        self.secret_dest2 = 0
+
         #
         self.tuneNetworkTags = False
         self.tuneFileTags = False
@@ -45,7 +50,7 @@ class Morse:
         elif format == 'cadets':
             return parse_event_cadets(self, datum, cdm_version)
         elif format == 'linux':
-            return parse_event_linux(self, datum, cdm_version)
+            return parse_event_linux(self, datum)
 
     def parse_object(self, datum, object_type, format, cdm_version):
         return parse_object_(self, datum, object_type, format, cdm_version)
@@ -73,11 +78,23 @@ class Morse:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False
             except KeyError:
                 # print('Oops! Cannot find Node!')
-                return None, None, None
+                return None, None, None, None
 
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
+
+        # if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.processName in {'thunderbird','firefox'}:
+        #     # pdb.set_trace()
+        #     return None, [], [], []
+
+        # if event.type == 'read' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'smtpd'}:
+        #     # pdb.set_trace()
+        #     return None, [], [], []
+        
+        # if event.type == 'write' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'postmap'}:
+        #     # pdb.set_trace()
+        #     return None, [], [], []
 
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
@@ -172,11 +189,32 @@ class Morse:
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
-        if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.cmdLine in {'/usr/lib/thunderbird/thunderbird','/usr/lib/firefox/firefox'}:
-            pdb.set_trace()
+        if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.processName in {'thunderbird','firefox'}:
+            # pdb.set_trace()
             return None
 
+        # if event.type == 'read' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'smtpd'}:
+        #     # pdb.set_trace()
+        #     return None
+        
+        # if event.type == 'write' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'postmap'}:
+        #     # pdb.set_trace()
+        #     return None
+
+        # if event.type == 'read' and src.processName in {'smtpd'}:
+        #     # pdb.set_trace()
+        #     return None
+
         if src:
+            from policy.floatTags import citag, ctag, itag, etag
+            if ctag(src.tags()) < 1:
+                self.secret_src += 1
+            if dest:
+                if ctag(dest.tags()) < 1:
+                    self.secret_dest += 1
+            if dest2:
+                if ctag(dest2.tags()) < 1:
+                    self.secret_dest2 += 1
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
             alarmArg = self.detect_alarm_pre(event, src, dest, self.alarm_file)
@@ -255,7 +293,6 @@ class Morse:
         #     self.Nodes[nid].updateTime = 0
         self.G = nx.DiGraph()
         self.Nodes = {}
-        self.Principals = {}
         self.processes = {}
         self.alarm = {}
         self.created = {}
