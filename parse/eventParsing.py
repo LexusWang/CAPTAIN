@@ -1,5 +1,6 @@
 from aifc import Error
 import pdb
+import json
 from graph.Event import Event
 from policy.initTags import match_path, match_network_addr
 from parse.eventType import EXECVE_SET, SET_UID_SET, lttng_events, cdm_events, standard_events
@@ -246,13 +247,50 @@ def parse_event_trace(self, datum, cdm_version):
     
     return event
 
-
+LINUX_READ_SET = set([4, 5, 6, 7, 19, 20])
+LINUX_WRITE_SET = set([8, 9, 10, 11, 17, 18])
+LINUX_CHMOD_SET = set([25])
+LINUX_SET_UID_SET = set([30, 31])
+LINUX_LOADLIBRARY_SET = set([35])
+LINUX_CREATE_SET = set([27])
+LINUX_RENAME_SET = set([22, 23])
+LINUX_REMOVE_SET = set([32, 33])
+LINUX_CLONE_SET = set([12, 13, 14])
 
 def parse_event_linux(self, datum):
     subject = None
     object = None
     object2 = None
-    event = None
-    a = datum['arguments']
-
+    event = Event(datum['id'], datum['timestamp'])
+    event_type_num = datum['event_type']
+    
+    if event_type_num in LINUX_READ_SET:
+        event.type = 'read'
+        a = datum['arguments']
+    elif event_type_num in LINUX_WRITE_SET:
+        event.type = 'write'
+    # elif event_type_num in LINUX_INJECT_SET:
+    #     event.type = 'inject'
+    elif event_type_num in LINUX_CHMOD_SET:
+        event.type = 'chmod'
+        # event.parameters = int(event.properties['mode'], 8)
+    elif event_type_num in LINUX_SET_UID_SET:
+        event.type = 'set_uid'
+    elif event_type_num in LINUX_LOADLIBRARY_SET:
+        event.type = 'execve'
+    elif event_type_num in LINUX_CREATE_SET:
+        # assert event.src and event.dest
+        # if self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None):
+        event.type = 'create'
+        # else:
+            # return None
+    elif event_type_num in LINUX_RENAME_SET:
+        event.type = 'rename'
+    elif event_type_num in LINUX_REMOVE_SET:
+        event.type = 'remove'
+    elif event_type_num in LINUX_CLONE_SET:
+        event.type = 'clone'
+    else:
+        return None
+    
     return subject, object, object2, event
