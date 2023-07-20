@@ -79,6 +79,12 @@ class Morse:
             except KeyError:
                 # print('Oops! Cannot find Node!')
                 return None, None, None, None
+        elif event.type == 'create':
+            try:
+                self.created[(self.Nodes[event.src].get_pid(), self.Nodes[event.dest].get_name())] = True
+            except KeyError:
+                # print('Oops! Cannot find Node!')
+                return None, None, None, None
 
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
@@ -189,9 +195,9 @@ class Morse:
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
-        if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.processName in {'thunderbird','firefox'}:
-            # pdb.set_trace()
-            return None
+        # if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.processName in {'thunderbird','firefox'}:
+        #     # pdb.set_trace()
+        #     return None
 
         # if event.type == 'read' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'smtpd'}:
         #     # pdb.set_trace()
@@ -271,7 +277,7 @@ class Morse:
             self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
         
     def detect_alarm(self,event,s ,o, alarmArg, gt, alarm_file = None):
-        return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, gt, self.format, self, alarm_file)
+        return check_alarm(event, s, o, self.alarm, self.created, self.alarm_sum, alarmArg, gt, self, alarm_file)
 
     def detect_alarm_pre(self,event,s ,o, alarm_file = None):
         return check_alarm_pre(event, s, o, self.alarm, self, alarm_file)

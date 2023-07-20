@@ -10,8 +10,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
    intags = None
    newtags = None
    whitelisted = False
-   edge_on_ipath = False
-   edge_on_cpath = False
    ab = att
    ae = att/2
    dpPow = decay
@@ -34,7 +32,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          itag_grad = o.get_itag_grad()
          i_init_id = o.getiTagInitID()
          sit = min(sit, oit)
-         edge_on_ipath = True
          s.propagation_chain['i'] = o.propagation_chain['i'][:]
          s.propagation_chain['i'].append(event.id)
 
@@ -42,7 +39,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          ctag_grad = o.get_ctag_grad()
          c_init_id = o.getcTagInitID()
          sct = min(sct, oct)
-         edge_on_cpath = True
          s.propagation_chain['c'] = o.propagation_chain['c'][:]
          s.propagation_chain['c'].append(event.id)
 
@@ -68,8 +64,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o.propagation_chain['i'].append(event.id)
       o.propagation_chain['c'] = s.propagation_chain['c'][:]
       o.propagation_chain['c'].append(event.id)
-      edge_on_ipath = True
-      edge_on_cpath = True
       o.updateTime = event.time
 
    elif event_type in {'write'}:
@@ -98,7 +92,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             o.setObjiTag(new_it)
             o.propagation_chain['i'] = s.propagation_chain['i'][:]
             o.propagation_chain['i'].append(event.id)
-            edge_on_ipath = True
 
          if ctag(otg) > new_ct:
             o.set_ctag_grad(ctag_grad)
@@ -106,7 +99,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             o.setObjcTag(new_ct)
             o.propagation_chain['c'] = s.propagation_chain['c'][:]
             o.propagation_chain['c'].append(event.id)
-            edge_on_cpath = True
          
          o.updateTime = event.time
             
@@ -129,7 +121,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             i_init_id = o.getiTagInitID()
             s.propagation_chain['i'] = o.propagation_chain['i'][:]
             s.propagation_chain['i'].append(event.id)
-            edge_on_ipath = True
          it = min(itag(stg), itag(otag))
 
          if ctag(stg) > ctag(otag):
@@ -137,7 +128,6 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             c_init_id = o.getcTagInitID()
             s.propagation_chain['c'] = o.propagation_chain['c'][:]
             s.propagation_chain['c'].append(event.id)
-            edge_on_cpath = True
          ct = min(ctag(stg), ctag(otag))
 
          s.setSubjTags([cit, etag(stg), it, ct])
@@ -252,14 +242,12 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
                i_init_id = o.getiTagInitID()
                s.propagation_chain['i'] = o.propagation_chain['i'][:]
                s.propagation_chain['i'].append(event.id)
-               edge_on_ipath = True
             it = min(itag(stg), itag(otg))
             if ctag(stg) > ctag(otg):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
                s.propagation_chain['c'] = o.propagation_chain['c'][:]
                s.propagation_chain['c'].append(event.id)
-               edge_on_cpath = True
             ct = min(ctag(stg), ctag(otg))
             
             s.setSubjTags([cit, et, it, ct])

@@ -111,18 +111,13 @@ def start_experiment(args):
             experiment.print_metrics()
             experiment.save_metrics()
             experiment.reset_metrics()
-            # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'r'))
-            # ec.summary(os.path.join(experiment.metric_path, "ec_summary.txt"))
-            # ec.reset()
 
             pc_event_counter = Counter()
             for item in propagation_chains:
                 pc_event_counter.update(item)
-                # if len(item) < 8:
-                #     print(item)
 
-            # print(pc_event_counter)
-            # pdb.set_trace()
+            pdb.set_trace()
+
 
             benign_nid_labels = {}
             public_nid_labels = {}
