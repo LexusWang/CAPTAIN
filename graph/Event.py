@@ -23,8 +23,6 @@ class Event:
         json_dict['s'] = self.src
         json_dict['d'] = self.dest
         json_dict['d2'] = self.dest2
-        # json_dict['name'] = self.name
-        # json_dict['path'] = self.path
         return json.dumps(json_dict)
 
     def loads(self, data_str):

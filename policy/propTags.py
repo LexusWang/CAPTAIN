@@ -5,6 +5,13 @@ from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag, ctag, itag, etag, isRoot
 import pdb
 
+def dump_event_feature(event, s, o, o2):
+   if o2:
+      features = (s.get_name(), event.type, o.get_name(), o2.get_name())
+   else:
+      features = (s.get_name(), event.type, o.get_name())
+   return features
+
 def propTags(event, s, o, o2, att = 0.2, decay = 0):
    event_type = event.type
    intags = None
@@ -33,14 +40,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          i_init_id = o.getiTagInitID()
          sit = min(sit, oit)
          s.propagation_chain['i'] = o.propagation_chain['i'][:]
-         s.propagation_chain['i'].append(event.id)
+         s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
 
       if sct > oct:
          ctag_grad = o.get_ctag_grad()
          c_init_id = o.getcTagInitID()
          sct = min(sct, oct)
          s.propagation_chain['c'] = o.propagation_chain['c'][:]
-         s.propagation_chain['c'].append(event.id)
+         s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
 
       s.setSubjTags([citag(stg), etag(stg), sit, sct])
       s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
@@ -61,9 +68,9 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o.setcTagInitID(c_init_id)
       o.set_grad([itag_grad, ctag_grad])
       o.propagation_chain['i'] = s.propagation_chain['i'][:]
-      o.propagation_chain['i'].append(event.id)
+      o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
       o.propagation_chain['c'] = s.propagation_chain['c'][:]
-      o.propagation_chain['c'].append(event.id)
+      o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o.updateTime = event.time
 
    elif event_type in {'write'}:
@@ -91,14 +98,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             o.setiTagInitID(i_init_id)
             o.setObjiTag(new_it)
             o.propagation_chain['i'] = s.propagation_chain['i'][:]
-            o.propagation_chain['i'].append(event.id)
+            o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
 
          if ctag(otg) > new_ct:
             o.set_ctag_grad(ctag_grad)
             o.setcTagInitID(c_init_id)
             o.setObjcTag(new_ct)
             o.propagation_chain['c'] = s.propagation_chain['c'][:]
-            o.propagation_chain['c'].append(event.id)
+            o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
          
          o.updateTime = event.time
             
@@ -120,14 +127,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             itag_grad = o.get_itag_grad()
             i_init_id = o.getiTagInitID()
             s.propagation_chain['i'] = o.propagation_chain['i'][:]
-            s.propagation_chain['i'].append(event.id)
+            s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
          it = min(itag(stg), itag(otag))
 
          if ctag(stg) > ctag(otag):
             ctag_grad = o.get_ctag_grad()
             c_init_id = o.getcTagInitID()
             s.propagation_chain['c'] = o.propagation_chain['c'][:]
-            s.propagation_chain['c'].append(event.id)
+            s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
          ct = min(ctag(stg), ctag(otag))
 
          s.setSubjTags([cit, etag(stg), it, ct])
@@ -215,14 +222,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
                itag_grad = o.get_itag_grad()
                i_init_id = o.getiTagInitID()
                s.propagation_chain['i'] = o.propagation_chain['i'][:]
-               s.propagation_chain['i'].append(event.id)
+               s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
             it = min(itag(stg), itag(otg))
 
             if ctag(stg) > ctag(otg):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
                s.propagation_chain['c'] = o.propagation_chain['c'][:]
-               s.propagation_chain['c'].append(event.id)
+               s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
             ct = min(ctag(stg), ctag(otg))
 
             s.setSubjTags([cit, et, it, ct])
@@ -241,13 +248,13 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
                itag_grad = o.get_itag_grad()
                i_init_id = o.getiTagInitID()
                s.propagation_chain['i'] = o.propagation_chain['i'][:]
-               s.propagation_chain['i'].append(event.id)
+               s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
             it = min(itag(stg), itag(otg))
             if ctag(stg) > ctag(otg):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
                s.propagation_chain['c'] = o.propagation_chain['c'][:]
-               s.propagation_chain['c'].append(event.id)
+               s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
             ct = min(ctag(stg), ctag(otg))
             
             s.setSubjTags([cit, et, it, ct])
@@ -275,9 +282,9 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o.set_grad(s.get_grad())
       o.setInitID(s.getInitID())
       o.propagation_chain['i'] = s.propagation_chain['i'][:]
-      o.propagation_chain['i'].append(event.id)
+      o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
       o.propagation_chain['c'] = s.propagation_chain['c'][:]
-      o.propagation_chain['c'].append(event.id)
+      o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o.updateTime = event.time
 
    elif event_type in {'update'}:
@@ -288,9 +295,9 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o2.setiTagInitID(o.getiTagInitID())
       o2.setcTagInitID(o.getcTagInitID())
       o2.propagation_chain['i'] = o.propagation_chain['i'][:]
-      o2.propagation_chain['i'].append(event.id)
+      o2.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
       o2.propagation_chain['c'] = o.propagation_chain['c'][:]
-      o2.propagation_chain['c'].append(event.id)
+      o2.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o2.updateTime = event.time
 
    elif event_type in {'set_uid'}:
@@ -299,9 +306,9 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o.set_grad(s.get_grad())
       o.setInitID(s.getInitID())
       o.propagation_chain['i'] = s.propagation_chain['i'][:]
-      o.propagation_chain['i'].append(event.id)
+      o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
       o.propagation_chain['c'] = s.propagation_chain['c'][:]
-      o.propagation_chain['c'].append(event.id)
+      o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o.updateTime = event.time
 
    elif event_type in {'rename'}:
@@ -311,9 +318,9 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o2.setiTagInitID(o.getiTagInitID())
       o2.setcTagInitID(o.getcTagInitID())
       o2.propagation_chain['i'] = o.propagation_chain['i'][:]
-      o2.propagation_chain['i'].append(event.id)
+      o2.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
       o2.propagation_chain['c'] = o.propagation_chain['c'][:]
-      o2.propagation_chain['c'].append(event.id)
+      o2.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o2.updateTime = event.time
 
    

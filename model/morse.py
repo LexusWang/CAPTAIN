@@ -90,18 +90,6 @@ class Morse:
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
-        # if event.type == 'load' and dest.get_name() in {'/etc/passwd'} and src.processName in {'thunderbird','firefox'}:
-        #     # pdb.set_trace()
-        #     return None, [], [], []
-
-        # if event.type == 'read' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'smtpd'}:
-        #     # pdb.set_trace()
-        #     return None, [], [], []
-        
-        # if event.type == 'write' and dest.get_name() in {'/usr/local/etc/postfix/virtual.db'} and src.processName in {'postmap'}:
-        #     # pdb.set_trace()
-        #     return None, [], [], []
-
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False

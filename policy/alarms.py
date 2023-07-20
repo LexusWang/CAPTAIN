@@ -138,8 +138,6 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, morse = N
 
    if event_type in {'mmap'}:
       if o.isFile() == False:
-         # prm = int(event['properties']['map']['protection'])
-         # if ((prm & int('01',8)) == int('01',8)):
          if 'PROT_EXEC' in set(event.parameters):
             if itag(s.tags()) < 0.5:
                if o:
@@ -151,8 +149,6 @@ def check_alarm(event, s, o, alarms, created, alarm_sum, alarmarg, gt, morse = N
                   alarm_result = prtSAlarm(ts, "MkMemExecutable", s, event.id, alarm_file)
     
    if event_type in {'mprotect'}:
-      # prm = int(event['properties']['map']['protection'])
-      # if ((prm & int('01',8)) == int('01',8)):
       if 'PROT_EXEC' in set(event.parameters):
          if itag(s.tags()) < 0.5:
             if o:

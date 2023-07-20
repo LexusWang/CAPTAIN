@@ -116,9 +116,6 @@ def start_experiment(args):
             for item in propagation_chains:
                 pc_event_counter.update(item)
 
-            pdb.set_trace()
-
-
             benign_nid_labels = {}
             public_nid_labels = {}
             for item in node_gradients:
@@ -142,6 +139,8 @@ def start_experiment(args):
                 if mo.Nodes[node[0]].get_name() not in public_node_dict:
                     public_node_dict[mo.Nodes[node[0]].get_name()] = []
                 public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
+
+            pdb.set_trace()
 
             for key, item in benign_node_dict.items():
                 if len(item) > 10 and sum(item)/len(item) > 0.9:
