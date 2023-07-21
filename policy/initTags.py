@@ -26,6 +26,7 @@ benign_public_group = []
 
 # untrusted_public_group = [r'/tmp.*',r'/media/.*']
 # untrusted_public_group = [r'www.hbo.com/.*']
+
 # Used in Linux data from SOC
 untrusted_public_group = [r'.*\.sh', r'/tmp.*']
 

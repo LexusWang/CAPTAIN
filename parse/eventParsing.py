@@ -211,6 +211,8 @@ def parse_event_trace(self, datum, cdm_version):
         event.parameters = int(event.properties['mode'], 8)
     elif datum['type'] in SET_UID_SET:
         event.type = 'set_uid'
+        event.src = event.dest
+        event.dest = None
     elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
         event.type = 'update_process'
     elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:

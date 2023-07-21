@@ -90,18 +90,18 @@ def start_experiment(args):
                 gt = ec.classify(event.id)
                 diagnosis = mo.add_event(event, gt)
                 experiment.update_metrics(diagnosis, gt)
-                if gt == 'MkFileExecutable' and diagnosis == None:
-                    print(event.id)
-                    pdb.set_trace()
+                # if gt == 'MkFileExecutable' and diagnosis == None:
+                #     print(event.id)
+                #     pdb.set_trace()
                     
-    print(mo.secret_src)
-    print(mo.secret_dest)
-    print(mo.secret_dest2)
+    # print(mo.secret_src)
+    # print(mo.secret_dest)
+    # print(mo.secret_dest2)
     mo.alarm_file.close()
     experiment.print_metrics()
     experiment.save_metrics()
-    ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-    ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
+    # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
+    # ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
 
     print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
     print("Metrics saved in {}".format(experiment.get_experiment_output_path()))

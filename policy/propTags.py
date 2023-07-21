@@ -261,20 +261,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
             s.setInitID([ci_init_id, etag_grad, i_init_id, c_init_id])
          
-         s.updateTime = event.time
-
-   # elif event_type in SET_UID_SET :
-   #    assert isinstance(o,Subject)
-   #    st = s.tags()
-   #    citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
-   #    ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
-   #    new_owner = morse.Principals[o.owner]
-   #    if isRoot(new_owner) == False:
-   #       o.setSubjTags([citag(st), etag(st), itag(st), ctag(st)])
-   #       o.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
-   #       o.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
-      
-   
+         s.updateTime = event.time   
    
    elif event_type in {'clone'}:
       assert isinstance(o,Subject) and isinstance(s,Subject)
@@ -300,16 +287,16 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       o2.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
       o2.updateTime = event.time
 
-   elif event_type in {'set_uid'}:
-      assert isinstance(o,Subject) and isinstance(s,Subject)
-      o.setSubjTags(s.tags())
-      o.set_grad(s.get_grad())
-      o.setInitID(s.getInitID())
-      o.propagation_chain['i'] = s.propagation_chain['i'][:]
-      o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
-      o.propagation_chain['c'] = s.propagation_chain['c'][:]
-      o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
-      o.updateTime = event.time
+   # elif event_type in {'set_uid'}:
+   #    assert isinstance(o,Subject) and isinstance(s,Subject)
+   #    o.setSubjTags(s.tags())
+   #    o.set_grad(s.get_grad())
+   #    o.setInitID(s.getInitID())
+   #    o.propagation_chain['i'] = s.propagation_chain['i'][:]
+   #    o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
+   #    o.propagation_chain['c'] = s.propagation_chain['c'][:]
+   #    o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
+   #    o.updateTime = event.time
 
    elif event_type in {'rename'}:
       assert isinstance(o,Object) and isinstance(o2,Object)
