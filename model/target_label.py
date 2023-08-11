@@ -31,10 +31,10 @@ def get_target(event, s, o, gt):
         if o.isIP() == False:
             if gt == "FileCorruption":
                 s_target_ = [None, None, 0, None]
-                o_target_ = [None, None, 1, None]
+                # o_target_ = [None, None, 1, None]
             else:
                 s_target_ = [None, None, 1, None]
-                o_target_ = [None, None, 0, None]
+                # o_target_ = [None, None, 0, None]
         elif o.isIP() and event_type == 'write':
             if gt == "DataLeak":
                 s_target_ = [None, None, 0, 0]
