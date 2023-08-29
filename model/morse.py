@@ -42,7 +42,9 @@ class Morse:
         self.alarm_sum = [0, 0]
         self.alarm_file = alarm_file
 
+        # customization
         self.white_name_set = set()
+        self.tau_dict = {}
 
     def parse_event(self, datum, format, cdm_version):
         if format == 'trace':
@@ -65,7 +67,17 @@ class Morse:
         pass
 
     def propagate(self, event, s, o1, o2):
-        return propTags(event, s, o1, o2)
+        tau = self.tau_dict.get((event.src, event.type, event.dest), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+        return propTags(event, s, o1, o2, tau)
+
+    def adjust_tau(self, fp_counter):
+        for event_key in fp_counter.keys():
+            if event_key not in tau_dict.keys():
+                self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            for i, v in enumerate(fp_counter[event_key]):
+                if v > 10:
+                    self.tau_dict[event_key][i] *=0.9
+                
 
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
@@ -93,7 +105,9 @@ class Morse:
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
-            diagnosis = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
+            event_key = (event.src, event.type, event.dest)
+            tau = self.tau_dict.get(event_key, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             s_target, o_target = get_target(event, src, dest, gt)
             
             if s_target:
@@ -132,7 +146,7 @@ class Morse:
             
             self.propagate(event, src, dest, dest2)
 
-        return diagnosis, s_labels, o_labels, kill_chains
+        return diagnosis, tag_indices, s_labels, o_labels, kill_chains
         
     def add_event(self, event, gt = None):
         if event.type == 'exit':
@@ -155,7 +169,7 @@ class Morse:
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
-            diagnosis = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
+            diagnosis, _ = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
             self.propagate(event, src, dest, dest2)
             return diagnosis
 

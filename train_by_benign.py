@@ -71,6 +71,7 @@ def start_experiment(args):
             # ============= Dectection =================== #
             node_gradients = []
             propagation_chains = []
+            fp_counter = {}
             for event in tqdm.tqdm(events):
                 if event.type == 'UPDATE':
                     try:
@@ -93,7 +94,7 @@ def start_experiment(args):
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
                     add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-                diagnosis, s_labels, o_labels, pc = mo.add_event_generate_loss(event, None)
+                diagnosis, tag_indices, s_labels, o_labels, pc = mo.add_event_generate_loss(event, None)
                 experiment.update_metrics(diagnosis, None)
 
                 if diagnosis == None:
@@ -106,6 +107,12 @@ def start_experiment(args):
                     node_gradients.extend(o_labels)
 
                 propagation_chains.extend(pc)
+                
+                event_key = (event.src, event.type, event.dest)
+                if event_key not in fp_counter.keys():
+                    fp_counter[event_key] = [0, 0, 0, 0, 0, 0, 0, 0]
+                for i in tag_indices:
+                    fp_counter[event_key][i] += 1
             
             mo.alarm_file.close()
             experiment.print_metrics()
@@ -145,6 +152,8 @@ def start_experiment(args):
             for key, item in benign_node_dict.items():
                 if len(item) > 10 and sum(item)/len(item) > 0.9:
                     mo.white_name_set.add(key)
+
+            mo.adjust_tau(fp_counter)
             
             print(mo.white_name_set)
 
