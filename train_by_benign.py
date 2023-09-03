@@ -9,7 +9,7 @@ import time
 from utils.utils import *
 from collections import Counter
 from utils.eventClassifier import eventClassifier
-from model.morse import Morse
+from policy.propTags import dump_event_feature
 
 import tqdm
 import time
@@ -107,12 +107,16 @@ def start_experiment(args):
                     node_gradients.extend(o_labels)
 
                 propagation_chains.extend(pc)
-                
-                event_key = (event.src, event.type, event.dest)
-                if event_key not in fp_counter.keys():
-                    fp_counter[event_key] = [0, 0, 0, 0, 0, 0, 0, 0]
-                for i in tag_indices:
-                    fp_counter[event_key][i] += 1
+
+                src = mo.Nodes.get(event.src, None)
+                dest = mo.Nodes.get(event.dest, None)
+                dest2 = mo.Nodes.get(event.dest2, None)
+                if src:
+                    event_key = str(dump_event_feature(event, src, dest, dest2))
+                    if event_key not in fp_counter.keys():
+                        fp_counter[event_key] = [0, 0, 0, 0, 0, 0, 0, 0]
+                    for i in tag_indices:
+                        fp_counter[event_key][i] += 1
             
             mo.alarm_file.close()
             experiment.print_metrics()

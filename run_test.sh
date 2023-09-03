@@ -37,3 +37,5 @@ python train_by_benign.py --ground_truth_file ../data/GT/groundTruthL13.txt --tr
 python detection.py --ground_truth_file ../data/GT/groundTruthL11.txt --test_data ../data/L11 --experiment_prefix ManualL11
 python detection.py --ground_truth_file ../data/GT/groundTruthL12.txt --test_data ../data/L12 --experiment_prefix ManualL12
 python detection.py --ground_truth_file ../data/GT/groundTruthL13.txt --test_data ../data/L13 --experiment_prefix ManualL13
+
+python train_by_benign.py --ground_truth_file /home/shared/linux_data/GT/groundTruthL11.txt --train_data /home/shared/linux_data/L11 --mode train --data_tag l11-train --experiment_prefix TrainL11 --time_range 2023-4-18T02:00:00+00:00 2023-4-18T08:00:00+00:00

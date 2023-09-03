@@ -5,7 +5,7 @@ sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import match_path, match_network_addr
-from policy.propTags import propTags
+from policy.propTags import propTags, dump_event_feature
 from policy.alarms import check_alarm
 from model.target_label import get_target
 from parse.eventParsing import parse_event_trace, parse_event_cadets, parse_event_linux
@@ -67,15 +67,16 @@ class Morse:
         pass
 
     def propagate(self, event, s, o1, o2):
-        tau = self.tau_dict.get((event.src, event.type, event.dest), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-        return propTags(event, s, o1, o2, tau)
+        event_key = str(dump_event_feature(event, s, o1, o2))
+        tau = self.tau_dict.get(event_key, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+        return propTags(event, s, o1, o2, tau=tau)
 
     def adjust_tau(self, fp_counter):
         for event_key in fp_counter.keys():
-            if event_key not in tau_dict.keys():
-                self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
             for i, v in enumerate(fp_counter[event_key]):
                 if v > 10:
+                    if event_key not in self.tau_dict.keys():
+                        self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
                     self.tau_dict[event_key][i] *=0.9
                 
 
