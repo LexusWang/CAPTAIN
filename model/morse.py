@@ -45,6 +45,7 @@ class Morse:
         # customization
         self.white_name_set = set()
         self.tau_dict = {}
+        self.tau_modify_dict = {}
 
     def parse_event(self, datum, format, cdm_version):
         if format == 'trace':
@@ -72,12 +73,31 @@ class Morse:
         return propTags(event, s, o1, o2, tau=tau)
 
     def adjust_tau(self, fp_counter):
-        for event_key in fp_counter.keys():
-            for i, v in enumerate(fp_counter[event_key]):
+
+        # Sort the event_key by the number of alarms it triggered and keep the top 50%
+        sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
+        half_length = len(sorted_items) // 2
+        selected_items = sorted_items[:half_length]
+        selected_dict = dict(selected_items)
+
+        for event_key in self.tau_modify_dict.keys():
+            if event_key not in selected_dict.keys():
+                for i in self.tau_modify_dict[event_key]:
+                    self.tau_dict[event_key][i] *= 1.5
+
+        self.tau_modify_dict = {}
+
+        for event_key in selected_dict.keys():
+            for i, v in enumerate(selected_dict[event_key]):
                 if v > 10:
                     if event_key not in self.tau_dict.keys():
                         self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-                    self.tau_dict[event_key][i] *=0.9
+                    self.tau_dict[event_key][i] *= 0.5
+                    if event_key not in self.tau_modify_dict.keys():
+                        self.tau_modify_dict[event_key] = []
+                    self.tau_modify_dict[event_key].append(i)
+        
+            
                 
 
     def add_event_generate_loss(self, event, gt):

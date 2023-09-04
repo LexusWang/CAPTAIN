@@ -111,6 +111,7 @@ def start_experiment(args):
                 src = mo.Nodes.get(event.src, None)
                 dest = mo.Nodes.get(event.dest, None)
                 dest2 = mo.Nodes.get(event.dest2, None)
+                
                 if src:
                     event_key = str(dump_event_feature(event, src, dest, dest2))
                     if event_key not in fp_counter.keys():
