@@ -83,23 +83,21 @@ class Morse:
         for event_key in self.tau_modify_dict.keys():
             if event_key not in selected_dict.keys():
                 for i in self.tau_modify_dict[event_key]:
-                    self.tau_dict[event_key][i] *= 1.5
+                    self.tau_dict[event_key][i] += self.tau_modify_dict[event_key][i]
+                    self.tau_modify_dict[event_key][i] *= 0.5
 
-        self.tau_modify_dict = {}
 
         for event_key in selected_dict.keys():
             for i, v in enumerate(selected_dict[event_key]):
                 if v > 10:
                     if event_key not in self.tau_dict.keys():
                         self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-                    self.tau_dict[event_key][i] *= 0.5
-                    if event_key not in self.tau_modify_dict.keys():
-                        self.tau_modify_dict[event_key] = []
-                    self.tau_modify_dict[event_key].append(i)
+                        self.tau_modify_dict[event_key] = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+                    self.tau_dict[event_key][i] -= self.tau_modify_dict[event_key][i]
+                    self.tau_modify_dict[event_key][i] *= 0.5
         
             
-                
-
+            
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
         s_labels = []
