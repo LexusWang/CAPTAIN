@@ -5,7 +5,7 @@ sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
 from policy.initTags import match_path, match_network_addr
-from policy.propTags import propTags
+from policy.propTags import propTags, dump_event_feature
 from policy.alarms import check_alarm
 from model.target_label import get_target
 from parse.eventParsing import parse_event_trace, parse_event_cadets, parse_event_linux
@@ -44,6 +44,9 @@ class Morse:
 
         self.white_name_set = set()
 
+        # lambda dictionary
+        self.lambda_dict = {}
+
     def parse_event(self, datum, format, cdm_version):
         if format == 'trace':
             return parse_event_trace(self, datum, cdm_version)
@@ -63,9 +66,6 @@ class Morse:
 
     def backward(self):
         pass
-
-    def propagate(self, event, s, o1, o2):
-        return propTags(event, s, o1, o2)
 
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
@@ -130,7 +130,8 @@ class Morse:
                         elif i == 3 and len(dest.propagation_chain['c'])>0:
                             kill_chains.append(dest.propagation_chain['c'])
             
-            self.propagate(event, src, dest, dest2)
+            prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
+            propTags(event, src, dest, dest2, prop_lambda=prop_lambda)
 
         return diagnosis, s_labels, o_labels, kill_chains
         
@@ -156,7 +157,8 @@ class Morse:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
             diagnosis = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
-            self.propagate(event, src, dest, dest2)
+            prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
+            propTags(event, src, dest, dest2, prop_lambda=prop_lambda)
             return diagnosis
 
     def add_object(self, object):

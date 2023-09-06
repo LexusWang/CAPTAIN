@@ -38,10 +38,10 @@ def get_target(event, s, o, gt):
         elif o.isIP() and event_type == 'write':
             if gt == "DataLeak":
                 s_target_ = [None, None, 0, 0]
-                o_target_ = [None, None, 1, None]
+                o_target_ = [None, None, None, 1]
             else:
                 s_target_ = [None, None, 1, 1]
-                o_target_ = [None, None, 0, None]
+                o_target_ = [None, None, None, 0]
 
     # if event_type in {'inject'}:
     #    if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):

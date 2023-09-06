@@ -60,6 +60,9 @@ def start_experiment(args):
         # mo.white_name_set = {'207.46.73.59', '127.0.0.1', '128.55.12.10', '128.55.12.118', '83.150.97.73', '128.55.12.67', '216.87.162.115', '128.55.12.55', '207.25.80.123', '10.0.6.9', '128.55.12.166', '69.20.49.234', '128.55.12.167', '207.46.73.60', '212.60.66.243', '193.40.5.73', '128.55.12.110', '212.190.125.38', '162.99.3.50', '194.90.181.242', '66.252.21.131', '128.55.12.56'}
         # #edge tuning trace
         # mo.white_name_set = {'128.55.12.73', '128.55.12.10', '158.28.238.9', '64.86.71.27', '204.2.179.67', '8.15.32.34', '64.4.125.136', '10.0.4.1', '83.222.15.109', '216.163.248.17', '64.191.208.114', '12.149.161.245', '208.17.90.10', '67.28.122.168', '128.55.12.122', '209.132.177.50', '66.252.21.131', '65.214.39.18', '129.33.46.231', '162.97.114.199', '216.9.245.101', '203.192.141.18', '208.75.170.1', '0.0.0.0'}
+        lambda_tuning_step = {}
+        alpha_tuning_step = {}
+        
         mo.Principals = principals
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
@@ -110,11 +113,37 @@ def start_experiment(args):
             mo.alarm_file.close()
             experiment.print_metrics()
             experiment.save_metrics()
-            experiment.reset_metrics()
 
             pc_event_counter = Counter()
             for item in propagation_chains:
                 pc_event_counter.update(item)
+            threshold = 100
+            filtered_pc_event_counter = {key: value for key, value in pc_event_counter.items() if value > threshold}
+
+            # for key, value in filtered_pc_event_counter.items():
+            #     if key in mo.lambda_dict:
+            #         mo.lambda_dict[key] = 0.5 * (mo.lambda_dict[key]+1)
+            #     else:
+            #         mo.lambda_dict[key] = 0.5
+            
+            # for key, value in mo.lambda_dict.items():
+            #     if key not in filtered_pc_event_counter:
+            #         mo.lambda_dict[key] = 0.5 * mo.lambda_dict[key]
+            
+            for key, value in filtered_pc_event_counter.items():
+                if key in mo.lambda_dict:
+                    mo.lambda_dict[key] = mo.lambda_dict[key] + lambda_tuning_step[key]
+                    lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
+                else:
+                    mo.lambda_dict[key] = 0.5
+                    lambda_tuning_step[key] = 0.25
+            
+            for key, value in mo.lambda_dict.items():
+                if key not in filtered_pc_event_counter:
+                    mo.lambda_dict[key] = mo.lambda_dict[key] - lambda_tuning_step[key]
+                    lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
+
+            # print(mo.lambda_dict)
 
             benign_nid_labels = {}
             public_nid_labels = {}
@@ -140,13 +169,33 @@ def start_experiment(args):
                     public_node_dict[mo.Nodes[node[0]].get_name()] = []
                 public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
 
-            pdb.set_trace()
+            # for key, item in benign_node_dict.items():
+            #     if len(item) > 10 and sum(item)/len(item) > 0.9:
+            #         mo.white_name_set.add(key)
 
-            for key, item in benign_node_dict.items():
-                if len(item) > 10 and sum(item)/len(item) > 0.9:
-                    mo.white_name_set.add(key)
+            # for key, item in benign_node_dict.items():
+            #     if len(item) > 10 and sum(item)/len(item) > 0.9:
+            #         if key not in mo.alpha_dict:
+            #             mo.alpha_dict[key] = 0.5
+            #             alpha_tuning_step[key] = 0.25
+            #         else:
+            #             mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
+            #             alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+
+            # for key in mo.alpha_dict.keys():
+            #     if key not in benign_node_dict:
+            #         mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
+            #         alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+
             
-            print(mo.white_name_set)
+            # print(mo.white_name_set)
+            experiment.reset_metrics()
+        
+        Path(os.path.join(experiment.get_experiment_output_path(), 'params')).mkdir(parents=True, exist_ok=True)
+        with open(os.path.join(experiment.get_experiment_output_path(), 'params/lambda.pickle'), 'wb') as fout:
+            pickle.dump(mo.lambda_dict, fout)
+        # with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha.pickle'), 'wb') as fout:
+        #     pickle.dump(mo.alpha_dict, fout)
 
     elif (mode == "test"):
         begin_time = time.time()
@@ -179,13 +228,16 @@ def start_experiment(args):
                 pickle.dump([events, nodes, princicals], f)
 
         mo.Principals = princicals
+
+        with open(os.path.join('./experiments/TrainT312023-09-05-17-44-11/train', 'params/lambda.pickle'), 'rb') as fin:
+            mo.lambda_dict = pickle.load(fin)
         # # Cadets
         # mo.white_name_set = {'207.46.73.59', '127.0.0.1', '128.55.12.10', '128.55.12.118', '83.150.97.73', '128.55.12.67', '216.87.162.115', '128.55.12.55', '207.25.80.123', '10.0.6.9', '128.55.12.166', '69.20.49.234', '128.55.12.167', '207.46.73.60', '212.60.66.243', '193.40.5.73', '128.55.12.110', '212.190.125.38', '162.99.3.50', '194.90.181.242', '66.252.21.131', '128.55.12.56'}
         # Trace
         # mo.white_name_set = {'128.55.12.73', '128.55.12.10', '158.28.238.9', '64.86.71.27', '204.2.179.67', '8.15.32.34', '64.4.125.136', '10.0.4.1', '83.222.15.109', '216.163.248.17', '64.191.208.114', '12.149.161.245', '208.17.90.10', '67.28.122.168', '128.55.12.122', '209.132.177.50', '66.252.21.131', '65.214.39.18', '129.33.46.231', '162.97.114.199', '216.9.245.101', '203.192.141.18', '208.75.170.1', '0.0.0.0'}
         
         # Linux L11
-        mo.white_name_set = {'/usr/libexec/grepconf.sh'}
+        # mo.white_name_set = {'/usr/libexec/grepconf.sh'}
         
         # # Linux L12
         # mo.white_name_set = {'192.168.20.56', '18.225.36.18', '61.75.63.184', '/tmp/atScript/atomic-red-team-Gray_dev1.0/execution-frameworks/contrib/python/Python-3.5.0/conftest', '/data/cs/opt/script/check_service.sh', '/usr/libexec/grepconf.sh'}
@@ -242,7 +294,7 @@ if __name__ == '__main__':
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--train_data", type=str)
     parser.add_argument("--test_data", type=str)
-    parser.add_argument("--epoch", default=100, type=int)
+    parser.add_argument("--epoch", default=10, type=int)
     parser.add_argument("--mode", type=str)
     parser.add_argument("--data_tag", type=str)
     parser.add_argument("--experiment_prefix", type=str)

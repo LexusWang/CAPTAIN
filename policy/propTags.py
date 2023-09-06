@@ -12,7 +12,7 @@ def dump_event_feature(event, s, o, o2):
       features = (s.get_name(), event.type, o.get_name())
    return features
 
-def propTags(event, s, o, o2, att = 0.2, decay = 0):
+def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
    event_type = event.type
    intags = None
    newtags = None
@@ -38,14 +38,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       if sit > oit:
          itag_grad = o.get_itag_grad()
          i_init_id = o.getiTagInitID()
-         sit = min(sit, oit)
+         sit  = (1-prop_lambda) * oit + prop_lambda * sit
          s.propagation_chain['i'] = o.propagation_chain['i'][:]
          s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
 
       if sct > oct:
          ctag_grad = o.get_ctag_grad()
          c_init_id = o.getcTagInitID()
-         sct = min(sct, oct)
+         sct = (1-prop_lambda) * oct + prop_lambda * sct
          s.propagation_chain['c'] = o.propagation_chain['c'][:]
          s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
 
@@ -96,6 +96,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          if itag(otg) > new_it:
             o.set_itag_grad(itag_grad)
             o.setiTagInitID(i_init_id)
+            new_it = (1-prop_lambda) * new_it + prop_lambda * itag(otg)
             o.setObjiTag(new_it)
             o.propagation_chain['i'] = s.propagation_chain['i'][:]
             o.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
@@ -103,6 +104,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          if ctag(otg) > new_ct:
             o.set_ctag_grad(ctag_grad)
             o.setcTagInitID(c_init_id)
+            new_ct = (1-prop_lambda) * new_ct + prop_lambda * ctag(otg)
             o.setObjcTag(new_ct)
             o.propagation_chain['c'] = s.propagation_chain['c'][:]
             o.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
@@ -114,84 +116,90 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
       assert isinstance(s, Subject) and isinstance(o, Object) and o.isFile()
       if o.isFile():
          stg = s.tags()
-         otag = o.tags()
+         otg = o.tags()
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
          ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
          if citag(stg) > citag(o.tags()):
             citag_grad = o.get_citag_grad()
             ci_init_id = o.getciTagInitID()
-         cit = min(citag(stg), citag(otag))
+            cit = (1-prop_lambda) * citag(otg) + prop_lambda * citag(stg)
+         else:
+            cit = citag(stg)
 
-         if itag(stg) > itag(otag):
+         if itag(stg) > itag(otg):
             itag_grad = o.get_itag_grad()
             i_init_id = o.getiTagInitID()
             s.propagation_chain['i'] = o.propagation_chain['i'][:]
             s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
-         it = min(itag(stg), itag(otag))
+            it = (1-prop_lambda) * itag(otg) + prop_lambda * itag(stg)
+         else:
+            it = itag(stg)
 
-         if ctag(stg) > ctag(otag):
+         if ctag(stg) > ctag(otg):
             ctag_grad = o.get_ctag_grad()
             c_init_id = o.getcTagInitID()
             s.propagation_chain['c'] = o.propagation_chain['c'][:]
             s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
-         ct = min(ctag(stg), ctag(otag))
+            ct = (1-prop_lambda) * ctag(otg) + prop_lambda * ctag(stg)
+         else:
+            ct = ctag(stg)
 
          s.setSubjTags([cit, etag(stg), it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
          s.setInitID([ci_init_id, e_init_id, i_init_id, c_init_id])
          s.updateTime = event.time
 
-   elif event_type in {'inject'}:
-      assert isinstance(o,Subject)
-      intags = s.tags()
-      stg = o.tags()
+   # elif event_type in {'inject'}:
+   #    assert isinstance(o,Subject)
+   #    intags = s.tags()
+   #    stg = o.tags()
 
-      # citag_grad = s.get_citag_grad()
-      # etag_grad = o.get_etag_grad()
-      # invtag_grad = o.get_invtag_grad()
-      # itag_grad = s.get_itag_grad()
-      # ctag_grad = s.get_ctag_grad()
+   #    # citag_grad = s.get_citag_grad()
+   #    # etag_grad = o.get_etag_grad()
+   #    # invtag_grad = o.get_invtag_grad()
+   #    # itag_grad = s.get_itag_grad()
+   #    # ctag_grad = s.get_ctag_grad()
 
-      citag_grad, etag_grad, itag_grad, ctag_grad = o.get_grad()
-      ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
+   #    citag_grad, etag_grad, itag_grad, ctag_grad = o.get_grad()
+   #    ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
 
-      if citag(stg) > citag(intags):
-         citag_grad = s.get_citag_grad()
-         ci_init_id = s.getciTagInitID()
-      cit = min(citag(stg), citag(intags))
+   #    if citag(stg) > citag(intags):
+   #       citag_grad = s.get_citag_grad()
+   #       ci_init_id = s.getciTagInitID()
+   #    cit = min(citag(stg), citag(intags))
 
-      if (isTRUSTED(cit) and itag(intags) < 0.5):
-         cit = UNTRUSTED
-         citag_grad = s.get_itag_grad()
-         ci_init_id = s.getiTagInitID()
+   #    if (isTRUSTED(cit) and itag(intags) < 0.5):
+   #       cit = UNTRUSTED
+   #       citag_grad = s.get_itag_grad()
+   #       ci_init_id = s.getiTagInitID()
 
-      et = etag(stg)
-      if (et > cit):
-         et = cit
-         etag_grad = citag_grad
-         e_init_id = ci_init_id
+   #    et = etag(stg)
+   #    if (et > cit):
+   #       et = cit
+   #       etag_grad = citag_grad
+   #       e_init_id = ci_init_id
 
-      inv = invtag(stg)
-      if (isUNTRUSTED(cit)):
-         inv = UNTRUSTED
-         invtag_grad = citag_grad
-         inv_init_id = ci_init_id
+   #    inv = invtag(stg)
+   #    if (isUNTRUSTED(cit)):
+   #       inv = UNTRUSTED
+   #       invtag_grad = citag_grad
+   #       inv_init_id = ci_init_id
 
-      if itag(stg) > itag(intags):
-         itag_grad = s.get_itag_grad()
-         i_init_id = s.getiTagInitID()
-      it = min(itag(stg), itag(intags))
+   #    if itag(stg) > itag(intags):
+   #       itag_grad = s.get_itag_grad()
+   #       i_init_id = s.getiTagInitID()
+   #    it = min(itag(stg), itag(intags))
       
-      if ctag(stg) > ctag(intags):
-         ctag_grad = s.get_ctag_grad()
-         c_init_id = s.getcTagInitID()
-      ct = min(ctag(stg), ctag(intags))
+   #    if ctag(stg) > ctag(intags):
+   #       ctag_grad = s.get_ctag_grad()
+   #       c_init_id = s.getcTagInitID()
+   #    ct = min(ctag(stg), ctag(intags))
        
-      o.setSubjTags(alltags(cit, et, inv, it, ct))
-      o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
-      o.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
-      o.updateTime = event.time
+   #    o.setSubjTags(alltags(cit, et, inv, it, ct))
+   #    o.set_grad([citag_grad, etag_grad, invtag_grad, itag_grad, ctag_grad])
+   #    o.setInitID([ci_init_id, e_init_id, inv_init_id, i_init_id, c_init_id])
+   #    o.updateTime = event.time
 
    elif event_type in {'execve'}:
       assert isinstance(o,Object) and isinstance(s,Subject)
@@ -223,14 +231,18 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
                i_init_id = o.getiTagInitID()
                s.propagation_chain['i'] = o.propagation_chain['i'][:]
                s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
-            it = min(itag(stg), itag(otg))
+               it = (1-prop_lambda) * itag(otg) + prop_lambda * itag(stg)
+            else:
+               it = itag(stg)
 
             if ctag(stg) > ctag(otg):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
                s.propagation_chain['c'] = o.propagation_chain['c'][:]
                s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
-            ct = min(ctag(stg), ctag(otg))
+               ct = (1-prop_lambda) * ctag(otg) + prop_lambda * ctag(stg)
+            else:
+               ct = ctag(stg)
 
             s.setSubjTags([cit, et, it, ct])
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
@@ -249,13 +261,18 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
                i_init_id = o.getiTagInitID()
                s.propagation_chain['i'] = o.propagation_chain['i'][:]
                s.propagation_chain['i'].append(str(dump_event_feature(event, s, o, o2)))
-            it = min(itag(stg), itag(otg))
+               it = (1-prop_lambda) * itag(otg) + prop_lambda * itag(stg)
+            else:
+               it = itag(stg)
+
             if ctag(stg) > ctag(otg):
                ctag_grad = o.get_ctag_grad()
                c_init_id = o.getcTagInitID()
                s.propagation_chain['c'] = o.propagation_chain['c'][:]
                s.propagation_chain['c'].append(str(dump_event_feature(event, s, o, o2)))
-            ct = min(ctag(stg), ctag(otg))
+               ct = (1-prop_lambda) * ctag(otg) + prop_lambda * ctag(stg)
+            else:
+               ct = ctag(stg)
             
             s.setSubjTags([cit, et, it, ct])
             s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
@@ -330,10 +347,10 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          nct = temp * ct + (1 - temp) * 0.75
          if nit > it:
             itag_grad *= temp
-         it = max(it, nit)
+            it = nit
          if nct > ct:
             ctag_grad *= temp
-         ct = max(ct, nct)
+            ct = nct
          s.setSubjTags([citag(stg), et, it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
          s.updateTime = ts
@@ -344,13 +361,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0):
          nit = temp * it + (1 - temp) * 0.45
          temp = pow(dpc, diff)
          nct = temp * ct + (1 - temp) * 0.45
+         
          if (nit < 0.5):
             if nit > it:
                itag_grad *= temp
-            it = max(it, nit)
+               it = nit
             if nct > ct:
                ctag_grad *= temp
-            ct = max(ct, nct)
+               ct = nct
       
          s.setSubjTags([citag(stg), et, it, ct])
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
