@@ -12,7 +12,7 @@ def dump_event_feature(event, s, o, o2):
       features = (s.get_name(), event.type, o.get_name())
    return features
 
-def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
+def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0, tau = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]):
    event_type = event.type
    intags = None
    newtags = None
@@ -22,6 +22,14 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
    dpPow = decay
    dpi = 1.0/pow(2, dpPow)
    dpc = 1.0/pow(2, dpPow)
+   tau_s_ci = tau[0]
+   tau_s_e = tau[1]
+   tau_s_i = tau[2]
+   tau_s_c = tau[3]
+   tau_o_ci = tau[4]
+   tau_o_e = tau[5]
+   tau_o_i = tau[6]
+   tau_o_c = tau[7]
 
    if event_type in {'read'}:
       assert isinstance(s,Subject) and isinstance(o,Object)
@@ -83,10 +91,10 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
          ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
-         if (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
+         if (isTRUSTED(citag(stg), tau_s_ci) and isTRUSTED(etag(stg), tau_s_e)):
             new_it = min(1, it + ab)
             new_ct = min(1, ct + ab)
-         elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))): 
+         elif (isTRUSTED(citag(stg), tau_s_ci) and isUNTRUSTED(etag(stg), tau_s_e)): 
             new_it = min(1, it + ae)
             new_ct = min(1, ct + ae)
          else:
@@ -164,15 +172,18 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
    #    citag_grad, etag_grad, itag_grad, ctag_grad = o.get_grad()
    #    ci_init_id, e_init_id, i_init_id, c_init_id = o.getInitID()
 
-   #    if citag(stg) > citag(intags):
-   #       citag_grad = s.get_citag_grad()
-   #       ci_init_id = s.getciTagInitID()
-   #    cit = min(citag(stg), citag(intags))
+      # if citag(stg) > citag(intags):
+      #    citag_grad = s.get_citag_grad()
+      #    ci_init_id = s.getciTagInitID()
+      # cit = min(citag(stg), citag(intags))
+      # tau_cit = tau_s_ci
+      # if cit == citag(intags):
+      #    tau_cit = tau_o_ci
 
-   #    if (isTRUSTED(cit) and itag(intags) < 0.5):
-   #       cit = UNTRUSTED
-   #       citag_grad = s.get_itag_grad()
-   #       ci_init_id = s.getiTagInitID()
+      # if (isTRUSTED(cit, tau_cit) and itag(intags) < tau_s_i):
+      #    cit = UNTRUSTED
+      #    citag_grad = s.get_itag_grad()
+      #    ci_init_id = s.getiTagInitID()
 
    #    et = etag(stg)
    #    if (et > cit):
@@ -180,11 +191,11 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
    #       etag_grad = citag_grad
    #       e_init_id = ci_init_id
 
-   #    inv = invtag(stg)
-   #    if (isUNTRUSTED(cit)):
-   #       inv = UNTRUSTED
-   #       invtag_grad = citag_grad
-   #       inv_init_id = ci_init_id
+      # inv = invtag(stg)
+      # if (isUNTRUSTED(cit, tau_cit)):
+      #    inv = UNTRUSTED
+      #    invtag_grad = citag_grad
+      #    inv_init_id = ci_init_id
 
    #    if itag(stg) > itag(intags):
    #       itag_grad = s.get_itag_grad()
@@ -215,13 +226,13 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
          citag_grad, etag_grad, itag_grad, ctag_grad = s.get_grad()
          ci_init_id, e_init_id, i_init_id, c_init_id = s.getInitID()
 
-         if (isTRUSTED(cit) and isTRUSTED(et)):
+         if (isTRUSTED(cit, tau_s_ci) and isTRUSTED(et, tau_s_e)):
             s.setSubjTags([citag(otg), et, 1.0, 1.0])
             s.set_grad([o.get_itag_grad(), etag_grad, 1.0, 1.0])
             s.setInitID([o.getiTagInitID(), e_init_id, None, None])
             s.propagation_chain['i'] = []
             s.propagation_chain['c'] = []
-         elif (isTRUSTED(cit) and isUNTRUSTED(et)):
+         elif (isTRUSTED(cit, tau_s_ci) and isUNTRUSTED(et, tau_s_e)):
             cit = citag(otg)
             citag_grad = o.get_itag_grad()
             ci_init_id = o.getiTagInitID()
@@ -339,7 +350,7 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
       ts = event.time
       if (s.updateTime == 0):
          s.updateTime = ts
-      elif (isTRUSTED(citag(stg)) and isTRUSTED(etag(stg))):
+      elif (isTRUSTED(citag(stg), tau_s_ci) and isTRUSTED(etag(stg), tau_s_e)):
          diff = (ts - s.updateTime) / 4e9
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.75
@@ -355,14 +366,13 @@ def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0):
          s.set_grad([citag_grad, etag_grad, itag_grad, ctag_grad])
          s.updateTime = ts
       
-      elif (isTRUSTED(citag(stg)) and isUNTRUSTED(etag(stg))):
+      elif (isTRUSTED(citag(stg), tau_s_ci) and isUNTRUSTED(etag(stg), tau_s_e)):
          diff = (ts - s.updateTime) / 4e9
          temp = pow(dpi, diff)
          nit = temp * it + (1 - temp) * 0.45
          temp = pow(dpc, diff)
          nct = temp * ct + (1 - temp) * 0.45
-         
-         if (nit < 0.5):
+         if (nit < tau_s_i):
             if nit > it:
                itag_grad *= temp
                it = nit

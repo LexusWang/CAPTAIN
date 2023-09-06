@@ -42,10 +42,14 @@ class Morse:
         self.alarm_sum = [0, 0]
         self.alarm_file = alarm_file
 
+        # customization
+        # alpha 
         self.white_name_set = set()
-
         # lambda dictionary
         self.lambda_dict = {}
+        # tau dictionary
+        self.tau_dict = {}
+        self.tau_modify_dict = {}
 
     def parse_event(self, datum, format, cdm_version):
         if format == 'trace':
@@ -67,6 +71,32 @@ class Morse:
     def backward(self):
         pass
 
+    def adjust_tau(self, fp_counter):
+
+        # Sort the event_key by the number of alarms it triggered and keep the top 50%
+        sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
+        half_length = len(sorted_items) // 2
+        selected_items = sorted_items[:half_length]
+        selected_dict = dict(selected_items)
+
+        for event_key in self.tau_modify_dict.keys():
+            if event_key not in selected_dict.keys():
+                for i in self.tau_modify_dict[event_key]:
+                    self.tau_dict[event_key][i] += self.tau_modify_dict[event_key][i]
+                    self.tau_modify_dict[event_key][i] *= 0.5
+
+
+        for event_key in selected_dict.keys():
+            for i, v in enumerate(selected_dict[event_key]):
+                if v > 10:
+                    if event_key not in self.tau_dict.keys():
+                        self.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                        self.tau_modify_dict[event_key] = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+                    self.tau_dict[event_key][i] -= self.tau_modify_dict[event_key][i]
+                    self.tau_modify_dict[event_key][i] *= 0.5
+        
+            
+            
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
         s_labels = []
@@ -93,7 +123,8 @@ class Morse:
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
-            diagnosis = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
+            tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             s_target, o_target = get_target(event, src, dest, gt)
             
             if s_target:
@@ -131,9 +162,9 @@ class Morse:
                             kill_chains.append(dest.propagation_chain['c'])
             
             prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
-            propTags(event, src, dest, dest2, prop_lambda=prop_lambda)
+            propTags(event, src, dest, dest2, prop_lambda=prop_lambda, tau=tau)
 
-        return diagnosis, s_labels, o_labels, kill_chains
+        return diagnosis, tag_indices, s_labels, o_labels, kill_chains
         
     def add_event(self, event, gt = None):
         if event.type == 'exit':
@@ -156,9 +187,10 @@ class Morse:
         if src:
             if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), dest.get_name())] = False
-            diagnosis = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file)
+            tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
-            propTags(event, src, dest, dest2, prop_lambda=prop_lambda)
+            diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
+            propTags(event, src, dest, dest2, prop_lambda=prop_lambda, tau=tau)
             return diagnosis
 
     def add_object(self, object):

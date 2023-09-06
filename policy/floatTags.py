@@ -29,8 +29,8 @@ def permbits(event):
    perm = int(permstr,8)
    return perm
 
-def isTRUSTED(tag):
-   return tag > 0.5
+def isTRUSTED(tag, tau = 0.5):
+   return tag > tau
 
-def isUNTRUSTED(tag):
-   return tag <= 0.5
+def isUNTRUSTED(tag, tau = 0.5):
+   return tag <= tau
