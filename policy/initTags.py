@@ -119,14 +119,3 @@ def initObjectTags(object, format = 'cdm'):
             itag = 0
 
     object.setObjTags([itag, ctag])
-
-
-#         init_otag("stderr", BENIGN, PUBLIC)
-#         init_otag("stdout", UNTRUSTED, SECRET)
-#         
-
-
-
-
-
-

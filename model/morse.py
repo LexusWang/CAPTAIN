@@ -27,8 +27,8 @@ class Morse:
         self.secret_dest2 = 0
 
         #
-        self.tuneNetworkTags = False
-        self.tuneFileTags = False
+        self.tuneNetworkTags = True
+        self.tuneFileTags = True
 
         # init graph
         self.G = nx.DiGraph()
@@ -214,15 +214,9 @@ class Morse:
                         obj_tag = self.Nodes[self.srcsink_Nodes[self.Nodes[object_id].name][-1]].tags()
                     self.srcsink_Nodes[self.Nodes[object_id].name].append(object_id)
             elif self.Nodes[object_id].type == "NetFlowObject":
-                if self.tuneNetworkTags:
-                    obj_tag = self.network_ini_tags["{}:{}".format(self.Nodes[object_id].IP, int(self.Nodes[object_id].port))]
-                else:
-                    obj_tag = list(match_network_addr(self.Nodes[object_id].IP, self.Nodes[object_id].port))
+                obj_tag = list(match_network_addr(self.Nodes[object_id].IP, self.Nodes[object_id].port))
             elif self.Nodes[object_id].type == "FileObject":
-                if self.tuneFileTags:
-                    obj_tag = self.node_inital_tags[object_id]
-                else:
-                    obj_tag = list(match_path(self.Nodes[object_id].path))
+                obj_tag = list(match_path(self.Nodes[object_id].path))
             else:
                 obj_tag = [1.0, 1.0]
         self.Nodes[object_id].setObjTags(obj_tag)

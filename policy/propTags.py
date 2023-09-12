@@ -8,8 +8,10 @@ import pdb
 def dump_event_feature(event, s, o, o2):
    if o2:
       features = (s.get_name(), event.type, o.get_name(), o2.get_name())
-   else:
+   elif o:
       features = (s.get_name(), event.type, o.get_name())
+   else:
+      features = (s.get_name(), event.type)
    return features
 
 def propTags(event, s, o, o2, att = 0.2, decay = 0, prop_lambda = 0, tau = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]):

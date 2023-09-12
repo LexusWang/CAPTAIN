@@ -13,6 +13,7 @@ from model.morse import Morse
 from graph.Event import Event
 from utils.graph_detection import add_nodes_to_graph
 from pathlib import Path
+from collections import Counter
 import pdb
 
 def start_experiment(args):
@@ -49,6 +50,8 @@ def start_experiment(args):
     else:
         detection_start_time = 0
         detection_end_time = 1e21
+
+    false_alarms = []
 
     with open(edge_file, 'r') as fin:
         for line in fin:
@@ -90,9 +93,8 @@ def start_experiment(args):
                 gt = ec.classify(event.id)
                 diagnosis = mo.add_event(event, gt)
                 experiment.update_metrics(diagnosis, gt)
-                # if gt == 'MkFileExecutable' and diagnosis == None:
-                #     print(event.id)
-                #     pdb.set_trace()
+                if gt == None and diagnosis != None:
+                    false_alarms.append(diagnosis)
                     
     # print(mo.secret_src)
     # print(mo.secret_dest)
@@ -102,6 +104,7 @@ def start_experiment(args):
     experiment.save_metrics()
     # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
     # ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
+    print(Counter(false_alarms))
 
     print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
     print("Metrics saved in {}".format(experiment.get_experiment_output_path()))

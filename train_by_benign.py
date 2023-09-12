@@ -266,11 +266,13 @@ def start_experiment(args):
 
         mo.Principals = princicals
 
-        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/lambda.pickle'), 'rb') as fin:
+        param_path = 'experiments/TrainL132023-09-12-03-20-48'
+
+        with open(os.path.join(param_path+'/train', 'params/lambda.pickle'), 'rb') as fin:
             mo.lambda_dict = pickle.load(fin)
-        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/tau.pickle'), 'rb') as fin:
+        with open(os.path.join(param_path+'/train', 'params/tau.pickle'), 'rb') as fin:
             mo.tau_dict = pickle.load(fin)
-        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/alpha.pickle'), 'rb') as fin:
+        with open(os.path.join(param_path+'/train', 'params/alpha.pickle'), 'rb') as fin:
             mo.alpha_dict = pickle.load(fin)
         # # Cadets
         # mo.white_name_set = {'207.46.73.59', '127.0.0.1', '128.55.12.10', '128.55.12.118', '83.150.97.73', '128.55.12.67', '216.87.162.115', '128.55.12.55', '207.25.80.123', '10.0.6.9', '128.55.12.166', '69.20.49.234', '128.55.12.167', '207.46.73.60', '212.60.66.243', '193.40.5.73', '128.55.12.110', '212.190.125.38', '162.99.3.50', '194.90.181.242', '66.252.21.131', '128.55.12.56'}
