@@ -62,6 +62,7 @@ def start_experiment(args):
         # mo.white_name_set = {'128.55.12.73', '128.55.12.10', '158.28.238.9', '64.86.71.27', '204.2.179.67', '8.15.32.34', '64.4.125.136', '10.0.4.1', '83.222.15.109', '216.163.248.17', '64.191.208.114', '12.149.161.245', '208.17.90.10', '67.28.122.168', '128.55.12.122', '209.132.177.50', '66.252.21.131', '65.214.39.18', '129.33.46.231', '162.97.114.199', '216.9.245.101', '203.192.141.18', '208.75.170.1', '0.0.0.0'}
         lambda_tuning_step = {}
         alpha_tuning_step = {}
+        tau_tuning_step = {}
         
         mo.Principals = principals
         for epoch in range(epochs):
@@ -126,6 +127,7 @@ def start_experiment(args):
             experiment.print_metrics()
             experiment.save_metrics()
 
+            # Tune Lambda
             pc_event_counter = Counter()
             for item in propagation_chains:
                 pc_event_counter.update(item)
@@ -154,9 +156,9 @@ def start_experiment(args):
                 if key not in filtered_pc_event_counter:
                     mo.lambda_dict[key] = mo.lambda_dict[key] - lambda_tuning_step[key]
                     lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
-
             # print(mo.lambda_dict)
 
+            # Tune Alpha
             benign_nid_labels = {}
             public_nid_labels = {}
             for item in node_gradients:
@@ -185,33 +187,52 @@ def start_experiment(args):
             #     if len(item) > 10 and sum(item)/len(item) > 0.9:
             #         mo.white_name_set.add(key)
 
-            # for key, item in benign_node_dict.items():
-            #     if len(item) > 10 and sum(item)/len(item) > 0.9:
-            #         if key not in mo.alpha_dict:
-            #             mo.alpha_dict[key] = 0.5
-            #             alpha_tuning_step[key] = 0.25
-            #         else:
-            #             mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
-            #             alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
-
-            # for key in mo.alpha_dict.keys():
-            #     if key not in benign_node_dict:
-            #         mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
-            #         alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
-
             for key, item in benign_node_dict.items():
                 if len(item) > 10 and sum(item)/len(item) > 0.9:
-                    mo.white_name_set.add(key)
+                    if key not in mo.alpha_dict:
+                        mo.alpha_dict[key] = 0.5
+                        alpha_tuning_step[key] = 0.25
+                    else:
+                        mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
+                        alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
 
-            mo.adjust_tau(fp_counter)
-            # print(mo.white_name_set)
+            for key in mo.alpha_dict.keys():
+                if key not in benign_node_dict:
+                    mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
+                    alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+
+            # Tune tau
+            # mo.adjust_tau(fp_counter)
+            # Sort the event_key by the number of alarms it triggered and keep the top 50%
+            sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
+            half_length = len(sorted_items) // 2
+            selected_items = sorted_items[:half_length]
+            selected_dict = dict(selected_items)
+
+            for event_key in tau_tuning_step.keys():
+                if event_key not in selected_dict.keys():
+                    for i, v in enumerate(tau_tuning_step[event_key]):
+                        mo.tau_dict[event_key][i] += tau_tuning_step[event_key][i]
+                        tau_tuning_step[event_key][i] *= 0.5
+
+            for event_key in selected_dict.keys():
+                for i, v in enumerate(selected_dict[event_key]):
+                    if v > 10:
+                        if event_key not in mo.tau_dict.keys():
+                            mo.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                            tau_tuning_step[event_key] = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+                        mo.tau_dict[event_key][i] -= tau_tuning_step[event_key][i]
+                        tau_tuning_step[event_key][i] *= 0.5
+
             experiment.reset_metrics()
         
         Path(os.path.join(experiment.get_experiment_output_path(), 'params')).mkdir(parents=True, exist_ok=True)
         with open(os.path.join(experiment.get_experiment_output_path(), 'params/lambda.pickle'), 'wb') as fout:
             pickle.dump(mo.lambda_dict, fout)
-        # with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha.pickle'), 'wb') as fout:
-        #     pickle.dump(mo.alpha_dict, fout)
+        with open(os.path.join(experiment.get_experiment_output_path(), 'params/tau.pickle'), 'wb') as fout:
+            pickle.dump(mo.tau_dict, fout)
+        with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha.pickle'), 'wb') as fout:
+            pickle.dump(mo.alpha_dict, fout)
 
     elif (mode == "test"):
         begin_time = time.time()
@@ -245,8 +266,12 @@ def start_experiment(args):
 
         mo.Principals = princicals
 
-        with open(os.path.join('./experiments/TrainT312023-09-05-17-44-11/train', 'params/lambda.pickle'), 'rb') as fin:
+        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/lambda.pickle'), 'rb') as fin:
             mo.lambda_dict = pickle.load(fin)
+        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/tau.pickle'), 'rb') as fin:
+            mo.tau_dict = pickle.load(fin)
+        with open(os.path.join('./experiments/TrainT312023-09-10-19-34-18/train', 'params/alpha.pickle'), 'rb') as fin:
+            mo.alpha_dict = pickle.load(fin)
         # # Cadets
         # mo.white_name_set = {'207.46.73.59', '127.0.0.1', '128.55.12.10', '128.55.12.118', '83.150.97.73', '128.55.12.67', '216.87.162.115', '128.55.12.55', '207.25.80.123', '10.0.6.9', '128.55.12.166', '69.20.49.234', '128.55.12.167', '207.46.73.60', '212.60.66.243', '193.40.5.73', '128.55.12.110', '212.190.125.38', '162.99.3.50', '194.90.181.242', '66.252.21.131', '128.55.12.56'}
         # Trace

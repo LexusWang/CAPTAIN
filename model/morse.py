@@ -45,6 +45,7 @@ class Morse:
         # customization
         # alpha 
         self.white_name_set = set()
+        self.alpha_dict = {}
         # lambda dictionary
         self.lambda_dict = {}
         # tau dictionary
@@ -72,7 +73,6 @@ class Morse:
         pass
 
     def adjust_tau(self, fp_counter):
-
         # Sort the event_key by the number of alarms it triggered and keep the top 50%
         sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
         half_length = len(sorted_items) // 2
@@ -81,7 +81,7 @@ class Morse:
 
         for event_key in self.tau_modify_dict.keys():
             if event_key not in selected_dict.keys():
-                for i in self.tau_modify_dict[event_key]:
+                for i, v in enumerate(self.tau_modify_dict[event_key]):
                     self.tau_dict[event_key][i] += self.tau_modify_dict[event_key][i]
                     self.tau_modify_dict[event_key][i] *= 0.5
 
@@ -198,8 +198,10 @@ class Morse:
         self.Nodes[object.id] = object
     
     def set_object_tags(self, object_id):
-        if self.Nodes[object_id].get_name() in self.white_name_set:
-            obj_tag = [1.0, 1.0]
+        # if self.Nodes[object_id].get_name() in self.white_name_set:
+        #     obj_tag = [1.0, 1.0]
+        if self.Nodes[object_id].get_name() in self.alpha_dict:
+            obj_tag = [self.alpha_dict[self.Nodes[object_id].get_name()], 1.0]
         else:
             if self.Nodes[object_id].type in {"MemoryObject", "UnnamedPipeObject"}:
                 obj_tag = [1.0, 1.0]
