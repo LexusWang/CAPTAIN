@@ -23,13 +23,11 @@ import pickle
 
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
-    mode = args.mode
     mo = Morse()
-
     # ============= Tag Initializer =============== #
     node_inits = {}
 
-    if (mode == "train"):
+    if args.mode == "train":
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
                             filemode='w+',
@@ -44,7 +42,6 @@ def start_experiment(args):
 
         # ================= Load all nodes & edges to memory ==================== #
         pre_loaded_path = experiment.get_pre_load_morse(args.data_tag)
-
         if pre_loaded_path.endswith('.pkl'):
             with open(pre_loaded_path, 'rb') as f:
                 events, nodes, principals = pickle.load(f)
@@ -129,17 +126,6 @@ def start_experiment(args):
                 pc_event_counter.update(item)
             threshold = 0.5
             filtered_pc_event_counter = {key: value for key, value in sorted(pc_event_counter.items(), key = lambda x:x[1], reverse = True)[:int(threshold * len(pc_event_counter))]}
-            # pdb.set_trace()
-
-            # for key, value in filtered_pc_event_counter.items():
-            #     if key in mo.lambda_dict:
-            #         mo.lambda_dict[key] = 0.5 * (mo.lambda_dict[key]+1)
-            #     else:
-            #         mo.lambda_dict[key] = 0.5
-            
-            # for key, value in mo.lambda_dict.items():
-            #     if key not in filtered_pc_event_counter:
-            #         mo.lambda_dict[key] = 0.5 * mo.lambda_dict[key]
             
             for key, value in filtered_pc_event_counter.items():
                 if key in mo.lambda_dict:
@@ -154,51 +140,50 @@ def start_experiment(args):
                     mo.lambda_dict[key] = mo.lambda_dict[key] - lambda_tuning_step[key]
                     lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
 
-            # # Tune Alpha
-            # benign_nid_labels = {}
-            # public_nid_labels = {}
-            # for item in node_gradients:
-            #     if item[0][1] == 'i':
-            #         if item[0] not in benign_nid_labels:
-            #             benign_nid_labels[item[0]] = []
-            #         benign_nid_labels[item[0]].append(item[1])
-            #     elif item[0][1] == 'c':
-            #         if item[0] not in public_nid_labels:
-            #             public_nid_labels[item[0]] = []
-            #         public_nid_labels[item[0]].append(item[1])
+            # Tune Alpha
+            benign_nid_labels = {}
+            public_nid_labels = {}
+            for item in node_gradients:
+                if item[0][1] == 'i':
+                    if item[0] not in benign_nid_labels:
+                        benign_nid_labels[item[0]] = []
+                    benign_nid_labels[item[0]].append(item[1])
+                elif item[0][1] == 'c':
+                    if item[0] not in public_nid_labels:
+                        public_nid_labels[item[0]] = []
+                    public_nid_labels[item[0]].append(item[1])
                 
-            # benign_node_dict = {}
-            # for node, value in benign_nid_labels.items():
-            #     if mo.Nodes[node[0]].get_name() not in benign_node_dict:
-            #         benign_node_dict[mo.Nodes[node[0]].get_name()] = []
-            #     benign_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
+            benign_node_dict = {}
+            for node, value in benign_nid_labels.items():
+                if mo.Nodes[node[0]].get_name() not in benign_node_dict:
+                    benign_node_dict[mo.Nodes[node[0]].get_name()] = []
+                benign_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
 
-            # public_node_dict = {}
-            # for node, value in public_nid_labels.items():
-            #     if mo.Nodes[node[0]].get_name() not in public_node_dict:
-            #         public_node_dict[mo.Nodes[node[0]].get_name()] = []
-            #     public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
-
-            # # for key, item in benign_node_dict.items():
-            # #     if len(item) > 10 and sum(item)/len(item) > 0.9:
-            # #         mo.white_name_set.add(key)
+            public_node_dict = {}
+            for node, value in public_nid_labels.items():
+                if mo.Nodes[node[0]].get_name() not in public_node_dict:
+                    public_node_dict[mo.Nodes[node[0]].get_name()] = []
+                public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
 
             # for key, item in benign_node_dict.items():
             #     if len(item) > 10 and sum(item)/len(item) > 0.9:
-            #         if key not in mo.alpha_dict:
-            #             mo.alpha_dict[key] = 0.5
-            #             alpha_tuning_step[key] = 0.25
-            #         else:
-            #             mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
-            #             alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+            #         mo.white_name_set.add(key)
 
-            # for key in mo.alpha_dict.keys():
-            #     if key not in benign_node_dict:
-            #         mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
-            #         alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+            for key, item in benign_node_dict.items():
+                if len(item) > 10 and sum(item)/len(item) > 0.9:
+                    if key not in mo.alpha_dict:
+                        mo.alpha_dict[key] = 0.5
+                        alpha_tuning_step[key] = 0.25
+                    else:
+                        mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
+                        alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+
+            for key in mo.alpha_dict.keys():
+                if key not in benign_node_dict:
+                    mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
+                    alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
 
             # Tune tau
-            # mo.adjust_tau(fp_counter)
             # Sort the event_key by the number of alarms it triggered and keep the top 50%
             sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
             half_length = len(sorted_items) // 2
@@ -230,9 +215,9 @@ def start_experiment(args):
         with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha.pickle'), 'wb') as fout:
             pickle.dump(mo.alpha_dict, fout)
 
-    elif (mode == "test"):
+    elif args.mode == "test":
         begin_time = time.time()
-        experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
+        # experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
         print("Begin preparing testing...")
         logging.basicConfig(level=logging.INFO,
                             filename='debug.log',
@@ -261,8 +246,6 @@ def start_experiment(args):
                 pickle.dump([events, nodes, princicals], f)
 
         mo.Principals = princicals
-
-        param_path = 'experiments/ALTrainT312023-09-13-03-08-28'
 
         with open(os.path.join(args.param_path, 'train', 'params/lambda.pickle'), 'rb') as fin:
             mo.lambda_dict = pickle.load(fin)
@@ -319,7 +302,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--data_path", type=str)
-    # parser.add_argument("--test_data", type=str)
     parser.add_argument("--epoch", default=10, type=int)
     parser.add_argument("--mode", type=str)
     parser.add_argument("--data_tag", type=str)
@@ -334,4 +316,3 @@ if __name__ == '__main__':
         args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%dT%H:%M:%S%z')))*1e9
 
     start_experiment(args)
-
