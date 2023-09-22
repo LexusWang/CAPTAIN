@@ -11,3 +11,4 @@ new_data/*
 eventClassifierTest.py
 learn_pytorch.py
 GT/*
+run_test.sh

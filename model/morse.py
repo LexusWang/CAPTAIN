@@ -167,6 +167,7 @@ class Morse:
         return diagnosis, tag_indices, s_labels, o_labels, kill_chains
         
     def add_event(self, event, gt = None):
+        diagnosis = None
         if event.type == 'exit':
             try:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False

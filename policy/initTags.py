@@ -28,7 +28,9 @@ benign_public_group = []
 # untrusted_public_group = [r'www.hbo.com/.*']
 
 # Used in Linux data from SOC
-untrusted_public_group = [r'.*\.sh', r'/tmp.*']
+# untrusted_public_group = [r'.*\.sh', r'/tmp.*']
+# Used in TRACE and CADETS
+untrusted_public_group = []
 
 # special_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*']
 special_group = []
