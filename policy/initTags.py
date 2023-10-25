@@ -8,8 +8,9 @@ import pdb
 # init_otag("[:any:]*ssh/[:any:]*", BENIGN, SECRET)
 # init_otag("/home/[:any:]*(pdf|doc|docx|xml|xlsx|cpp)", BENIGN, SECRET)
 
-benign_secret_group = [r'.*passwd',r'.*pwd\.db',r'.*auth\.log.*',r'.*shadow',r'.*ssh/.*',r'/home/.*(pdf|doc|docx|xml|xlsx|cpp)']
+# benign_secret_group = [r'.*passwd',r'.*pwd\.db',r'.*auth\.log.*',r'.*shadow',r'.*ssh/.*',r'/home/.*(pdf|doc|docx|xml|xlsx|cpp)']
 # benign_secret_group = [r'.*passwd',r'.*/var/log/.*',r'.*auth\.log.*',r'.*shadow']
+benign_secret_group = [r'.*passwd', r'.*/var/log/.*', r'.*shadow']
 
 # init_otag("/tmp/\.X11-unix/[:any:]*", BENIGN, PUBLIC)
 # init_otag("/tmp/\.ICE-unix/[:any:]*", BENIGN, PUBLIC)
@@ -28,9 +29,9 @@ benign_public_group = []
 # untrusted_public_group = [r'www.hbo.com/.*']
 
 # Used in Linux data from SOC
-# untrusted_public_group = [r'.*\.sh', r'/tmp.*']
+untrusted_public_group = [r'.*\.sh', r'/tmp.*']
 # Used in TRACE and CADETS
-untrusted_public_group = []
+# untrusted_public_group = []
 
 # special_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*']
 special_group = []

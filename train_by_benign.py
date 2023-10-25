@@ -37,7 +37,7 @@ def load_graph(data_path, time_range, pre_loaded_path):
 
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
-    mo = Morse()
+    mo = Morse(att = args.att, decay = args.decay)
     # ============= Tag Initializer =============== #
     node_inits = {}
 
@@ -48,6 +48,7 @@ def start_experiment(args):
                             format='%(asctime)s %(levelname)s:%(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p')
         epochs = args.epoch
+        Path(os.path.join(experiment.get_experiment_output_path(), 'params')).mkdir(parents=True, exist_ok=True)
 
         # load the checkpoint if it is given
         if args.checkpoint:
@@ -56,10 +57,6 @@ def start_experiment(args):
 
         events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
 
-        lambda_tuning_step = {}
-        alpha_tuning_step = {}
-        tau_tuning_step = {}
-        
         mo.Principals = principals
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
@@ -70,6 +67,7 @@ def start_experiment(args):
 
             # ============= Dectection =================== #
             node_gradients = []
+            edge_gradients = []
             propagation_chains = []
             fp_counter = {}
             for event in tqdm.tqdm(events):
@@ -94,7 +92,7 @@ def start_experiment(args):
                 if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
                     add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
 
-                diagnosis, tag_indices, s_labels, o_labels, pc = mo.add_event_generate_loss(event, None)
+                diagnosis, tag_indices, s_labels, o_labels, pc, lambda_grad = mo.add_event_generate_loss(event, None)
                 experiment.update_metrics(diagnosis, None)
 
                 if diagnosis == None:
@@ -106,7 +104,7 @@ def start_experiment(args):
                 if o_labels:
                     node_gradients.extend(o_labels)
 
-                propagation_chains.extend(pc)
+                edge_gradients.extend(lambda_grad)
 
                 src = mo.Nodes.get(event.src, None)
                 dest = mo.Nodes.get(event.dest, None)
@@ -119,105 +117,114 @@ def start_experiment(args):
                     for i in tag_indices:
                         fp_counter[event_key][i] += 1
             
+            # calculate lengths of grad dict
+            grad_dict_lens = {}
+            for key, item in mo.Nodes.items():
+                grad_dict_lens[key] = item.grad_dict_lens()
+            Path(os.path.join(experiment.get_experiment_output_path(), 'overhead')).mkdir(parents=True, exist_ok=True)
+            with open(os.path.join(experiment.get_experiment_output_path(), 'overhead/grad-dict-len-{}.txt'.format(epoch)),'wb') as fout:
+                pickle.dump(grad_dict_lens, fout)
+            
             mo.alarm_file.close()
             experiment.print_metrics()
             experiment.save_metrics()
 
             if 'l' in args.param_type:
                 # Tune Lambda
-                pc_event_counter = Counter()
-                for item in propagation_chains:
-                    pc_event_counter.update(item)
-                threshold = 0.5
-                filtered_pc_event_counter = {key: value for key, value in sorted(pc_event_counter.items(), key = lambda x:x[1], reverse = True)[:int(threshold * len(pc_event_counter))]}
-                
-                for key, value in filtered_pc_event_counter.items():
-                    if key in mo.lambda_dict:
-                        mo.lambda_dict[key] = mo.lambda_dict[key] + lambda_tuning_step[key]
-                        lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
-                    else:
-                        mo.lambda_dict[key] = 0.5
-                        lambda_tuning_step[key] = 0.25
-                
-                for key, value in mo.lambda_dict.items():
-                    if key not in filtered_pc_event_counter:
-                        mo.lambda_dict[key] = mo.lambda_dict[key] - lambda_tuning_step[key]
-                        lambda_tuning_step[key] = 0.5 * lambda_tuning_step[key]
+                if len(edge_gradients) > 0:
+                    seo_lambda_gradients = {}
+                    for item in edge_gradients:
+                        if item[0] not in seo_lambda_gradients:
+                            seo_lambda_gradients[item[0]] = 0
+                        seo_lambda_gradients[item[0]] += item[1]
+                    for key, value in seo_lambda_gradients.items():
+                        if key not in mo.lambda_dict:
+                            mo.lambda_dict[key] = 0
+                        mo.lambda_dict[key] = mo.lambda_dict[key] - 1e-2*value
+                        mo.lambda_dict[key] = min(1, mo.lambda_dict[key])
+                        mo.lambda_dict[key] = max(0, mo.lambda_dict[key])
+                        if mo.lambda_dict[key] <= 1e-2:
+                            del mo.lambda_dict[key]
+                    
+                    for key in list(mo.lambda_dict.keys()):
+                        if key not in seo_lambda_gradients:
+                            mo.lambda_dict[key] = mo.lambda_dict[key] - 1e-2*1
+                            mo.lambda_dict[key] = min(1, mo.lambda_dict[key])
+                            mo.lambda_dict[key] = max(0, mo.lambda_dict[key])
+                            if mo.lambda_dict[key] <= 1e-2:
+                                del mo.lambda_dict[key]
 
             if 'a' in args.param_type:
                 # Tune Alpha
-                benign_nid_labels = {}
-                public_nid_labels = {}
+                intg_nid_labels = {}
+                conf_nid_labels = {}
                 for item in node_gradients:
                     if item[0][1] == 'i':
-                        if item[0] not in benign_nid_labels:
-                            benign_nid_labels[item[0]] = []
-                        benign_nid_labels[item[0]].append(item[1])
+                        if item[0] not in intg_nid_labels:
+                            intg_nid_labels[item[0]] = []
+                        intg_nid_labels[item[0]].append(item[1])
                     elif item[0][1] == 'c':
-                        if item[0] not in public_nid_labels:
-                            public_nid_labels[item[0]] = []
-                        public_nid_labels[item[0]].append(item[1])
+                        if item[0] not in conf_nid_labels:
+                            conf_nid_labels[item[0]] = []
+                        conf_nid_labels[item[0]].append(item[1])
                     
-                benign_node_dict = {}
-                for node, value in benign_nid_labels.items():
-                    if mo.Nodes[node[0]].get_name() not in benign_node_dict:
-                        benign_node_dict[mo.Nodes[node[0]].get_name()] = []
-                    benign_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
+                node_iTagGradients_dict = {}
+                for node, value in intg_nid_labels.items():
+                    node_name = mo.Nodes[node[0]].get_name()
+                    if node_name not in node_iTagGradients_dict:
+                        node_iTagGradients_dict[node_name] = []
+                    node_iTagGradients_dict[node_name].extend(value)
 
-                public_node_dict = {}
-                for node, value in public_nid_labels.items():
-                    if mo.Nodes[node[0]].get_name() not in public_node_dict:
-                        public_node_dict[mo.Nodes[node[0]].get_name()] = []
-                    public_node_dict[mo.Nodes[node[0]].get_name()].extend(value)
+                node_cTagGradients_dict = {}
+                for node, value in conf_nid_labels.items():
+                    node_name = mo.Nodes[node[0]].get_name()
+                    if node_name not in node_cTagGradients_dict:
+                        node_cTagGradients_dict[node_name] = []
+                    node_cTagGradients_dict[node_name].extend(value)
 
-                threshold = 0.5
-                filtered_benign_node_dict = {key: value for key, value in sorted(benign_node_dict.items(), key = lambda x:len(x[1]), reverse = True)[:int(threshold * len(benign_node_dict))]}
-
-                for key, item in filtered_benign_node_dict.items():
+                for key in node_iTagGradients_dict.keys():
+                    node_iTagGradients_dict[key] = sum(node_iTagGradients_dict[key])
+                for key in node_cTagGradients_dict.keys():
+                    node_cTagGradients_dict[key] = sum(node_cTagGradients_dict[key])
+                for key, item in node_iTagGradients_dict.items():
                     if key not in mo.alpha_dict:
-                        mo.alpha_dict[key] = 0.5
-                        alpha_tuning_step[key] = 0.25
-                    else:
-                        mo.alpha_dict[key] = mo.alpha_dict[key] + alpha_tuning_step[key]
-                        alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+                        mo.alpha_dict[key] = 0.0
+                    mo.alpha_dict[key] = mo.alpha_dict[key] - 1e-2*(item+1)
+                    mo.alpha_dict[key] = min(1, mo.alpha_dict[key])
+                    mo.alpha_dict[key] = max(0, mo.alpha_dict[key])
 
                 for key in mo.alpha_dict.keys():
-                    if key not in benign_node_dict:
-                        mo.alpha_dict[key] = mo.alpha_dict[key] - alpha_tuning_step[key]
-                        alpha_tuning_step[key] = 0.5 * alpha_tuning_step[key]
+                    if key not in node_iTagGradients_dict:
+                        mo.alpha_dict[key] = mo.alpha_dict[key] - 1e-2*1
+                        mo.alpha_dict[key] = min(1, mo.alpha_dict[key])
+                        mo.alpha_dict[key] = max(0, mo.alpha_dict[key])
 
             if 't' in args.param_type:
                 # Tune tau
-                # Sort the event_key by the number of alarms it triggered and keep the top 50%
-                sorted_items = sorted(fp_counter.items(), key=lambda x: sum(x[1]), reverse=True)
-                half_length = len(sorted_items) // 2
-                selected_items = sorted_items[:half_length]
-                selected_dict = dict(selected_items)
+                for key in fp_counter.keys():
+                    if key not in mo.tau_dict.keys():
+                        mo.tau_dict[key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                    for i, v in enumerate(fp_counter[key]):
+                        mo.tau_dict[key][i] -= v*1e-2
+                        mo.tau_dict[key][i] = max(0, mo.tau_dict[key][i])
 
-                for event_key in tau_tuning_step.keys():
-                    if event_key not in selected_dict.keys():
-                        for i, v in enumerate(tau_tuning_step[event_key]):
-                            mo.tau_dict[event_key][i] += tau_tuning_step[event_key][i]
-                            tau_tuning_step[event_key][i] *= 0.5
+                for key in list(mo.tau_dict.keys()):
+                    if key not in fp_counter.keys():
+                        for i, v in enumerate(mo.tau_dict[key]):
+                            mo.tau_dict[key][i] = min((mo.tau_dict[key][i] + 1e-2*1), 0.5)
+                        if max(mo.tau_dict[key]) == 0.5 and min(mo.tau_dict[key]) == 0.5:
+                            del mo.tau_dict[key]
 
-                for event_key in selected_dict.keys():
-                    for i, v in enumerate(selected_dict[event_key]):
-                        if v > 10:
-                            if event_key not in mo.tau_dict.keys():
-                                mo.tau_dict[event_key] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-                                tau_tuning_step[event_key] = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
-                            mo.tau_dict[event_key][i] -= tau_tuning_step[event_key][i]
-                            tau_tuning_step[event_key][i] *= 0.5
-
+            pdb.set_trace()
+            
             experiment.reset_metrics()
         
-        Path(os.path.join(experiment.get_experiment_output_path(), 'params')).mkdir(parents=True, exist_ok=True)
-        with open(os.path.join(experiment.get_experiment_output_path(), 'params/lambda.pickle'), 'wb') as fout:
-            pickle.dump(mo.lambda_dict, fout)
-        with open(os.path.join(experiment.get_experiment_output_path(), 'params/tau.pickle'), 'wb') as fout:
-            pickle.dump(mo.tau_dict, fout)
-        with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha.pickle'), 'wb') as fout:
-            pickle.dump(mo.alpha_dict, fout)
+            with open(os.path.join(experiment.get_experiment_output_path(), 'params/lambda-e{}.pickle'.format(epoch)), 'wb') as fout:
+                pickle.dump(mo.lambda_dict, fout)
+            with open(os.path.join(experiment.get_experiment_output_path(), 'params/tau-e{}.pickle'.format(epoch)), 'wb') as fout:
+                pickle.dump(mo.tau_dict, fout)
+            with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha-e{}.pickle'.format(epoch)), 'wb') as fout:
+                pickle.dump(mo.alpha_dict, fout)
 
     elif args.mode == "test":
         begin_time = time.time()
@@ -237,11 +244,12 @@ def start_experiment(args):
         events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
 
         mo.Principals = principals
-        with open(os.path.join(args.param_path, 'train', 'params/lambda.pickle'), 'rb') as fin:
+        best_epoch = 9
+        with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(best_epoch)), 'rb') as fin:
             mo.lambda_dict = pickle.load(fin)
-        with open(os.path.join(args.param_path, 'train', 'params/tau.pickle'), 'rb') as fin:
+        with open(os.path.join(args.param_path, 'train', 'params/tau-e{}.pickle'.format(best_epoch)), 'rb') as fin:
             mo.tau_dict = pickle.load(fin)
-        with open(os.path.join(args.param_path, 'train', 'params/alpha.pickle'), 'rb') as fin:
+        with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(best_epoch)), 'rb') as fin:
             mo.alpha_dict = pickle.load(fin)
 
         false_alarms = []
@@ -273,21 +281,21 @@ def start_experiment(args):
             experiment.update_metrics(diagnosis, gt)
             if gt == None and diagnosis != None:
                 false_alarms.append(diagnosis)
-                        
+
         mo.alarm_file.close()
+        experiment.alarm_dis = Counter(false_alarms)
+        experiment.detection_time = time.time()-begin_time
         experiment.print_metrics()
         experiment.save_metrics()
         ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
         ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
-
-        print(Counter(false_alarms))
-
-        print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
         print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
+    parser.add_argument("--att", type=float, default=0.2)
+    parser.add_argument("--decay", type=float, default=0)
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--data_path", type=str)
     parser.add_argument("--epoch", default=10, type=int)

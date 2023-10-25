@@ -10,7 +10,7 @@ import pdb
 
 def start_experiment(args):
     begin_time = time.time()
-    mo = Morse()
+    mo = Morse(0, 0)
 
     node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')
@@ -37,13 +37,15 @@ def start_experiment(args):
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("Morse has loaded {} lines.".format(loaded_line))
+                    print("CAPTAIN has parsed {} lines.".format(loaded_line))
                 try:
                     record_datum = json.loads(line)
                 except JSONDecodeError as e:
                     continue
-                if 'event_type' not in record_datum:
+                if 'log_name' in record_datum and record_datum['log_name'] in {'ClientPolicyUpdate', 'DNSQuery'}:
                     continue
+                if 'event_type' not in record_datum:
+                    pdb.set_trace()
                 if record_datum['event_type'] > 37 or record_datum['event_type'] < 1:
                     continue
                 envt_num += 1
@@ -99,7 +101,7 @@ def start_experiment(args):
                     event.dest = uuid_nid_mapping.get(event.dest, None)
                     event.dest2 = uuid_nid_mapping.get(event.dest2, None)
                     event_str = '{},{},{}'.format(event.src, event.type, event.dest)
-                    if event_str != last_event_str and event.src:
+                    if event_str != last_event_str and (event.src!=None):
                         last_event_str = event_str
                         edge_num += 1
                         print(event.dumps(), file = edge_file)

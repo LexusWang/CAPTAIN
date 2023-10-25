@@ -38,6 +38,10 @@ class Experiment:
         self.fp = 0
         self.fn = 0
         self.tn = 0
+        # alarm distribution
+        self.alarm_dis = {}
+        # detection time
+        self.detection_time = 0
 
     def get_experiment_output_path(self):
         return self.results_path
@@ -87,15 +91,16 @@ class Experiment:
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
         # print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
-        with open(filename, 'w') as f:
+        with open(filename, 'a') as f:
             f.write(f"tp: {self.tp}\n")
             f.write(f"fp: {self.fp}\n")
             f.write(f"fn: {self.fn}\n")
             f.write(f"tn: {self.tn}\n")
+            print(self.alarm_dis, file=f)
+            print("Detecting Time: {:.2f}s".format(self.detection_time), file=f)
             # f.write(f"precision: {self.get_precision()}")
             # f.write(f"recall: {self.get_recall()}")
             # f.write(f"f1: {self.get_f1_score()}")
-
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:

@@ -1,5 +1,5 @@
 import json
-from policy.floatTags import citag
+import pdb
 import math
 import re
 
@@ -16,11 +16,10 @@ class Object:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        self.iTag_grad: float = 1.0
-        self.cTag_grad: float = 1.0
-
-        self.iTag_initID = (id,'i')
-        self.cTag_initID = (id,'c')
+        self.iTag_gradients = {(id,'i'): 1.0}
+        self.cTag_gradients = {(id,'c'): 1.0}
+        self.i_lambda_gradients = {}
+        self.c_lambda_gradients = {}
 
         self.propagation_chain = {'i':[], 'c':[]}
 
@@ -57,11 +56,12 @@ class Object:
             self.name = json_dict['name']
 
     def tags(self):
-        if self.iTag > 0.5:
-            ciTag = 1.0
-        else:
-            ciTag = 0.0
-        return [ciTag, ciTag, float(self.iTag), float(self.cTag)]
+        # if self.iTag > 0.5:
+        #     ciTag = 1.0
+        # else:
+        #     ciTag = 0.0
+        # return [ciTag, None, float(self.iTag), float(self.cTag)]
+        return [float(self.iTag), None, float(self.iTag), float(self.cTag)]
 
     def setObjTags(self, tags):
         self.iTag = tags[0]
@@ -103,7 +103,7 @@ class Object:
         return self.id
 
     def get_grad(self):
-        return [self.iTag_grad, self.iTag_grad, self.iTag_grad, self.cTag_grad]
+        return [self.iTag_gradients, None, self.iTag_gradients, self.cTag_gradients]
 
     def get_citag_grad(self):
         return self.iTag_grad
@@ -133,17 +133,27 @@ class Object:
     def setcTagInitID(self, id):
         self.cTag_initID = id
 
-    def getInitID(self):
-        return [self.iTag_initID, self.iTag_initID, self.iTag_initID, self.cTag_initID]
+    def get_lambda_grad(self):
+        return [self.i_lambda_gradients, None, self.i_lambda_gradients, self.c_lambda_gradients]
 
-    def getciTagInitID(self):
-        return self.iTag_initID
+    def check_gradients(self, threshold = 1e-5):
+        for key in list(self.iTag_gradients.keys()):
+            value = self.iTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.iTag_gradients[key]
+        for key in list(self.cTag_gradients.keys()):
+            value = self.cTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.cTag_gradients[key]
 
-    def geteTagInitID(self):
-        return self.iTag_initID
+        for key in list(self.i_lambda_gradients.keys()):
+            value = self.i_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.i_lambda_gradients[key]
+        for key in list(self.c_lambda_gradients.keys()):
+            value = self.c_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.c_lambda_gradients[key]
 
-    def getiTagInitID(self):
-        return self.iTag_initID
-
-    def getcTagInitID(self):
-        return self.cTag_initID
+    def grad_dict_lens(self):
+        return (0, 0,len(self.iTag_gradients),len(self.cTag_gradients),0, 0,len(self.i_lambda_gradients),len(self.c_lambda_gradients))

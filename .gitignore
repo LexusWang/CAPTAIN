@@ -5,10 +5,8 @@
 results*
 debug.log
 experiments/*
-local_data
 pre_load_graph/*
 new_data/*
 eventClassifierTest.py
-learn_pytorch.py
 GT/*
-run_test.sh
+test_scripts/*

@@ -20,7 +20,7 @@ def start_experiment(args):
     begin_time = time.time()
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
 
-    mo = Morse()
+    mo = Morse(att = args.att, decay = args.decay)
     mo.tuneNetworkTags = False
     mo.tuneFileTags = False
 
@@ -57,20 +57,19 @@ def start_experiment(args):
         for line in fin:
             loaded_line += 1
             if loaded_line % 100000 == 0:
-                print("Morse has loaded {} edges.".format(loaded_line))
+                print("CAPTAIN has loaded {} edges.".format(loaded_line))
             edge_datum = json.loads(line)
             if edge_datum['type'] == 'UPDATE':
+                if edge_datum['nid'] not in mo.Nodes:
+                    add_nodes_to_graph(mo, edge_datum['nid'], nodes[edge_datum['nid']])
                 updated_value = edge_datum['value']
-                try:
-                    if 'exec' in updated_value:
-                        mo.Nodes[edge_datum['nid']].processName = updated_value['exec']
-                    elif 'name' in updated_value:
-                        mo.Nodes[edge_datum['nid']].name = updated_value['name']
-                        mo.Nodes[edge_datum['nid']].path = updated_value['name']
-                    elif 'cmdl' in updated_value:
-                        mo.Nodes[edge_datum['nid']].cmdLine = updated_value['cmdl']
-                except KeyError:
-                    pass
+                if 'exec' in updated_value:
+                    mo.Nodes[edge_datum['nid']].processName = updated_value['exec']
+                elif 'name' in updated_value:
+                    mo.Nodes[edge_datum['nid']].name = updated_value['name']
+                    mo.Nodes[edge_datum['nid']].path = updated_value['name']
+                elif 'cmdl' in updated_value:
+                    mo.Nodes[edge_datum['nid']].cmdLine = updated_value['cmdl']
             else:
                 event = Event(None, None)
                 event.loads(line)
@@ -95,23 +94,22 @@ def start_experiment(args):
                 experiment.update_metrics(diagnosis, gt)
                 if gt == None and diagnosis != None:
                     false_alarms.append(diagnosis)
+        print(event.time)
                     
-    # print(mo.secret_src)
-    # print(mo.secret_dest)
-    # print(mo.secret_dest2)
     mo.alarm_file.close()
+    experiment.alarm_dis = Counter(false_alarms)
+    experiment.detection_time = time.time()-begin_time
     experiment.print_metrics()
     experiment.save_metrics()
-    # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-    # ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
-    print(Counter(false_alarms))
-
-    print("Detecting Time: {:.2f}s".format(time.time()-begin_time))
+    ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
+    ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
     print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
+    parser.add_argument("--att", type=float, default=0.2)
+    parser.add_argument("--decay", type=float, default=0)
     parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--test_data", nargs='?', type=str)
     parser.add_argument("--experiment_prefix", type=str)

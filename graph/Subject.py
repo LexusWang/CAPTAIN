@@ -2,6 +2,7 @@
 import math
 import re
 import json
+import pdb
 
 class Subject:
     def __init__(self, id, type, pid: int, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
@@ -21,15 +22,15 @@ class Subject:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        self.ciTag_grad: float = 1.0
-        self.eTag_grad: float = 1.0
-        self.iTag_grad: float = 1.0
-        self.cTag_grad: float = 1.0
+        self.ciTag_gradients = {}
+        self.eTag_gradients = {}
+        self.iTag_gradients = {(id,'i'): 1.0}
+        self.cTag_gradients = {(id,'c'): 1.0}
 
-        self.ciTag_initID = None
-        self.eTag_initID = None
-        self.iTag_initID = (id,'i')
-        self.cTag_initID = (id,'c')
+        self.ci_lambda_gradients = {}
+        self.e_lambda_gradients = {}
+        self.i_lambda_gradients = {}
+        self.c_lambda_gradients = {}
 
         self.propagation_chain = {'i':[], 'c':[]}
 
@@ -79,36 +80,63 @@ class Subject:
         self.cTag = tags[3]
 
     def get_grad(self):
-        return [self.ciTag_grad, self.eTag_grad, self.iTag_grad, self.cTag_grad]
-
-    def get_citag_grad(self):
-        return self.ciTag_grad
-    
-    def get_etag_grad(self):
-        return self.eTag_grad
-
-    def get_itag_grad(self):
-        return self.iTag_grad
-
-    def get_ctag_grad(self):
-        return self.cTag_grad
+        return [self.ciTag_gradients, self.eTag_gradients, self.iTag_gradients, self.cTag_gradients]
 
     def set_grad(self, grads):
-        self.ciTag_grad = grads[0]
-        self.eTag_grad = grads[1]
-        self.iTag_grad = grads[2]
-        self.cTag_grad = grads[3]
-    
-    def setInitID(self, InitID):
-        self.ciTag_initID = InitID[0]
-        self.eTag_initID = InitID[1]
-        self.iTag_initID = InitID[2]
-        self.cTag_initID = InitID[3]
+        self.ciTag_gradients = grads[0]
+        self.eTag_gradients = grads[1]
+        self.iTag_gradients = grads[2]
+        self.cTag_gradients = grads[3]
 
-    def getInitID(self):
-        return [self.ciTag_initID, self.eTag_initID, self.iTag_initID, self.cTag_initID]
+    def get_lambda_grad(self):
+        return [self.ci_lambda_gradients, self.e_lambda_gradients, self.i_lambda_gradients, self.c_lambda_gradients]
+
+    def set_lambda_grad(self, lambda_grads):
+        self.ci_lambda_gradients = lambda_grads[0]
+        self.e_lambda_gradients = lambda_grads[1]
+        self.i_lambda_gradients = lambda_grads[2]
+        self.c_lambda_gradients = lambda_grads[3]
+    
+    def check_gradients(self, threshold = 1e-5):
+        for key in list(self.ciTag_gradients.keys()):
+            value = self.ciTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.ciTag_gradients[key]
+        for key in list(self.eTag_gradients.keys()):
+            value = self.eTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.eTag_gradients[key]
+        for key in list(self.iTag_gradients.keys()):
+            value = self.iTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.iTag_gradients[key]
+        for key in list(self.cTag_gradients.keys()):
+            value = self.cTag_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.cTag_gradients[key]
+
+        for key in list(self.ci_lambda_gradients.keys()):
+            value = self.ci_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.ci_lambda_gradients[key]
+        for key in list(self.e_lambda_gradients.keys()):
+            value = self.e_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.e_lambda_gradients[key]
+        for key in list(self.i_lambda_gradients.keys()):
+            value = self.i_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.i_lambda_gradients[key]
+        for key in list(self.c_lambda_gradients.keys()):
+            value = self.c_lambda_gradients[key]
+            if value > -1.0*threshold and value < 1.0*threshold:
+                del self.c_lambda_gradients[key]
+
 
     def isMatch(self, string):
         if self.processName == None:
             return False
         return isinstance(re.search(string, self.processName), re.Match)
+    
+    def grad_dict_lens(self):
+        return (len(self.ciTag_gradients),len(self.eTag_gradients),len(self.iTag_gradients),len(self.cTag_gradients),len(self.ci_lambda_gradients),len(self.e_lambda_gradients),len(self.i_lambda_gradients),len(self.c_lambda_gradients))

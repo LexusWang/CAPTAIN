@@ -22,7 +22,7 @@ def get_target(event, s, o, gt):
                     s_target_ = [None, None, 1, None]
         else:
             if 'PROT_EXEC' in set(event.parameters):
-                if gt == "MkMemExecutable":
+                if gt == "MkFileExecutable":
                     s_target_ = [None, None, 0, None]
                 else:
                     s_target_ = [None, None, 1, None]
@@ -48,10 +48,11 @@ def get_target(event, s, o, gt):
     #       alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
 
     if event_type in {'set_uid'}:
-        if gt == "PrivilegeEscalation":
-            s_target_ = [None, None, 0, None]
-        else:
-            s_target_ = [None, None, 1, None]
+        if event.parameters == 0:
+            if gt == "PrivilegeEscalation":
+                s_target_ = [None, None, 0, None]
+            else:
+                s_target_ = [None, None, 1, None]
     
     if event_type in {'chmod'}:
         prm = event.parameters

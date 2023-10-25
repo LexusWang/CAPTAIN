@@ -8,23 +8,19 @@ from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags, dump_event_feature
 from policy.alarms import check_alarm
 from model.target_label import get_target
-from parse.eventParsing import parse_event_trace, parse_event_cadets, parse_event_linux
+from parse.cdm18.cadets_parser import parse_event_cadets
+from parse.cdm18.trace_parser import parse_event_trace
+from parse.cdm18.fivedirections_parser import parse_event_fivedirections
+from parse.lttng_parser import parse_event_linux
 from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
 
 
 class Morse:
-    def __init__(self, format= 'cdm', batch_size = 0, sequence_size = 0, data_loader = 0, alarm_file = './results/alarms.txt'):
+    def __init__(self, att, decay, alarm_file = './results/alarms.txt'):
         self.device = None
-        self.batch_size = batch_size
-        self.sequence_size = sequence_size
-        self.data_loader = data_loader
-        self.format = format
-
-        # debug
-        self.secret_src = 0
-        self.secret_dest = 0
-        self.secret_dest2 = 0
+        self.att = att
+        self.decay = decay
 
         #
         self.tuneNetworkTags = True
@@ -57,6 +53,8 @@ class Morse:
             return parse_event_trace(self, datum, cdm_version)
         elif format == 'cadets':
             return parse_event_cadets(self, datum, cdm_version)
+        elif format == 'fivedirections':
+            return parse_event_fivedirections(self, datum, cdm_version)
         elif format == 'linux':
             return parse_event_linux(self, datum)
 
@@ -102,6 +100,7 @@ class Morse:
         s_labels = []
         o_labels = []
         kill_chains = []
+        loss_lambda_grads = []
 
         if event.type == 'exit':
             try:
@@ -121,50 +120,61 @@ class Morse:
         dest2 = self.Nodes.get(event.dest2, None)
 
         if src:
-            if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
-                self.alarm[(src.get_pid(), dest.get_name())] = False
+            if dest and (src.get_pid(), event.type, dest.get_name()) not in self.alarm:
+                self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
             tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             s_target, o_target = get_target(event, src, dest, gt)
-            
+            if dest and self.alarm[(src.get_pid(), event.type, dest.get_name())]:
+                self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
+
             if s_target:
-                init_ids = src.getInitID()
+                lambda_grads = src.get_lambda_grad()
                 grads = src.get_grad()
                 for i, item in enumerate(s_target):
                     if item:
-                        if grads[i] > 0:
-                            s_labels.append([init_ids[i], item])
-                        elif grads[i] == 0:
-                            pass
-                        else:
-                            s_labels.append([init_ids[i], 1-item])
+                        for key in grads[i].keys():
+                            if item == 1:
+                                s_labels.append((key, -1.0*grads[i][key]))
+                            elif item == 0:
+                                s_labels.append((key, 1.0*grads[i][key]))
 
+                        for key in lambda_grads[i].keys():
+                            if item == 1:
+                                loss_lambda_grads.append((key, -1.0*lambda_grads[i][key]))
+                            elif item == 0:
+                                loss_lambda_grads.append((key, 1.0*lambda_grads[i][key]))
+                        
                         if i == 2 and len(src.propagation_chain['i'])>0:
                             kill_chains.append(src.propagation_chain['i'])
                         elif i == 3 and len(src.propagation_chain['c'])>0:
                             kill_chains.append(src.propagation_chain['c'])
 
             if o_target:
-                init_ids = dest.getInitID()
+                lambda_grads = dest.get_lambda_grad()
                 grads = dest.get_grad()
                 for i, item in enumerate(o_target):
                     if item:
-                        if grads[i] > 0:
-                            o_labels.append([init_ids[i], item])
-                        elif grads[i] == 0:
-                            pass
-                        else:
-                            o_labels.append([init_ids[i], 1-item])
+                        for key in grads[i].keys():
+                            if item == 1:
+                                o_labels.append((key, -1.0*grads[i][key]))
+                            elif item == 0:
+                                o_labels.append((key, 1.0*grads[i][key]))
                         
+                        for key in lambda_grads[i].keys():
+                            if item == 1:
+                                loss_lambda_grads.append((key, -1.0*lambda_grads[i][key]))
+                            elif item == 0:
+                                loss_lambda_grads.append((key, 1.0*lambda_grads[i][key]))
                         if i == 2 and len(dest.propagation_chain['i'])>0:
                             kill_chains.append(dest.propagation_chain['i'])
                         elif i == 3 and len(dest.propagation_chain['c'])>0:
                             kill_chains.append(dest.propagation_chain['c'])
             
             prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
-            propTags(event, src, dest, dest2, prop_lambda=prop_lambda, tau=tau)
+            propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau)
 
-        return diagnosis, tag_indices, s_labels, o_labels, kill_chains
+        return diagnosis, tag_indices, s_labels, o_labels, kill_chains, loss_lambda_grads
         
     def add_event(self, event, gt = None):
         diagnosis = None
@@ -186,21 +196,19 @@ class Morse:
         dest2 = self.Nodes.get(event.dest2, None)
 
         if src:
-            if dest and (src.get_pid(), dest.get_name()) not in self.alarm:
-                self.alarm[(src.get_pid(), dest.get_name())] = False
+            if dest and (src.get_pid(), event.type, dest.get_name()) not in self.alarm:
+                self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
             tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
-            propTags(event, src, dest, dest2, prop_lambda=prop_lambda, tau=tau)
-            return diagnosis
+            propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau)
+        return diagnosis
 
     def add_object(self, object):
         # self.G.add_node(object.id)
         self.Nodes[object.id] = object
     
     def set_object_tags(self, object_id):
-        # if self.Nodes[object_id].get_name() in self.white_name_set:
-        #     obj_tag = [1.0, 1.0]
         if self.Nodes[object_id].get_name() in self.alpha_dict:
             obj_tag = [self.alpha_dict[self.Nodes[object_id].get_name()], 1.0]
         else:
@@ -225,33 +233,26 @@ class Morse:
     def add_subject(self, subject):
         # self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
-        if subject.pid not in self.processes:
-            self.processes[subject.pid] = {}
-            self.processes[subject.pid]['nid'] = subject.id
-            self.processes[subject.pid]['alive'] = True
-            if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
-                parent_nid = self.processes[subject.ppid]['nid']
-                self.Nodes[subject.id].setSubjTags(self.Nodes[parent_nid].tags())
-                self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
-                self.Nodes[subject.id].setInitID(self.Nodes[parent_nid].getInitID())
-            else:
-                self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
-        elif self.processes[subject.pid]['alive'] == False:
-            self.processes[subject.pid]['nid'] = subject.id
-            self.processes[subject.pid]['alive'] = True
-            if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
-                parent_nid = self.processes[subject.ppid]['nid']
-                self.Nodes[subject.id].setSubjTags(self.Nodes[parent_nid].tags())
-                self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
-                self.Nodes[subject.id].setInitID(self.Nodes[parent_nid].getInitID())
-            else:
-                self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
-        else:
+        if subject.pid in self.processes and self.processes[subject.pid]['alive']:
             old_version_process_nid = self.processes[subject.pid]['nid']
             self.Nodes[subject.id].setSubjTags(self.Nodes[old_version_process_nid].tags())
             self.Nodes[subject.id].set_grad(self.Nodes[old_version_process_nid].get_grad())
-            self.Nodes[subject.id].setInitID(self.Nodes[old_version_process_nid].getInitID())
+            self.Nodes[subject.id].set_lambda_grad(self.Nodes[old_version_process_nid].get_lambda_grad())
             self.processes[subject.pid]['nid'] = subject.id
+            return
+        elif subject.pid not in self.processes:
+            self.processes[subject.pid] = {}
+
+        self.processes[subject.pid]['nid'] = subject.id
+        self.processes[subject.pid]['alive'] = True
+        if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
+            parent_nid = self.processes[subject.ppid]['nid']
+            self.Nodes[subject.id].setSubjTags(self.Nodes[parent_nid].tags())
+            self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
+            self.Nodes[subject.id].set_lambda_grad(self.Nodes[parent_nid].get_lambda_grad())
+        else:
+            self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
+        return
         
     def set_subject_tags(self, nid):
         self.Nodes[nid].setSubjTags([1.0, 1.0, 1.0, 1.0])

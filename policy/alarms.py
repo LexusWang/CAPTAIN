@@ -18,13 +18,13 @@ def getTime(ts):
    dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
    return dt
 
-def prtSOAlarm(ts, an, s, o, alarms, event_id, alarmfile= None):
-      if not alarms[(s.get_pid(), o.get_name())]:
-         alarms[(s.get_pid(), o.get_name())] = True
-      if alarmfile:
-         alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Object:{} (name:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(), o.get_id(),o.get_name())
-         alarmfile.write(alarm_string)
-      return an
+def prtSOAlarm(ts, an, s, o, alarms, event_id, event_type, alarmfile= None):
+      if not alarms[(s.get_pid(), event_type, o.get_name())]:
+         alarms[(s.get_pid(), event_type, o.get_name())] = True
+         if alarmfile:
+            alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Object:{} (name:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(), o.get_id(),o.get_name())
+            alarmfile.write(alarm_string)
+         return an
    
 def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
     # Question
@@ -58,8 +58,8 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
    if event_type in {'execve', 'load'}:
       if o.isFile():
          if isTRUSTED(citag(s.tags()), tau_s_ci) and itag(o.tags()) < tau_o_i:
-            if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_result = prtSOAlarm(ts, "FileExec", s, o, alarms, event.id, alarm_file)
+            if not alarms[(s.get_pid(), event.type, o.get_name())]:
+               alarm_result = prtSOAlarm(ts, "FileExec", s, o, alarms, event.id, event.type, alarm_file)
                tag_indices.extend([0, 6])
 
    if event_type in {'mmap', 'mprotect'}:
@@ -78,14 +78,14 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
       if o.isIP() == False:
          if (itag(o.tags()) >= tau_o_i and itag(s.tags()) < tau_s_i):
             if not created.get((s.get_pid(), o.get_name()), False):
-               if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), event.type, o.get_name())]:
+                  alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.append(2)
       elif o.isIP() and event_type == 'write':
          if itag(s.tags()) < tau_s_i:
             if  ctag(s.tags()) < tau_s_c and ctag(o.tags()) >= tau_o_c:
-               if not alarms[(s.get_pid(), o.get_name())]:
-                  alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, alarm_file)
+               if not alarms[(s.get_pid(), event.type, o.get_name())]:
+                  alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.extend([2,3])
 
    # if event_type in {'inject'}:
@@ -93,16 +93,16 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
    #       alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
 
    if event_type in {'set_uid'}:
-      if itag(s.tags()) < tau_s_i:
-         alarm_result = prtSAlarm(ts, "PrivilegeEscalation", s, event.id, alarm_file)
-         tag_indices.append(2)
+      if event.parameters == 0:
+         if itag(s.tags()) < tau_s_i:
+            alarm_result = prtSAlarm(ts, "PrivilegeEscalation", s, event.id, alarm_file)
+            tag_indices.append(2)
 
    if event_type in {'chmod'}:
-      prm = event.parameters
-      if ((prm & int('0111',8)) != 0):
+      if ((event.parameters & int('0111',8)) != 0):
          if itag(o.tags()) < tau_o_i:
-            if not alarms[(s.get_pid(), o.get_name())]:
-               alarm_result = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, alarm_file)
+            if not alarms[(s.get_pid(), event.type, o.get_name())]:
+               alarm_result = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, event.type, alarm_file)
                tag_indices.append(6)
-   
+
    return alarm_result, tag_indices

@@ -52,7 +52,7 @@ def start_experiment(args):
                 #     break
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("Morse has loaded {} lines.".format(loaded_line))
+                    print("CAPTAIN has parsed {} lines.".format(loaded_line))
                 record_datum = json.loads(line)['datum']
                 record_type = list(record_datum.keys())[0]
                 record_datum = record_datum[record_type]
@@ -79,7 +79,7 @@ def start_experiment(args):
                             event.dest = uuid_nid_mapping.get(event.dest, None)
                             event.dest2 = uuid_nid_mapping.get(event.dest2, None)
                             event_str = '{},{},{}'.format(event.src, event.type, event.dest)
-                            if event_str != last_event_str and event.src:
+                            if event_str != last_event_str and event.src!=None:
                                 last_event_str = event_str
                                 if sanity_check(event):
                                     print(event.dumps(), file = edge_file)
