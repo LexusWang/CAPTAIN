@@ -1,5 +1,6 @@
 from datetime import datetime
 import re
+import pdb
 
 class eventClassifier:
     def __init__(self, filePath):
@@ -29,6 +30,7 @@ class eventClassifier:
             # print(self.mkFileExecutableUUID)
             # print(self.mkMemExecutableUUID)
             # print(self.fileExecUUID)
+            # print(self.fileCorruptionUUID)
     
     def reset(self):
         for sublst in self.dataLeakUUID.keys():
@@ -94,7 +96,7 @@ class eventClassifier:
             if(self.classify(l[0])):
                 print(self.classify(l[0]), "alarm detected")
 
-            subject_info = re.search(r'Subject:([0-9]*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', l[4])
+            subject_info = re.search(r'Subject:([0-9]*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', line)
             suuid = subject_info.group(1)
             spid = subject_info.group(2)
             spname = subject_info.group(3)
