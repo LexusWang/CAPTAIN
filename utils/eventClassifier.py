@@ -11,12 +11,14 @@ class eventClassifier:
         self.mkMemExecutableUUID = {}
         self.fileExecUUID = {}
         self.fileCorruptionUUID = {}
+        self.privilegeEscalationUUID = {}
+        self.injectionUUID = {}
         with open(filePath, 'r') as f:
             curr_alarm = None
             curr_list = []
             for line in f:
                 clean_line = line.strip()
-                if clean_line in {"DataLeak", "MkFileExecutable", "FileExec", "MkMemExecutable", "FileCorruption"}:
+                if clean_line in {"DataLeak", "MkFileExecutable", "FileExec", "MkMemExecutable", "FileCorruption", "PrivilegeEscalation", "Injection"}:
                     if curr_alarm:
                         self.__addAlarmUUID(curr_alarm, curr_list)
                     curr_list = []
@@ -43,6 +45,10 @@ class eventClassifier:
             self.mkMemExecutableUUID[sublst] = False
         for sublst in self.fileCorruptionUUID.keys():
             self.fileCorruptionUUID[sublst] = False
+        for sublst in self.privilegeEscalationUUID.keys():
+            self.privilegeEscalationUUID[sublst] = False
+        for sublst in self.injectionUUID.keys():
+            self.injectionUUID[sublst] = False
         self.reportedProcessUUID = {}
         self.reportedProcessName = {}
 
@@ -62,6 +68,12 @@ class eventClassifier:
         for sublst in self.fileCorruptionUUID.keys():
             if UUID in sublst:
                 return "FileCorruption"
+        for sublst in self.privilegeEscalationUUID.keys():
+            if UUID in sublst:
+                return "PrivilegeEscalation"
+        for sublst in self.injectionUUID.keys():
+            if UUID in sublst:
+                return "Injection"
         # if UUID in [i for sublst in self.dataLeakUUID.keys() for i in sublst]:
         #     return "DataLeak"
         # elif UUID in [i for sublst in self.mkFileExecutableUUID.keys() for i in sublst]:
@@ -88,6 +100,12 @@ class eventClassifier:
         for sublst in self.fileCorruptionUUID.keys():
             if UUID in sublst:
                 self.fileCorruptionUUID[sublst] = True
+        for sublst in self.privilegeEscalationUUID.keys():
+            if UUID in sublst:
+                self.privilegeEscalationUUID[sublst] = True
+        for sublst in self.injectionUUID.keys():
+            if UUID in sublst:
+                self.injectionUUID[sublst] = True
 
     def analyzeFile(self, f):
         for line in f:
@@ -142,6 +160,14 @@ class eventClassifier:
                     if not self.fileCorruptionUUID[sublst]:
                         print("missing FileCorruption TP from following eventids:", file = fout)
                         print(sublst, file = fout)
+                for sublst in self.privilegeEscalationUUID.keys():
+                    if not self.privilegeEscalationUUID[sublst]:
+                        print("missing PrivilegeEscalation TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
+                for sublst in self.injectionUUID.keys():
+                    if not self.injectionUUID[sublst]:
+                        print("missing Injection TP from following eventids:", file = fout)
+                        print(sublst, file = fout)
                 # print("---------------------------------------------------------------", file = fout)
                 # print("Reported alarms on the following ", len(self.reportedProcessUUID), " processes with distinguishing UUIDs:", file = fout)
                 # for x in self.reportedProcessUUID.keys():
@@ -163,3 +189,7 @@ class eventClassifier:
             self.mkMemExecutableUUID[tuple(lst)] = False
         elif alarm == "FileCorruption":
             self.fileCorruptionUUID[tuple(lst)] = False
+        elif alarm == "PrivilegeEscalation":
+            self.privilegeEscalationUUID[tuple(lst)] = False
+        elif alarm == "Injection":
+            self.injectionUUID[tuple(lst)] = False
