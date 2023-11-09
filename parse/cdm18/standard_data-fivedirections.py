@@ -50,12 +50,21 @@ def start_experiment(args):
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Subject':
                     subject = mo.parse_subject(record_datum, args.format, args.cdm_version)
-                    if subject != None:
+                    if subject:
                         mo.add_subject(subject)
                         uuid_nid_mapping[subject.id] = node_num
-                        mo.Nodes[subject.id].id = node_num
+                        # mo.Nodes[subject.id].id = node_num
                         subject.id = node_num
-                        print(subject.dumps(), file = node_file)
+                        # print(subject.dumps(), file = node_file)
+                        node_num += 1
+                elif record_type.endswith('Object'):
+                    object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
+                    if object:
+                        mo.add_object(object)
+                        uuid_nid_mapping[object.id] = node_num
+                        # mo.Nodes[object.id].id = node_num
+                        object.id = node_num
+                        # print(object.dumps(), file = node_file)
                         node_num += 1
                 elif record_type == 'Principal':
                     if isinstance(record_datum['username'], dict):
@@ -63,15 +72,6 @@ def start_experiment(args):
                     del record_datum['hostId']
                     del record_datum['properties']
                     print(json.dumps(record_datum), file = principal_file)
-                elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
-                    if object != None:
-                        mo.add_object(object)
-                        uuid_nid_mapping[object.id] = node_num
-                        mo.Nodes[object.id].id = node_num
-                        object.id = node_num
-                        print(object.dumps(), file = node_file)
-                        node_num += 1
                 elif record_type == 'TimeMarker':
                     pass
                 elif record_type == 'StartMarker':
@@ -114,6 +114,9 @@ def start_experiment(args):
                             if sanity_check(event):
                                 print(event.dumps(), file = edge_file)
                                 edge_num += 1
+
+    for nid, node in mo.Nodes.items():
+        print(node.dumps(), file = node_file)
 
     node_file.close()
     edge_file.close()
