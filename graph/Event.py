@@ -24,6 +24,9 @@ class Event:
         json_dict['d'] = self.dest
         json_dict['d2'] = self.dest2
         return json.dumps(json_dict)
+    
+    def __str__(self):
+        return self.dumps()
 
     def loads(self, data_str):
         json_dict = json.loads(data_str)

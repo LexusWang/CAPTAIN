@@ -23,6 +23,9 @@ class Object:
 
         self.propagation_chain = {'i':[], 'c':[]}
 
+    def __str__(self):
+        return self.dumps()
+
     def dumps(self) -> str:
         json_dict = {}
         json_dict['id'] = self.id
