@@ -19,27 +19,28 @@ def getTime(ts):
    return dt
 
 def prtSOAlarm(ts, an, s, o, alarms, event_id, event_type, alarmfile= None):
-      if not alarms[(s.get_pid(), event_type, o.get_name())]:
-         alarms[(s.get_pid(), event_type, o.get_name())] = True
-         if alarmfile:
-            alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Object:{} (name:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(), o.get_id(),o.get_name())
-            alarmfile.write(alarm_string)
-         return an
+   if not alarms[(s.get_pid(), event_type, o.get_name())]:
+      alarms[(s.get_pid(), event_type, o.get_name())] = True
+      # alarm_info  = {'eventId': event_id, 'alarmType':'AlarmSO', 'time': getTime(ts), }
+      if alarmfile:
+         alarm_string = "{}, AlarmSO, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Object:{} (name:{})".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(), o.get_id(),o.get_name())
+         alarm_string = alarm_string.replace('\n',' ')
+         alarmfile.write(alarm_string+'\n')
+      return an
    
 def prtSSAlarm(ts, an, s, ss, event_id, alarmfile= None):
-    # Question
-    # print(": Alarm: ", an, ": Subject ", s.get_subjid(), " pid=", s.get_pid(),
-    #        " ", s.get_cmdln(), " Subject ", ssubjid(ss), " pid=", ss.get_pid(), " ", ss.get_cmdln(), " AlarmE", "\n")
-    if alarmfile:
-        alarm_string = "{}, AlarmSS, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{}), Subject:{} (pid:{} pname:{} cmdl:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name(), ss.get_name())
-        alarmfile.write(alarm_string)
-    return an
+   if alarmfile:
+      alarm_string = "{}, AlarmSS, Time:{}, Type:{}, Subject1:{} (pid:{} pname:{} cmdl:{}), Subject2:{} (pid:{} pname:{} cmdl:{})".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln(),ss.get_id(), ss.get_pid(), ss.get_name(), ss.get_cmdln())
+      alarm_string = alarm_string.replace('\n',' ')
+      alarmfile.write(alarm_string+'\n')
+   return an
 
 def prtSAlarm(ts, an, s, event_id, alarmfile= None):
-    if alarmfile:
-        alarm_string = "{}, AlarmS, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{})\n".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
-        alarmfile.write(alarm_string)
-    return an
+   if alarmfile:
+      alarm_string = "{}, AlarmS, Time:{}, Type:{}, Subject:{} (pid:{} pname:{} cmdl:{})".format(event_id, getTime(ts), an, s.get_id(), s.get_pid(), s.get_name(), s.get_cmdln())
+      alarm_string = alarm_string.replace('\n',' ')
+      alarmfile.write(alarm_string+'\n')
+   return an
 
 def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]):
    ts = event.time
@@ -63,34 +64,33 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
                tag_indices.extend([0, 6])
 
    if event_type in {'mmap', 'mprotect'}:
-      if o and o.isFile() == False:
-         if 'PROT_EXEC' in set(event.parameters):
-            if itag(s.tags()) < tau_s_i:
+      if 'PROT_EXEC' in set(event.parameters):
+         if itag(s.tags()) < tau_s_i:
+            tag_indices.append(2)
+            if o:
+               alarm_result = prtSOAlarm(ts, "MkMemExecutable", s, o, alarms, event.id, event.type, alarm_file)
+            else:
                alarm_result = prtSAlarm(ts, "MkMemExecutable", s, event.id, alarm_file)
-               tag_indices.append(2)
-      else:
-         if 'PROT_EXEC' in set(event.parameters):
-            if itag(s.tags()) < tau_s_i:
-               alarm_result = prtSAlarm(ts, "MkMemExecutable", s, event.id, alarm_file)
-               tag_indices.append(2)
-    
+
    if event_type in {'write', 'remove', 'rename'}:
       if o.isIP() == False:
          if (itag(o.tags()) >= tau_o_i and itag(s.tags()) < tau_s_i):
+         # if itag(s.tags()) < tau_s_i:
             if not created.get((s.get_pid(), o.get_name()), False):
                if not alarms[(s.get_pid(), event.type, o.get_name())]:
                   alarm_result = prtSOAlarm(ts, "FileCorruption", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.append(2)
       elif o.isIP() and event_type == 'write':
          if itag(s.tags()) < tau_s_i:
-            if  ctag(s.tags()) < tau_s_c and ctag(o.tags()) >= tau_o_c:
+            if ctag(s.tags()) < tau_s_c and ctag(o.tags()) >= tau_o_c:
                if not alarms[(s.get_pid(), event.type, o.get_name())]:
                   alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.extend([2,3])
 
-   # if event_type in {'inject'}:
-   #    if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
-   #       alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
+   if event_type in {'inject'}:
+      if itag(s.tags()) < tau_s_i:
+         alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
+         # Problem
 
    if event_type in {'set_uid'}:
       if event.parameters == 0:

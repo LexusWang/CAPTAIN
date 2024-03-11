@@ -4,7 +4,7 @@ import math
 import re
 
 class Object:
-    def __init__(self, id, type, epoch: int = None, subtype: str = None, objName: str = None):
+    def __init__(self, id, type, epoch: int = None, subtype: str = None, objName: str = None, training_mode = True):
         self.id = id
         self.type = type
         self.epoch = epoch
@@ -16,12 +16,14 @@ class Object:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        self.iTag_gradients = {(id,'i'): 1.0}
-        self.cTag_gradients = {(id,'c'): 1.0}
-        self.i_lambda_gradients = {}
-        self.c_lambda_gradients = {}
+        if training_mode:
+            self.iTag_gradients = {(id,'i'): 1.0}
+            self.cTag_gradients = {(id,'c'): 1.0}
+            
+            self.i_lambda_gradients = {}
+            self.c_lambda_gradients = {}
 
-        self.propagation_chain = {'i':[], 'c':[]}
+            self.propagation_chain = {'i':[], 'c':[]}
 
     def __str__(self):
         return self.dumps()
@@ -99,6 +101,8 @@ class Object:
         elif self.isIP():
             # return "{}:{}".format(self.IP, self.port)
             return "{}".format(self.IP)
+        elif self.name.startswith('MEM_'):
+            return "MEM_*"
         else:
             return self.name
 

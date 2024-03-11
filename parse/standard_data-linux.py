@@ -37,7 +37,7 @@ def start_experiment(args):
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("CAPTAIN has parsed {} lines.".format(loaded_line))
+                    print("CAPTAIN has parsed {:,} lines.".format(loaded_line))
                 try:
                     record_datum = json.loads(line)
                 except JSONDecodeError as e:
@@ -110,9 +110,9 @@ def start_experiment(args):
     edge_file.close()
     principal_file.close()
     print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
-    print("#Events: {}".format(envt_num))
+    print("#Events: {:,}".format(envt_num))
     print("#Nodes: {}".format(nodes_num))
-    print("#Edges: {}".format(edge_num))
+    print("#Edges: {:,}".format(edge_num))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Data Standardize")

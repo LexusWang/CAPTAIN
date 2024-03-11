@@ -86,26 +86,33 @@ class Experiment:
         return 2 * (p * r / (p + r))
 
     def print_metrics(self):
-        print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}, tn: {self.tn}")
+        print(f"final metrics: tp: {self.tp:,}, fp: {self.fp:,}, fn: {self.fn:,}, tn: {self.tn:,}")
 
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")
         # print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
         with open(filename, 'a') as f:
-            f.write(f"tp: {self.tp}\n")
-            f.write(f"fp: {self.fp}\n")
-            f.write(f"fn: {self.fn}\n")
-            f.write(f"tn: {self.tn}\n")
+            f.write(f"tp: {self.tp:,}\n")
+            f.write(f"fp: {self.fp:,}\n")
+            f.write(f"fn: {self.fn:,}\n")
+            f.write(f"tn: {self.tn:,}\n")
             print(self.alarm_dis, file=f)
             print("Detecting Time: {:.2f}s".format(self.detection_time), file=f)
             # f.write(f"precision: {self.get_precision()}")
             # f.write(f"recall: {self.get_recall()}")
             # f.write(f"f1: {self.get_f1_score()}")
+
+    def save_to_metrics_file(self, contents):
+        filename = os.path.join(self.results_path, "metrics.txt")
+        # print(f"final metrics: tp: {self.tp}, fp: {self.fp}, fn: {self.fn}")
+        with open(filename, 'a') as f:
+            print(contents, file=f)
+    
     def save_hyperparameters(self):
         filename = os.path.join(self.results_path, "_hyperparameters.txt")
         with open(filename, 'w+') as f:
-            for arg_item in vars(self.args):
-                f.write(f"{arg_item[0]}: {arg_item[1]}\n")
+            for arg, value in vars(self.args).items():
+                f.write(f"{arg}: {value}\n")
 
     def save_model(self, model_dict):
         Path(os.path.join(self.results_path, "train_models")).mkdir(parents=True, exist_ok=True)

@@ -2,18 +2,10 @@ import json
 import os
 import argparse
 import time
-from utils.utils import *
+import sys
+sys.path.extend(['.','..','...'])
+from parse.cdm18.fivedirections_parser import parse_event_fivedirections, parse_object_fivedirections, parse_subject_fivedirections
 from model.morse import Morse
-import time
-
-def sanity_check(event):
-    if event.type == 'execve':
-        if event.src and event.dest:
-            return True
-        else:
-            return False
-
-    return True
 
 def start_experiment(args):
     begin_time = time.time()
@@ -41,7 +33,7 @@ def start_experiment(args):
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("CAPTAIN has parsed {} lines.".format(loaded_line))
+                    print("CAPTAIN has parsed {:,} lines.".format(loaded_line))
                 if line.endswith(',\n'):
                     line = line[:-2]
                 record_datum = json.loads(line)['datum']
@@ -49,25 +41,21 @@ def start_experiment(args):
                 record_datum = record_datum[record_type]
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Subject':
-                    subject = mo.parse_subject(record_datum, args.format, args.cdm_version)
+                    subject = parse_subject_fivedirections(mo, record_datum, args.cdm_version)
                     if subject:
                         mo.add_subject(subject)
                         uuid_nid_mapping[subject.id] = node_num
-                        # mo.Nodes[subject.id].id = node_num
                         subject.id = node_num
-                        # print(subject.dumps(), file = node_file)
                         node_num += 1
                 elif record_type.endswith('Object'):
-                    object = mo.parse_object(record_datum, record_type, args.format, args.cdm_version)
+                    object = parse_object_fivedirections(mo, record_datum, record_type)
                     if object:
                         mo.add_object(object)
                         uuid_nid_mapping[object.id] = node_num
-                        # mo.Nodes[object.id].id = node_num
                         object.id = node_num
-                        # print(object.dumps(), file = node_file)
                         node_num += 1
                 elif record_type == 'Principal':
-                    if isinstance(record_datum['username'], dict):
+                    if record_datum['username']:
                         record_datum['username'] = record_datum['username']['string']
                     del record_datum['hostId']
                     del record_datum['properties']
@@ -90,7 +78,7 @@ def start_experiment(args):
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("CAPTAIN has parsed {} lines.".format(loaded_line))
+                    print("CAPTAIN has parsed {:,} lines.".format(loaded_line))
                 if line.endswith(',\n'):
                     line = line[:-2]
                 record_datum = json.loads(line)['datum']
@@ -99,7 +87,7 @@ def start_experiment(args):
                 record_type = record_type.split('.')[-1]
                 if record_type == 'Event':
                     envt_num += 1
-                    event, node_updates = mo.parse_event(record_datum, args.format, args.cdm_version)
+                    event, node_updates = parse_event_fivedirections(mo, record_datum, args.cdm_version)
                     for key, value in node_updates.items():
                         if key in uuid_nid_mapping:
                             update_evnt = {'type': 'UPDATE', 'nid': uuid_nid_mapping[key], 'value': value}
@@ -111,9 +99,8 @@ def start_experiment(args):
                         event_str = '{},{},{}'.format(event.src, event.type, event.dest)
                         if event_str != last_event_str and event.src != None:
                             last_event_str = event_str
-                            if sanity_check(event):
-                                print(event.dumps(), file = edge_file)
-                                edge_num += 1
+                            print(event.dumps(), file = edge_file)
+                            edge_num += 1
 
     for nid, node in mo.Nodes.items():
         print(node.dumps(), file = node_file)
@@ -122,9 +109,9 @@ def start_experiment(args):
     edge_file.close()
     principal_file.close()
     print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
-    print("#Events: {}".format(envt_num))
-    print("#Nodes: {}".format(node_num))
-    print("#Edges: {}".format(edge_num))
+    print("#Events: {:,}".format(envt_num))
+    print("#Nodes: {:,}".format(node_num))
+    print("#Edges: {:,}".format(edge_num))
 
 
 if __name__ == '__main__':

@@ -3,12 +3,21 @@ import os
 import argparse
 import json
 import time
+import pickle
+import pandas as pd
+
+import psutil
+import csv
+process = psutil.Process(os.getpid())
+perf_file = open('system_usage.csv', 'a', newline='')
+writer = csv.writer(perf_file)
+writer.writerow(['Time', 'CPU Usage (%)', 'Memory Usage (MB)'])
+
+from pympler import asizeof
+
 from datetime import datetime
 from utils.utils import *
 from utils.eventClassifier import eventClassifier
-from model.morse import Morse
-import time
-import pandas as pd
 from model.morse import Morse
 from graph.Event import Event
 from utils.graph_detection import add_nodes_to_graph
@@ -17,12 +26,12 @@ from collections import Counter
 import pdb
 
 def start_experiment(args):
-    begin_time = time.time()
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
 
     mo = Morse(att = args.att, decay = args.decay)
-    mo.tuneNetworkTags = False
-    mo.tuneFileTags = False
+    mo.mode = 'eval'
+    # mo.tuneNetworkTags = False
+    # mo.tuneFileTags = False
 
     print("Begin preparing testing...")
     logging.basicConfig(level=logging.INFO,
@@ -33,15 +42,13 @@ def start_experiment(args):
     experiment.save_hyperparameters()
     ec = eventClassifier(args.ground_truth_file)
         
-    mo.node_inital_tags = {}
-    Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
-
-    nodes = pd.read_json(os.path.join(args.test_data, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
-    mo.Principals = pd.read_json(os.path.join(args.test_data, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
-
-    loaded_line = 0
-    edge_file = os.path.join(args.test_data, 'edges.json')
+    if args.param_path:
+        with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(args.model_index)), 'rb') as fin:
+            mo.lambda_dict = pickle.load(fin)
+        with open(os.path.join(args.param_path, 'train', 'params/tau-e{}.pickle'.format(args.model_index)), 'rb') as fin:
+            mo.tau_dict = pickle.load(fin)
+        with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(args.model_index)), 'rb') as fin:
+            mo.alpha_dict = pickle.load(fin)
 
     # close interval
     if args.time_range:
@@ -51,36 +58,55 @@ def start_experiment(args):
         detection_start_time = 0
         detection_end_time = 1e21
 
-    false_alarms = []
+    # mo.node_inital_tags = {}
+    Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
+    mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
+    nodes = pd.read_json(os.path.join(args.data_path, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
+    mo.Principals = pd.read_json(os.path.join(args.data_path, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
+
+    loaded_line = 0
+    edge_file = os.path.join(args.data_path, 'edges.json')
+
+    false_alarms = []
     with open(edge_file, 'r') as fin:
         for line in fin:
-            loaded_line += 1
-            if loaded_line % 100000 == 0:
-                print("CAPTAIN has loaded {} edges.".format(loaded_line))
-            edge_datum = json.loads(line)
-            if edge_datum['type'] == 'UPDATE':
-                if edge_datum['nid'] not in mo.Nodes:
-                    add_nodes_to_graph(mo, edge_datum['nid'], nodes[edge_datum['nid']])
-                updated_value = edge_datum['value']
-                if 'exec' in updated_value:
-                    mo.Nodes[edge_datum['nid']].processName = updated_value['exec']
-                elif 'name' in updated_value:
-                    mo.Nodes[edge_datum['nid']].name = updated_value['name']
-                    mo.Nodes[edge_datum['nid']].path = updated_value['name']
-                elif 'cmdl' in updated_value:
-                    mo.Nodes[edge_datum['nid']].cmdLine = updated_value['cmdl']
+            if loaded_line == 1:
+                begin_time = time.time()
+            event = Event(None, None)
+            event.loads(line)
+            # edge_datum = json.loads(line)
+            if event.type == 'UPDATE':
+                try:
+                    if 'exec' in event.value:
+                        mo.Nodes[event.nid].processName = event.value['exec']
+                    elif 'name' in event.value:
+                        mo.Nodes[event.nid].name = event.value['name']
+                        mo.Nodes[event.nid].path = event.value['name']
+                    elif 'cmdl' in event.value:
+                        mo.Nodes[event.nid].cmdLine = event.value['cmdl']
+                except KeyError:
+                    pass
             else:
-                event = Event(None, None)
-                event.loads(line)
+                if loaded_line > 0 and loaded_line % 100000 == 0:
+                    print("CAPTAIN has detected {:,} edges.".format(loaded_line))
+                    # current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+                    # cpu_usage = process.cpu_percent(interval=1)
+                    # memory_usage = process.memory_info().rss / (1024 * 1024)  # 转换为MB
+                    # writer.writerow([current_time, cpu_usage, memory_usage])
+                    # print(f"{current_time}, CPU: {cpu_usage}%, Memory: {memory_usage}MB")
+                # event = Event(None, None)
+                # event.loads(line)
 
                 if event.time < detection_start_time:
                     continue
                 elif event.time > detection_end_time:
                     break
 
+                loaded_line += 1
+
                 if event.src not in mo.Nodes:
-                    assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
+                    # assert nodes[event.src]['type'] == 'SUBJECT_PROCESS'
                     add_nodes_to_graph(mo, event.src, nodes[event.src])
 
                 if isinstance(event.dest, int) and event.dest not in mo.Nodes:
@@ -94,16 +120,23 @@ def start_experiment(args):
                 experiment.update_metrics(diagnosis, gt)
                 if gt == None and diagnosis != None:
                     false_alarms.append(diagnosis)
-        print(event.time)
+    
+    experiment.detection_time = time.time()-begin_time
+    print('The detection time is :{:.2f} s'.format(experiment.detection_time))
+    print('The event throughput is :{:.2f} s'.format(loaded_line/experiment.detection_time))
+
+    print("{} Mb".format(asizeof.asizeof(mo)/(1024*1024)))
+    print("# of nodes: {}".format(len(mo.Nodes)))
                     
     mo.alarm_file.close()
     experiment.alarm_dis = Counter(false_alarms)
-    experiment.detection_time = time.time()-begin_time
     experiment.print_metrics()
     experiment.save_metrics()
     ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
     ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
     print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
+
+    perf_file.close()
 
 
 if __name__ == '__main__':
@@ -111,8 +144,13 @@ if __name__ == '__main__':
     parser.add_argument("--att", type=float, default=0.2)
     parser.add_argument("--decay", type=float, default=0)
     parser.add_argument("--ground_truth_file", type=str)
-    parser.add_argument("--test_data", nargs='?', type=str)
+    parser.add_argument("--data_path", nargs='?', type=str)
+    parser.add_argument("--param_type", type=str)
+    parser.add_argument("--model_index", type=int)
+    parser.add_argument("--data_tag", type=str)
     parser.add_argument("--experiment_prefix", type=str)
+    parser.add_argument("--checkpoint", type=str)
+    parser.add_argument("--param_path", type=str)
     parser.add_argument("--time_range", nargs=2, type=str, default = None)
     parser.add_argument("--mode", type=str, default='test')
 

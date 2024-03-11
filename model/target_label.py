@@ -14,19 +14,12 @@ def get_target(event, s, o, gt):
                 o_target_ = [None, None, 1, None]
 
     if event_type in {'mmap', 'mprotect'}:
-        if o and o.isFile() == False:
-            if 'PROT_EXEC' in set(event.parameters):
-                if gt == "MkMemExecutable":
-                    s_target_ = [None, None, 0, None]
-                else:
-                    s_target_ = [None, None, 1, None]
-        else:
-            if 'PROT_EXEC' in set(event.parameters):
-                if gt == "MkFileExecutable":
-                    s_target_ = [None, None, 0, None]
-                else:
-                    s_target_ = [None, None, 1, None]
-        
+        if 'PROT_EXEC' in set(event.parameters):
+            if gt == "MkMemExecutable":
+                s_target_ = [None, None, 0, None]
+            else:
+                s_target_ = [None, None, 1, None]
+
     if event_type in {'write', 'remove', 'rename'}:
         if o.isIP() == False:
             if gt == "FileCorruption":

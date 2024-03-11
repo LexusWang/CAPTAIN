@@ -10,7 +10,7 @@ import pdb
 
 # benign_secret_group = [r'.*passwd',r'.*pwd\.db',r'.*auth\.log.*',r'.*shadow',r'.*ssh/.*',r'/home/.*(pdf|doc|docx|xml|xlsx|cpp)']
 # benign_secret_group = [r'.*passwd',r'.*/var/log/.*',r'.*auth\.log.*',r'.*shadow']
-benign_secret_group = [r'.*passwd', r'.*/var/log/.*', r'.*shadow']
+benign_secret_group = [r'.*passwd', r'.*/var/log/.*', r'.*shadow',r'.*\.(pdf|doc|docx|xml|xlsx|cpp|rtf|xlsm)']
 
 # init_otag("/tmp/\.X11-unix/[:any:]*", BENIGN, PUBLIC)
 # init_otag("/tmp/\.ICE-unix/[:any:]*", BENIGN, PUBLIC)
@@ -29,9 +29,9 @@ benign_public_group = []
 # untrusted_public_group = [r'www.hbo.com/.*']
 
 # Used in Linux data from SOC
-untrusted_public_group = [r'.*\.sh', r'/tmp.*']
+# untrusted_public_group = [r'.*\.sh', r'/tmp.*']
 # Used in TRACE and CADETS
-# untrusted_public_group = []
+untrusted_public_group = []
 
 # special_group = [r'/tmp/\.X11-unix/.*',r'/tmp/\.ICE-unix/.*']
 special_group = []
@@ -77,11 +77,11 @@ def match_path(path):
 benign_public_ips = []
 benign_ports = set()
 
-def match_network_addr(ip_address, port):
+def match_network_addr(ip_address, port = None):
     itag = 0
     ctag = 1
 
-    if int(port) in benign_ports:
+    if port and int(port) in benign_ports:
         itag = 1
         ctag = 1
         return itag, ctag

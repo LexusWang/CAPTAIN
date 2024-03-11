@@ -251,10 +251,6 @@ def start_experiment(args):
         Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
         mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
-        # ================= Load all nodes & edges to memory ==================== #
-        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
-        mo.Principals = principals
-
         if args.param_path:
             with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(args.model_index)), 'rb') as fin:
                 mo.lambda_dict = pickle.load(fin)
@@ -262,6 +258,10 @@ def start_experiment(args):
                 mo.tau_dict = pickle.load(fin)
             with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(args.model_index)), 'rb') as fin:
                 mo.alpha_dict = pickle.load(fin)
+
+        # ================= Load all nodes & edges to memory ==================== #
+        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
+        mo.Principals = principals
 
         false_alarms = []
         begin_time = time.time()
@@ -295,13 +295,14 @@ def start_experiment(args):
             experiment.update_metrics(diagnosis, gt)
             if gt == None and diagnosis != None:
                 false_alarms.append(diagnosis)
-        # calculate lengths of grad dict
-        reduced_node_num = 0
-        for key, item in mo.Nodes.items():
-            if mo.Nodes[key].tags()[2] < 0.5:
-                reduced_node_num += 1
-        print('The reduced graph has {} nodes!'.format(reduced_node_num))
-        experiment.save_to_metrics_file('The reduced graph has {} nodes!'.format(reduced_node_num))
+                
+        # # calculate lengths of grad dict
+        # reduced_node_num = 0
+        # for key, item in mo.Nodes.items():
+        #     if mo.Nodes[key].tags()[2] < 0.5:
+        #         reduced_node_num += 1
+        # print('The reduced graph has {} nodes!'.format(reduced_node_num))
+        # experiment.save_to_metrics_file('The reduced graph has {} nodes!'.format(reduced_node_num))
 
         mo.alarm_file.close()
         experiment.alarm_dis = Counter(false_alarms)

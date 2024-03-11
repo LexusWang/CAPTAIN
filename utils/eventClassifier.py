@@ -13,6 +13,7 @@ class eventClassifier:
         self.fileCorruptionUUID = {}
         self.privilegeEscalationUUID = {}
         self.injectionUUID = {}
+        self.AlarmType = {}
         with open(filePath, 'r') as f:
             curr_alarm = None
             curr_list = []
@@ -52,37 +53,32 @@ class eventClassifier:
         self.reportedProcessUUID = {}
         self.reportedProcessName = {}
 
+    # def classify(self, UUID):
+    #     for sublst in self.dataLeakUUID.keys():
+    #         if UUID in sublst:
+    #             return "DataLeak"
+    #     for sublst in self.mkFileExecutableUUID.keys():
+    #         if UUID in sublst:
+    #             return "MkFileExecutable"
+    #     for sublst in self.fileExecUUID.keys():
+    #         if UUID in sublst:
+    #             return "FileExec"
+    #     for sublst in self.mkMemExecutableUUID.keys():
+    #         if UUID in sublst:
+    #             return "MkMemExecutable"
+    #     for sublst in self.fileCorruptionUUID.keys():
+    #         if UUID in sublst:
+    #             return "FileCorruption"
+    #     for sublst in self.privilegeEscalationUUID.keys():
+    #         if UUID in sublst:
+    #             return "PrivilegeEscalation"
+    #     for sublst in self.injectionUUID.keys():
+    #         if UUID in sublst:
+    #             return "Injection"
+    #     return None
+
     def classify(self, UUID):
-        for sublst in self.dataLeakUUID.keys():
-            if UUID in sublst:
-                return "DataLeak"
-        for sublst in self.mkFileExecutableUUID.keys():
-            if UUID in sublst:
-                return "MkFileExecutable"
-        for sublst in self.fileExecUUID.keys():
-            if UUID in sublst:
-                return "FileExec"
-        for sublst in self.mkMemExecutableUUID.keys():
-            if UUID in sublst:
-                return "MkMemExecutable"
-        for sublst in self.fileCorruptionUUID.keys():
-            if UUID in sublst:
-                return "FileCorruption"
-        for sublst in self.privilegeEscalationUUID.keys():
-            if UUID in sublst:
-                return "PrivilegeEscalation"
-        for sublst in self.injectionUUID.keys():
-            if UUID in sublst:
-                return "Injection"
-        # if UUID in [i for sublst in self.dataLeakUUID.keys() for i in sublst]:
-        #     return "DataLeak"
-        # elif UUID in [i for sublst in self.mkFileExecutableUUID.keys() for i in sublst]:
-        #     return "MkFileExecutable"
-        # elif UUID in [i for sublst in self.fileExecUUID.keys() for i in sublst]:
-        #     return "FileExec"
-        # elif UUID in [i for sublst in self.mkMemExecutableUUID.keys() for i in sublst]:
-        #     return "MkMemExecutable"
-        return None
+        return self.AlarmType.get(UUID, None)
 
     def tally(self, UUID):
         for sublst in self.dataLeakUUID.keys():
@@ -193,3 +189,6 @@ class eventClassifier:
             self.privilegeEscalationUUID[tuple(lst)] = False
         elif alarm == "Injection":
             self.injectionUUID[tuple(lst)] = False
+
+        for item in lst:
+            self.AlarmType[item] = alarm

@@ -21,13 +21,13 @@ class Morse:
         self.device = None
         self.att = att
         self.decay = decay
+        self.mode = 'train'
 
-        #
-        self.tuneNetworkTags = True
-        self.tuneFileTags = True
+        # self.tuneNetworkTags = True
+        # self.tuneFileTags = True
 
         # init graph
-        self.G = nx.DiGraph()
+        # self.G = nx.DiGraph()
         self.Nodes = {}
         self.Principals = {}
         self.processes = {}
@@ -40,7 +40,7 @@ class Morse:
 
         # customization
         # alpha 
-        self.white_name_set = set()
+        # self.white_name_set = set()
         self.alpha_dict = {}
         # lambda dictionary
         self.lambda_dict = {}
@@ -97,6 +97,7 @@ class Morse:
             
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
+        loss = 0
         s_labels = []
         o_labels = []
         kill_chains = []
@@ -106,13 +107,11 @@ class Morse:
             try:
                 self.processes[self.Nodes[event.src].pid]['alive'] = False
             except KeyError:
-                # print('Oops! Cannot find Node!')
                 return None, None, None, None
         elif event.type == 'create':
             try:
                 self.created[(self.Nodes[event.src].get_pid(), self.Nodes[event.dest].get_name())] = True
             except KeyError:
-                # print('Oops! Cannot find Node!')
                 return None, None, None, None
 
         src = self.Nodes.get(event.src, None)
@@ -120,30 +119,45 @@ class Morse:
         dest2 = self.Nodes.get(event.dest2, None)
 
         if src:
+            event_feature_str = str(dump_event_feature(event, src, dest, dest2))
             if dest and (src.get_pid(), event.type, dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
-            tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            tau = self.tau_dict.get(event_feature_str, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             s_target, o_target = get_target(event, src, dest, gt)
             if dest and self.alarm[(src.get_pid(), event.type, dest.get_name())]:
                 self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
+
+            loss_thr_grads = {}
+            loss_thr_grads[event_feature_str] = [None, None, None, None, None, None, None, None]
 
             if s_target:
                 lambda_grads = src.get_lambda_grad()
                 grads = src.get_grad()
                 for i, item in enumerate(s_target):
                     if item:
+
+                        f = src.tags()[i] - tau[i]
+                        if item == 0:
+                            loss += (1+f)*(1+f)
+                            gradients = (2*f+2)
+                        else:
+                            loss += (1-f)*(1-f)
+                            gradients = (2*f-2)
+
                         for key in grads[i].keys():
-                            if item == 1:
-                                s_labels.append((key, -1.0*grads[i][key]))
-                            elif item == 0:
-                                s_labels.append((key, 1.0*grads[i][key]))
+                            s_labels.append((key, gradients*grads[i][key]))
 
                         for key in lambda_grads[i].keys():
-                            if item == 1:
-                                loss_lambda_grads.append((key, -1.0*lambda_grads[i][key]))
-                            elif item == 0:
-                                loss_lambda_grads.append((key, 1.0*lambda_grads[i][key]))
+                            loss_lambda_grads.append((key, gradients*lambda_grads[i][key]))
+
+                        loss_thr_grads[event_feature_str][i] = gradients*(-1)
+
+                        # for key in grads[i].keys():
+                        #     s_labels.append((key, (2*item-1)*(-1.0)*grads[i][key]))
+
+                        # for key in lambda_grads[i].keys():
+                        #     loss_lambda_grads.append((key, (2*item-1)*(-1.0)*lambda_grads[i][key]))
                         
                         if i == 2 and len(src.propagation_chain['i'])>0:
                             kill_chains.append(src.propagation_chain['i'])
@@ -155,53 +169,77 @@ class Morse:
                 grads = dest.get_grad()
                 for i, item in enumerate(o_target):
                     if item:
+
+                        f = dest.tags()[i] - tau[i+4]
+                        if item == 0:
+                            loss += (1+f)*(1+f)
+                            gradients = (2*f+2)
+                        else:
+                            loss += (1-f)*(1-f)
+                            gradients = (2*f-2)
+
                         for key in grads[i].keys():
-                            if item == 1:
-                                o_labels.append((key, -1.0*grads[i][key]))
-                            elif item == 0:
-                                o_labels.append((key, 1.0*grads[i][key]))
-                        
+                            o_labels.append((key, gradients*grads[i][key]))
+
                         for key in lambda_grads[i].keys():
-                            if item == 1:
-                                loss_lambda_grads.append((key, -1.0*lambda_grads[i][key]))
-                            elif item == 0:
-                                loss_lambda_grads.append((key, 1.0*lambda_grads[i][key]))
+                            loss_lambda_grads.append((key, gradients*lambda_grads[i][key]))
+
+                        loss_thr_grads[event_feature_str][i+4] = gradients*(-1)
+
+                        # for key in grads[i].keys():
+                        #     o_labels.append((key, (2*item-1)*(-1.0)*grads[i][key]))
+                        
+                        # for key in lambda_grads[i].keys():
+                        #     loss_lambda_grads.append((key, (2*item-1)*(-1.0)*lambda_grads[i][key]))
+                            
                         if i == 2 and len(dest.propagation_chain['i'])>0:
                             kill_chains.append(dest.propagation_chain['i'])
                         elif i == 3 and len(dest.propagation_chain['c'])>0:
                             kill_chains.append(dest.propagation_chain['c'])
             
-            prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
+            prop_lambda = self.lambda_dict.get(event_feature_str, 0)
             propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau)
 
-        return diagnosis, tag_indices, s_labels, o_labels, kill_chains, loss_lambda_grads
+        return diagnosis, tag_indices, s_labels, o_labels, kill_chains, loss_lambda_grads, loss_thr_grads, loss
         
     def add_event(self, event, gt = None):
         diagnosis = None
-        if event.type == 'exit':
-            try:
-                self.processes[self.Nodes[event.src].pid]['alive'] = False
-            except KeyError:
-                # print('Oops! Cannot find Node!')
-                return None, None, None, None
-        elif event.type == 'create':
-            try:
-                self.created[(self.Nodes[event.src].get_pid(), self.Nodes[event.dest].get_name())] = True
-            except KeyError:
-                # print('Oops! Cannot find Node!')
-                return None, None, None, None
-
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
         if src:
+            event_feature_str = str(dump_event_feature(event, src, dest, dest2))
+            fout = open('./C3-events.txt', 'a')
+            print(event_feature_str, file=fout)
+            fout.close()
+
+            try:
+                if event.type == 'exit':
+                    self.processes[src.pid]['alive'] = False
+                    del self.Nodes[event.src]
+                elif event.type == 'create':
+                    self.created[(src.get_pid(), dest.get_name())] = True
+            except Exception:
+                # print('Oops! Cannot find Node!')
+                return None
+
             if dest and (src.get_pid(), event.type, dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
-            tau = self.tau_dict.get(str(dump_event_feature(event, src, dest, dest2)), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-            prop_lambda = self.lambda_dict.get(str(dump_event_feature(event, src, dest, dest2)), 0)
+            tau = self.tau_dict.get(event_feature_str, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            prop_lambda = self.lambda_dict.get(event_feature_str, 0)
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
-            propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau)
+            propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau, update_gradients=False)
+
+            try:
+                if event.type == 'update':
+                    del self.Nodes[event.dest]
+                elif event.type == 'rename':
+                    del self.Nodes[event.dest]
+            except KeyError:
+                # print('Oops! Cannot find Node!')
+                return None
+            
         return diagnosis
 
     def add_object(self, object):
@@ -209,36 +247,34 @@ class Morse:
         self.Nodes[object.id] = object
     
     def set_object_tags(self, object_id):
-        if self.Nodes[object_id].get_name() in self.alpha_dict:
-            obj_tag = [self.alpha_dict[self.Nodes[object_id].get_name()], 1.0]
+        if (self.Nodes[object_id].type, self.Nodes[object_id].get_name()) in self.alpha_dict:
+            obj_tag = [self.alpha_dict[(self.Nodes[object_id].type, self.Nodes[object_id].get_name())], 1.0]
         else:
-            if self.Nodes[object_id].type in {"MemoryObject", "UnnamedPipeObject"}:
-                obj_tag = [1.0, 1.0]
-            elif self.Nodes[object_id].type == "SrcSinkObject":
-                obj_tag = [1.0, 1.0]
-                if self.Nodes[object_id].name and self.Nodes[object_id].name.startswith('UnknownObject'):
-                    if self.Nodes[object_id].name not in self.srcsink_Nodes:
-                        self.srcsink_Nodes[self.Nodes[object_id].name] = []
-                    else:
-                        obj_tag = self.Nodes[self.srcsink_Nodes[self.Nodes[object_id].name][-1]].tags()
-                    self.srcsink_Nodes[self.Nodes[object_id].name].append(object_id)
-            elif self.Nodes[object_id].type == "NetFlowObject":
-                obj_tag = list(match_network_addr(self.Nodes[object_id].IP, self.Nodes[object_id].port))
-            elif self.Nodes[object_id].type == "FileObject":
-                obj_tag = list(match_path(self.Nodes[object_id].path))
-            else:
-                obj_tag = [1.0, 1.0]
+            obj_tag = self.get_default_a(self.Nodes[object_id].type, self.Nodes[object_id].get_name())
         self.Nodes[object_id].setObjTags(obj_tag)
+
+    def get_default_a(self, node_type, node_name):
+        if node_type == "NetFlowObject":
+            return list(match_network_addr(node_name))
+        elif node_type == "FileObject":
+            return list(match_path(node_name))
+        else:
+            return [1.0, 1.0]
 
     def add_subject(self, subject):
         # self.G.add_node(subject.id)
         self.Nodes[subject.id] = subject
         if subject.pid in self.processes and self.processes[subject.pid]['alive']:
             old_version_process_nid = self.processes[subject.pid]['nid']
+
             self.Nodes[subject.id].setSubjTags(self.Nodes[old_version_process_nid].tags())
-            self.Nodes[subject.id].set_grad(self.Nodes[old_version_process_nid].get_grad())
-            self.Nodes[subject.id].set_lambda_grad(self.Nodes[old_version_process_nid].get_lambda_grad())
+            if self.mode == 'train':
+                self.Nodes[subject.id].set_grad(self.Nodes[old_version_process_nid].get_grad())
+                self.Nodes[subject.id].set_lambda_grad(self.Nodes[old_version_process_nid].get_lambda_grad())
+
             self.processes[subject.pid]['nid'] = subject.id
+            del self.Nodes[old_version_process_nid]
+
             return
         elif subject.pid not in self.processes:
             self.processes[subject.pid] = {}
@@ -248,8 +284,9 @@ class Morse:
         if subject.ppid and subject.ppid in self.processes and self.processes[subject.ppid]['alive']:
             parent_nid = self.processes[subject.ppid]['nid']
             self.Nodes[subject.id].setSubjTags(self.Nodes[parent_nid].tags())
-            self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
-            self.Nodes[subject.id].set_lambda_grad(self.Nodes[parent_nid].get_lambda_grad())
+            if self.mode == 'train':
+                self.Nodes[subject.id].set_grad(self.Nodes[parent_nid].get_grad())
+                self.Nodes[subject.id].set_lambda_grad(self.Nodes[parent_nid].get_lambda_grad())
         else:
             self.Nodes[subject.id].setSubjTags([1.0, 1.0, 1.0, 1.0])
         return

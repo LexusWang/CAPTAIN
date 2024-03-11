@@ -25,7 +25,7 @@ def read_events_from_files(edge_file, time_range):
                     break
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
-                    print("Morse has loaded {} edges.".format(loaded_line))
+                    print("CAPTAIN has loaded {:,} edges.".format(loaded_line))
             event = Event(None, None)
             event.loads(line)
             events.append(event)

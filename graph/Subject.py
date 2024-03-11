@@ -5,7 +5,7 @@ import json
 import pdb
 
 class Subject:
-    def __init__(self, id, type, pid: int, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None):
+    def __init__(self, id, type, pid: int, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None, training_mode = True):
         self.id = id
         self.type = type
         self.pid = pid
@@ -22,17 +22,18 @@ class Subject:
         self.iTag: float = 0.0
         self.cTag: float = 0.0
 
-        self.ciTag_gradients = {}
-        self.eTag_gradients = {}
-        self.iTag_gradients = {(id,'i'): 1.0}
-        self.cTag_gradients = {(id,'c'): 1.0}
+        if training_mode:
+            self.ciTag_gradients = {}
+            self.eTag_gradients = {}
+            self.iTag_gradients = {(id,'i'): 1.0}
+            self.cTag_gradients = {(id,'c'): 1.0}
 
-        self.ci_lambda_gradients = {}
-        self.e_lambda_gradients = {}
-        self.i_lambda_gradients = {}
-        self.c_lambda_gradients = {}
+            self.ci_lambda_gradients = {}
+            self.e_lambda_gradients = {}
+            self.i_lambda_gradients = {}
+            self.c_lambda_gradients = {}
 
-        self.propagation_chain = {'i':[], 'c':[]}
+            self.propagation_chain = {'i':[], 'c':[]}
 
     def __str__(self):
         return self.dumps()

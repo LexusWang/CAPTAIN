@@ -1,6 +1,6 @@
 from utils.eventClassifier import eventClassifier
 
-ec = eventClassifier('groundTruthC31.txt')
+ec = eventClassifier('/home/shared/linux_data/GT/groundTruthT5.txt')
 # if ec.classify('0F8CF745-900F-206D-F134-28686757C4D5') == "DataLeak":
 #     print("correctly classified DataLeak Alarm")
 # else:
@@ -21,6 +21,6 @@ ec = eventClassifier('groundTruthC31.txt')
 # else:
 #     print("error")
 
-ec.analyzeFile(open('/Users/lexus/Documents/research/APT/ATPG/experiments/Manual-C312022-09-26-16-37-23/test/alarms/alarms-in-test.txt','r'))
+ec.analyzeFile(open('experiments/Manual-T522023-11-07-15-56-11/test/alarms/alarms-in-test.txt','r'))
 
-ec.summary("/Users/lexus/Documents/research/APT/ATPG/experiments/Manual-C312022-09-26-16-37-23/test/metric/ec_summary_test.txt")
+ec.summary("experiments/Manual-T522023-11-07-15-56-11/test/metric/ec_summary_test.txt")

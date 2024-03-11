@@ -44,105 +44,99 @@ def parse_event_cadets(self, datum, cdm_version):
     if isinstance(datum['predicateObject2'], dict):
         event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
 
-    try:
-        if isinstance(datum['predicateObjectPath'], dict):
-            event.obj_path = datum['predicateObjectPath']['string']
-            if self.Nodes[event.dest].path != event.obj_path:
-                self.Nodes[event.dest].name = event.obj_path
-                self.Nodes[event.dest].path = event.obj_path
-                node_updates[event.dest] = {'name':event.obj_path}
-    except KeyError:
-        pass
+    if isinstance(datum['predicateObjectPath'], dict):
+        event.obj_path = datum['predicateObjectPath']['string']
+        if event.dest in self.Nodes and self.Nodes[event.dest].path != event.obj_path:
+            self.Nodes[event.dest].name = event.obj_path
+            self.Nodes[event.dest].path = event.obj_path
+            node_updates[event.dest] = {'name':event.obj_path}
+
+    if isinstance(datum['predicateObject2Path'], dict):
+        event.obj2_path = datum['predicateObject2Path']['string']
+        if event.dest2 in self.Nodes and self.Nodes[event.dest2].path != event.obj2_path:
+            self.Nodes[event.dest2].name = event.obj2_path
+            self.Nodes[event.dest2].path = event.obj2_path
+            node_updates[event.dest2] = {'name':event.obj2_path}
+
+    if 'exec' in event.properties:
+        if event.src in self.Nodes and self.Nodes[event.src].processName != event.properties['exec']:
+            self.Nodes[event.src].processName = event.properties['exec']
+            node_updates[event.src] = {'exec':event.properties['exec']}
 
     try:
-        if isinstance(datum['predicateObject2Path'], dict):
-            event.obj2_path = datum['predicateObject2Path']['string']
-            if self.Nodes[event.dest2].path != event.obj2_path:
-                self.Nodes[event.dest2].name = event.obj2_path
-                self.Nodes[event.dest2].path = event.obj2_path
-                node_updates[event.dest2] = {'name':event.obj2_path}
-    except KeyError:
-        pass
-
-    try:
-        if 'exec' in event.properties:
-            if self.Nodes[event.src].processName != event.properties['exec']:
-                self.Nodes[event.src].processName = event.properties['exec']
-                node_updates[event.src] = {'exec':event.properties['exec']}
-    except KeyError:
-        pass
-
-    if datum['type'] in READ_SET:
-        if self.Nodes.get(event.dest, None):
+        if datum['type'] in READ_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
             event.type = 'read'
-        else:
-            # TO DO: How to deal with unknown object
-            return None, node_updates
-    elif datum['type'] in WRITE_SET:
-        if self.Nodes.get(event.dest, None):
+        elif datum['type'] in WRITE_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
             event.type = 'write'
-        else:
+        elif datum['type'] in INJECT_SET:
+            event.type = 'inject'
+        elif datum['type'] in CHMOD_SET:
+            if datum['name']['string'] == 'aue_chmod':
+                assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+                event.type = 'chmod'
+                event.parameters = int(datum['parameters']['array'][0]['valueBytes']['bytes'], 16)
+                # print('8-based: {}'.format(oct(event.parameters)))
+            else:
+                return None, node_updates  
+        elif datum['type'] in SET_UID_SET:
+            if datum['name']['string'] in {'aue_setuid'}:
+                assert self.Nodes.get(event.src, None)
+                event.dest = None
+                event.type = 'set_uid'
+                event.parameters = int(datum['properties']['map']['arg_uid'])
+                # print('arg_uid: {}'.format(datum['properties']['map']['arg_uid']))
+                # print('byte: {}'.format(datum['parameters']['array'][0]['valueBytes']['bytes']))
+            else:
+                return None, node_updates
+        elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+            event.parameters = datum['properties']['map']['cmdLine']
+            event.type = 'execve'
+        elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
+            pdb.set_trace()
             return None, node_updates
-    elif datum['type'] in INJECT_SET:
-        event.type = 'inject'
-    elif datum['type'] in CHMOD_SET:
-        if datum['name']['string'] == 'aue_chmod':
-            event.type = 'chmod'
-            event.parameters = int(datum['parameters']['array'][0]['valueBytes']['bytes'], 16)
-            # print('8-based: {}'.format(oct(event.parameters)))
-        else:
-            return None, node_updates  
-    elif datum['type'] in SET_UID_SET:
-        if datum['name']['string'] in {'aue_setuid'}:
-            event.type = 'set_uid'
-            event.parameters = int(datum['properties']['map']['arg_uid'])
-            # print('arg_uid: {}'.format(datum['properties']['map']['arg_uid']))
-            # print('byte: {}'.format(datum['parameters']['array'][0]['valueBytes']['bytes']))
-        else:
-            return None, node_updates
-    elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
-        event.parameters = datum['properties']['map']['cmdLine']
-        event.type = 'execve'
-    elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
-        # pdb.set_trace()
-        return None, node_updates
-    elif datum['type'] in {cdm_events['EVENT_MMAP']}:
-        if self.Nodes[event.dest].isFile():
-            event.type = 'load'
-        else:
-            event.type = 'mmap'
-            event.parameters = memory_protection(eval(event.properties['protection']))
-    elif datum['type'] in CREATE_SET:
-        assert event.src and event.dest
-        if datum['name']['string'] not in  {'aue_socketpair', 'aue_mkdirat'}:
+        elif datum['type'] in {cdm_events['EVENT_MMAP']}:
+            if self.Nodes[event.dest].isFile():
+                assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+                event.type = 'load'
+            else:
+                pdb.set_trace()
+                event.type = 'mmap'
+                event.parameters = memory_protection(eval(event.properties['protection']))
+        elif datum['type'] in CREATE_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+            assert datum['name']['string'] not in {'aue_socketpair', 'aue_mkdirat'}
             if self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None):
                 event.type = 'create'
             else:
                 return None, node_updates
+        elif datum['type'] in RENAME_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None) and self.Nodes.get(event.dest2, None)
+            event.parameters = datum['predicateObjectPath']['string']
+            event.type = 'rename'
+        elif datum['type'] in REMOVE_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+            event.type = 'remove'
+        elif datum['type'] in CLONE_SET:
+            assert self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None)
+            event.type = 'clone'
+        elif datum['type'] in MPROTECT_SET:
+            assert self.Nodes.get(event.src, None)
+            event.dest == None
+            event.type = 'mprotect'
+            event.parameters = eval(datum['properties']['map']['arg_mem_flags'])
+        elif datum['type'] in UPDATE_SET:
+            pdb.set_trace()
+            event.type = 'update'
+        elif datum['type'] in EXIT_SET:
+            assert self.Nodes.get(event.src, None)
+            event.dest = None
+            event.type = 'exit'
         else:
             return None, node_updates
-    elif datum['type'] in RENAME_SET:
-        a = self.Nodes.get(event.src, None)
-        b = self.Nodes.get(event.dest, None)
-        c = self.Nodes.get(event.dest2, None)
-        event.type = 'rename'
-    elif datum['type'] in REMOVE_SET:
-        event.type = 'remove'
-    elif datum['type'] in CLONE_SET:
-        a = self.Nodes[event.src]
-        b = self.Nodes[event.dest]
-        event.type = 'clone'
-    elif datum['type'] in MPROTECT_SET:
-        # a = self.Nodes[event.dest]
-        assert event.dest == None
-        b = self.Nodes[event.src]
-        event.type = 'mprotect'
-        event.parameters = eval(datum['properties']['map']['arg_mem_flags'])
-    elif datum['type'] in UPDATE_SET:
-        event.type = 'update'
-    elif datum['type'] in EXIT_SET:
-        event.type = 'exit'
-    else:
+    except AssertionError as ae:
         return None, node_updates
     
     return event, node_updates
@@ -184,9 +178,12 @@ def parse_object_cadets(self, datum, object_type):
     if isinstance(datum['baseObject']['epoch'], dict):
         object.epoch = datum['baseObject']['epoch']['int']
     if object_type == 'FileObject':
-        object.subtype = datum['type']
-        permission = datum['baseObject']['permission']
-        object.path = datum['baseObject']['properties']['map'].get('path', None)
+        if datum['type'] == 'FILE_OBJECT_FILE':
+            object.subtype = datum['type']
+            permission = datum['baseObject']['permission']
+            object.path = datum['baseObject']['properties']['map'].get('path', None)
+        else:
+            return None
     elif object_type == 'NetFlowObject':
         try:
             object.set_IP(datum['remoteAddress'], datum['remotePort'],datum['ipProtocol']['int'])
