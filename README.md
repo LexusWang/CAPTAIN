@@ -1,16 +1,25 @@
-# ATPG
-This is the code repository of our project Auto Tuning Parameter Graph
+# CAPTAIN
+This is the code repository of CAPTAIN
 
-### Utils
+## Enviroment Setup
 
-#### eventClassifier class
-1. eventClassifier(filePath): constructor of eventClassifier. The filePath should be the path to the ground truth file.
-2. eventClassifier.classify(UUID): return alarm type if the event correponding to the UUID should trigger an alarm according to the ground truth. Otherwise, return None.
+## Pipeline
 
-#### datProcessor class
-1. dataProcessor(configFile): constructor of dataProcessor. The configFile should be the path to the .ini file.
-2. dataProcessor.separate(): read from and write to files specified in config, as well as applying filtering conditions in the config file if applicable. 
+### Data Preprocessing
 
-Notes on config.ini:
-1. To disable segmentation, set segSize to 0.
-2. To disable timestamp filtering, set endTimestamp to 0.
+```
+mkdir data/C3
+python parse/cdm18/standard_data-cadets.py --input_data ../data/raw --output_data data/C3 --format cadets --cdm_version 18
+```
+
+### Training
+```
+python train_by_benign_debug.py --att 0 --decay 0 --ground_truth_file ../data/GT/groundTruthC31.txt --data_path ../data/C31 --mode train --data_tag c31-train --param_type agt --experiment_prefix AGT-Train-C31 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-6T00:00:00-04:00
+```
+
+### Detection (Testing)
+```
+python detection.py --att 0.2 --decay 2 --ground_truth_file ../data/GT/groundTruthC31.txt --data_path ../data/C3 --mode test --data_tag c31-test --experiment_prefix AGT-Test-C3 --param_path experiments/AGT-Train-C312023-11-30-04-16-08 --model_index 99 --time_range 2018-4-6T00:00:00-04:00 2018-4-15T00:00:00-04:00
+```
+
+
