@@ -10,3 +10,5 @@ new_data/*
 eventClassifierTest.py
 GT/*
 test_scripts/*
+adversarial/artifacts/*
+data/*

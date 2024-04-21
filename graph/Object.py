@@ -47,13 +47,15 @@ class Object:
     def load(self, json_dict):
         self.type = json_dict['type']
         self.epoch = json_dict['epoch']
-        if math.isnan(self.epoch) == False:
+        if self.epoch:
+        # if math.isnan(self.epoch) == False:
             self.epoch = int(self.epoch)
         self.subtype = json_dict['subtype']
         if self.type == 'NetFlowObject':
             self.IP = json_dict['ip']
             self.port = json_dict['port']
-            if math.isnan(self.port) == False:
+            # if math.isnan(self.port) == False:
+            if self.port:
                 self.port = int(self.port)
         elif self.type == 'FileObject':
             self.path = json_dict['path']

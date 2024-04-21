@@ -16,7 +16,7 @@ from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
 
 
-class Morse:
+class CAPTAIN:
     def __init__(self, att, decay, alarm_file = './results/alarms.txt'):
         self.device = None
         self.att = att
@@ -48,15 +48,15 @@ class Morse:
         self.tau_dict = {}
         self.tau_modify_dict = {}
 
-    def parse_event(self, datum, format, cdm_version):
-        if format == 'trace':
-            return parse_event_trace(self, datum, cdm_version)
-        elif format == 'cadets':
-            return parse_event_cadets(self, datum, cdm_version)
-        elif format == 'fivedirections':
-            return parse_event_fivedirections(self, datum, cdm_version)
-        elif format == 'linux':
-            return parse_event_linux(self, datum)
+    # def parse_event(self, datum, format, cdm_version):
+    #     if format == 'trace':
+    #         return parse_event_trace(self, datum, cdm_version)
+    #     elif format == 'cadets':
+    #         return parse_event_cadets(self, datum, cdm_version)
+    #     elif format == 'fivedirections':
+    #         return parse_event_fivedirections(self, datum, cdm_version)
+    #     elif format == 'linux':
+    #         return parse_event_linux(self, datum)
 
     def parse_object(self, datum, object_type, format, cdm_version):
         return parse_object_(self, datum, object_type, format, cdm_version)
@@ -202,17 +202,24 @@ class Morse:
 
         return diagnosis, tag_indices, s_labels, o_labels, kill_chains, loss_lambda_grads, loss_thr_grads, loss
         
-    def add_event(self, event, gt = None):
+    def add_event(self, event, gt = None):                        
         diagnosis = None
         src = self.Nodes.get(event.src, None)
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
+        # if src and src.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
+        #     # pdb.set_trace()
+        #     print(dump_event_feature(event, src, dest, dest2))
+        # if dest and dest.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
+        #     # pdb.set_trace()
+        #     print(dump_event_feature(event, src, dest, dest2))
+        # if dest2 and dest2.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
+        #     # pdb.set_trace()
+        #     print(dump_event_feature(event, src, dest, dest2))
+
         if src:
             event_feature_str = str(dump_event_feature(event, src, dest, dest2))
-            fout = open('./C3-events.txt', 'a')
-            print(event_feature_str, file=fout)
-            fout.close()
 
             try:
                 if event.type == 'exit':
@@ -231,14 +238,14 @@ class Morse:
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau, update_gradients=False)
 
-            try:
-                if event.type == 'update':
-                    del self.Nodes[event.dest]
-                elif event.type == 'rename':
-                    del self.Nodes[event.dest]
-            except KeyError:
-                # print('Oops! Cannot find Node!')
-                return None
+            # try:
+            #     if event.type == 'update':
+            #         del self.Nodes[event.dest]
+            #     elif event.type == 'rename':
+            #         del self.Nodes[event.dest]
+            # except KeyError:
+            #     # print('Oops! Cannot find Node!')
+            #     return None
             
         return diagnosis
 
@@ -273,7 +280,7 @@ class Morse:
                 self.Nodes[subject.id].set_lambda_grad(self.Nodes[old_version_process_nid].get_lambda_grad())
 
             self.processes[subject.pid]['nid'] = subject.id
-            del self.Nodes[old_version_process_nid]
+            # del self.Nodes[old_version_process_nid]
 
             return
         elif subject.pid not in self.processes:
@@ -302,7 +309,7 @@ class Morse:
             else:
                 self.set_object_tags(nid)
         
-    def reset_morse(self):
+    def reset(self):
         # nid_list = list(self.Nodes.keys())
         # for nid in nid_list:
         #     self.Nodes[nid].updateTime = 0

@@ -27,13 +27,9 @@ def memory_protection(permission: int):
         elif permission == 7:
             return ['PROT_READ', 'PROT_WRITE', 'PROT_EXEC']
 
-def parse_event_trace(self, datum, cdm_version):
+def parse_event_trace(node_buffer, datum, cdm_version):
     event = Event(datum['uuid'], datum['timestampNanos'])
     datum['type'] = cdm_events[datum['type']]
-
-    if datum['type'] in UNUSED_SET:
-        return None
-    
     event.properties = datum['properties']['map']
 
     if isinstance(datum['subject'], dict):
@@ -45,81 +41,90 @@ def parse_event_trace(self, datum, cdm_version):
     if isinstance(datum['predicateObject2'], dict):
         event.dest2 = list(datum['predicateObject2'].values())[0]
 
-    if datum['type'] in READ_SET:
-        if self.Nodes.get(event.dest, None):
+    try:
+        if datum['type'] in READ_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
             event.type = 'read'
-        else:
-            return None
-    elif datum['type'] in WRITE_SET:
-        if self.Nodes.get(event.dest, None):
+        elif datum['type'] in WRITE_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
             event.type = 'write'
-        else:
-            return None
-    elif datum['type'] in INJECT_SET:
-        pdb.set_trace()
-        event.type = 'inject'
-    elif datum['type'] in CHMOD_SET:
-        event.type = 'chmod'
-        event.parameters = int(event.properties['mode'], 8)
-    elif datum['type'] in SET_UID_SET:
-        if datum['properties']['map']['operation'] == 'setuid':
-            event.type = 'set_uid'
-            event.src = event.dest
-            event.dest = None
-            event.parameters = int(self.Principals[self.Nodes.get(event.src, None).owner]['userId'])
-        else:
-            return None
-    elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
-        event.type = 'update_process'
-    elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
-        event.type = 'execve'
-    elif datum['type'] in {cdm_events['EVENT_MMAP']}:
-        if self.Nodes.get(event.dest, None):
-            if self.Nodes[event.dest].isFile():
+        elif datum['type'] in INJECT_SET:
+            event.type = 'inject'
+        elif datum['type'] in CHMOD_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
+            event.type = 'chmod'
+            event.parameters = int(event.properties['mode'], 8)
+        elif datum['type'] in SET_UID_SET:
+            assert node_buffer.get(event.src, None)
+            if datum['properties']['map']['operation'] == 'setuid':
+                event.type = 'set_uid'
+                event.src = event.dest
+                event.dest = None
+                event.parameters = node_buffer.get(event.src, None).owner
+            else:
+                return None
+        elif datum['type'] in {cdm_events['EVENT_EXECUTE']}:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
+            event.type = 'update_process'
+        elif datum['type'] in {cdm_events['EVENT_LOADLIBRARY']}:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
+            event.type = 'execve'
+        elif datum['type'] in {cdm_events['EVENT_MMAP']}:
+            assert node_buffer.get(event.src, None)
+            if node_buffer.get(event.dest, None) and node_buffer[event.dest].isFile():
                 event.type = 'load'
+                event.dest2 = None
             else:
                 event.type = 'mmap'
-            event.parameters = memory_protection(eval(event.properties['protection']))
-        else:
-            return None
-    elif datum['type'] in CREATE_SET:
-        assert event.src and event.dest
-        if self.Nodes.get(event.src, None) and self.Nodes.get(event.dest, None):
+                event.dest = None
+                event.dest2 = None
+                event.parameters = memory_protection(eval(event.properties['protection']))
+        elif datum['type'] in CREATE_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
             event.type = 'create'
             event.parameters = datum['properties']['map']
+        elif datum['type'] in RENAME_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None) and node_buffer.get(event.dest2, None)
+            event.type = 'rename'
+        elif datum['type'] in REMOVE_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
+            event.type = 'remove'
+        elif datum['type'] in CLONE_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None)
+            event.type = 'clone'
+        elif datum['type'] in MPROTECT_SET:
+            assert node_buffer.get(event.src, None)
+            event.type = 'mprotect'
+            event.dest = None
+            event.dest2 = None
+            event.parameters = memory_protection(eval(event.properties['protection']))
+        elif datum['type'] in UPDATE_SET:
+            assert node_buffer.get(event.src, None) and node_buffer.get(event.dest, None) and node_buffer.get(event.dest2, None)
+            event.type = 'update'
+        elif datum['type'] in EXIT_SET:
+            assert node_buffer.get(event.src, None)
+            event.type = 'exit'
+            event.dest = None
         else:
             return None
-    elif datum['type'] in RENAME_SET:
-        event.type = 'rename'
-    elif datum['type'] in REMOVE_SET:
-        event.type = 'remove'
-    elif datum['type'] in CLONE_SET:
-        event.type = 'clone'
-    elif datum['type'] in MPROTECT_SET:
-        event.type = 'mprotect'
-        event.parameters = memory_protection(eval(event.properties['protection']))
-    elif datum['type'] in UPDATE_SET:
-        event.type = 'update'
-    elif datum['type'] in EXIT_SET:
-        event.type = 'exit'
-        event.dest = None
-    else:
+    except AssertionError as ae:
         return None
     
     return event
 
-def parse_subject_trace(self, datum, cdm_version):
-    subject = None
+def parse_subject_trace(datum, cdm_version):
     subject_type = datum['type']
     if subject_type == 'SUBJECT_PROCESS':
         type_ = datum['type']
         pid_ = int(datum['cid'])
         pname_ = datum['properties']['map'].get('name',None)
         ppid_ = int(datum['properties']['map']['ppid'])
+
         if datum['parentSubject']:
             parent_ = datum['parentSubject']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
             parent_ = None
+
         if datum['cmdLine']:
             cmdLine_ = datum['cmdLine'].get('string')
         else:
@@ -129,24 +134,23 @@ def parse_subject_trace(self, datum, cdm_version):
             subject.owner = datum['localPrincipal']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
         else:
             subject.owner = datum['localPrincipal']
+        return subject
     elif subject_type == 'SUBJECT_THREAD':
-        pass
+        return None
     elif subject_type == 'SUBJECT_UNIT':
-        pass
+        return None
     elif subject_type == 'SUBJECT_BASIC_BLOCK':
-        pass
+        return None
     else:
-        pass
-    
-    return subject
+        return None
 
-def parse_object_trace(self, datum, object_type):
+def parse_object_trace(datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
     if isinstance(datum['baseObject']['epoch'], dict):
         object.epoch = datum['baseObject']['epoch']['int']
     if object_type == 'FileObject':
         object.subtype = datum['type']
-        permission = datum['baseObject']['permission']
+        # permission = datum['baseObject']['permission']
         object.name = datum['baseObject']['properties']['map'].get('path',None)
         object.path = datum['baseObject']['properties']['map'].get('path', None)
     elif object_type == 'UnnamedPipeObject':
@@ -156,17 +160,12 @@ def parse_object_trace(self, datum, object_type):
     elif object_type == 'PacketSocketObject':
         return None
     elif object_type == 'NetFlowObject':
-        object.set_IP(datum['remoteAddress']['string'], datum['remotePort']['int'],datum['ipProtocol']['int'])
+        object.set_IP(datum['remoteAddress']['string'], datum['remotePort']['int'], datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
-        object.name = 'MEM_{}'.format(datum['memoryAddress'])
+        # object.name = 'MEM_{}'.format(datum['memoryAddress'])
+        return None
     elif object_type == 'SrcSinkObject':
-        object.subtype = datum['type']
-        # permission = datum['baseObject']['permission']
-        if object.subtype in {'SRCSINK_UNKNOWN', 'SRCSINK_IPC'}:
-            return None
-        else:
-            print(datum)
-            pdb.set_trace()
+        return None
     else:
         return None
 

@@ -31,7 +31,7 @@ def memory_protection(permission: int):
 def parse_event_cadets(node_buffer, datum, cdm_version):
     event = Event(datum['uuid'], datum['timestampNanos'])
     datum['type'] = cdm_events[datum['type']]
-    node_updates = {}
+    event.properties = datum['properties']['map']
 
     ##### Get Related Nodes #####
     if isinstance(datum['subject'], dict):
@@ -44,13 +44,16 @@ def parse_event_cadets(node_buffer, datum, cdm_version):
         event.dest2 = datum['predicateObject2']['com.bbn.tc.schema.avro.cdm{}.UUID'.format(cdm_version)]
 
     ##### Check if the nodes get updated #####
+    node_updates = {}
     if isinstance(datum['predicateObjectPath'], dict):
+        event.obj_path = datum['predicateObjectPath']['string']
         if event.dest in node_buffer and node_buffer[event.dest].path != event.obj_path:
             node_buffer[event.dest].name = event.obj_path
             node_buffer[event.dest].path = event.obj_path
             node_updates[event.dest] = {'name':event.obj_path}
 
     if isinstance(datum['predicateObject2Path'], dict):
+        event.obj2_path = datum['predicateObject2Path']['string']
         if event.dest2 in node_buffer and node_buffer[event.dest2].path != event.obj2_path:
             node_buffer[event.dest2].name = event.obj2_path
             node_buffer[event.dest2].path = event.obj2_path
@@ -160,16 +163,17 @@ def parse_subject_cadets(node_buffer, datum, cdm_version=18):
 def parse_object_cadets(datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
     if object_type == 'FileObject':
-        # We ignore all other types of file
+        ## We ignore all other types of file
         if datum['type'] != 'FILE_OBJECT_FILE':
             return None
         object.subtype = datum['type']
+        ## Usually it is null
         object.path = datum['baseObject']['properties']['map'].get('path', None)
     elif object_type == 'NetFlowObject':
         object.set_IP(datum['remoteAddress'], datum['remotePort'], None)
     elif object_type == 'MemoryObject':
         object.name = 'MEM_{}'.format(datum['memoryAddress'])
-    elif object_type == {'UnnamedPipeObject', 'RegistryKeyObject', 'PacketSocketObject', 'SrcSinkObject'}:
+    elif object_type in {'UnnamedPipeObject', 'RegistryKeyObject', 'PacketSocketObject', 'SrcSinkObject'}:
         return None
     else:
         return None

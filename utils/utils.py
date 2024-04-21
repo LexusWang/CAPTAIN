@@ -13,7 +13,7 @@ class Experiment:
         self.args = args
         self.project_path = os.path.abspath(__file__)
         self.project_path = os.path.dirname(os.path.dirname(self.project_path))
-        self.experiment_path = os.path.join(self.project_path, "experiments", train_name+timestamp)
+        self.experiment_path = os.path.join(self.project_path, "experiments", f"{train_name}-{timestamp}")
         Path(self.experiment_path).mkdir(parents=True, exist_ok=True)
         if not os.path.exists(self.experiment_path):
             os.mkdir(self.experiment_path)

@@ -4,22 +4,31 @@ import argparse
 import time
 import sys
 sys.path.extend(['.','..','...'])
-from parse.cdm18.trace_parser import parse_subject_trace, parse_object_trace, parse_event_trace
+from parse.cdm18.theia_parser import parse_subject_theia, parse_object_theia, parse_event_theia
 import time
 import pdb
 
 def start_experiment(args):
-    # output_file = open(os.path.join(args.output_data, 'logs.json'), 'w')
+    output_file = open(os.path.join(args.output_data, 'logs.json'), 'w')
 
     ##### Load File Names #####
     # volume_list = [file for file in os.listdir(args.input_data) if file.startswith('.') == False]
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     volume_list = []
-    for volume in range(args.volume_num):
+    for volume in range(10):
         if volume == 0:
-            volume_list.append(args.input_data)
+            volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-1r.json', 'ta1-theia-e3-official-1r.json'))
         else:
-            volume_list.append(args.input_data+f'.{volume}')
+            volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-1r.json', 'ta1-theia-e3-official-1r.json')+f'.{volume}')
+    
+    volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-3.json', 'ta1-theia-e3-official-3.json'))
+    volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-5m.json', 'ta1-theia-e3-official-5m.json'))
+
+    for volume in range(13):
+        if volume == 0:
+            volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-6r.json', 'ta1-theia-e3-official-6r.json'))
+        else:
+            volume_list.append(os.path.join(args.input_data, 'ta1-theia-e3-official-6r.json', 'ta1-theia-e3-official-6r.json')+f'.{volume}')
 
     last_event_str = ''
     node_buffer = {}
@@ -32,9 +41,8 @@ def start_experiment(args):
     edge_num = 0
     node_num = 0
     
+    begin_time = time.time()
     for volume in volume_list:
-        if volume.endswith('118'):
-            begin_time = time.time()
         print("Loading {} ...".format(volume))
         with open(volume,'r') as fin:
             for line in fin:
@@ -47,7 +55,7 @@ def start_experiment(args):
                 record_type = record_type.split('.')[-1]
                 envt_num += 1
                 if record_type == 'Event':
-                    event = parse_event_trace(node_buffer, record_datum, args.cdm_version)
+                    event = parse_event_theia(node_buffer, record_datum, args.cdm_version)
                     if event:
                         if event.type == 'set_uid':
                             event.parameters = int(principals_buffer[event.parameters]['userId'])
@@ -56,34 +64,40 @@ def start_experiment(args):
                             last_event_str = event_str
                             edge_num += 1
                             log_datum = {'logType':'EVENT', 'logData': json.loads(event.dumps())}
-                            # print(json.dumps(log_datum), file = output_file)
+                            print(json.dumps(log_datum), file = output_file)
                 elif record_type == 'Subject':
-                    subject = parse_subject_trace(record_datum,args.cdm_version)
+                    subject = parse_subject_theia(record_datum,args.cdm_version)
                     if subject:
                         node_buffer[subject.id] = subject
                         log_datum = {'logType':'NODE', 'logData': json.loads(subject.dumps())}
-                        # print(json.dumps(log_datum), file = output_file)
+                        print(json.dumps(log_datum), file = output_file)
                         node_num += 1
                 elif record_type == 'Principal':
-                    record_datum['euid'] = record_datum['properties']['map']['euid']
+                    # record_datum['euid'] = record_datum['properties']['map']['euid']
                     del record_datum['hostId']
-                    del record_datum['properties']
+                    # del record_datum['properties']
                     principals_buffer[record_datum['uuid']] = record_datum
                     log_datum = {'logType':'PRINCIPAL', 'logData': record_datum}
-                    # print(json.dumps(log_datum), file = output_file)
+                    print(json.dumps(log_datum), file = output_file)
                 elif record_type.endswith('Object'):
-                    object = parse_object_trace(record_datum,record_type)
+                    object = parse_object_theia(record_datum,record_type)
                     if object:
                         node_buffer[object.id] = object
                         log_datum = {'logType':'NODE', 'logData': json.loads(object.dumps())}
-                        # print(json.dumps(log_datum), file = output_file)
+                        print(json.dumps(log_datum), file = output_file)
                         node_num += 1
-                elif record_type in {'TimeMarker', 'StartMarker', 'UnitDependency', 'Host'}:
-                    pass
+                elif record_type == 'Host':
+                    # node_buffer = {}
+                    # last_event_str = ''
+                    # node_set = set()
+                    log_datum = {'logType':'CTL_EVENT_REBOOT', 'logData': {}}
+                    print(json.dumps(log_datum), file = output_file)
+                # elif record_type in {'TimeMarker', 'StartMarker', 'UnitDependency'}:
+                #     pass
                 else:
                     pass
 
-    # output_file.close()
+    output_file.close()
     print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
     print("#Events: {:,}".format(envt_num))
     print("#Nodes: {:,}".format(node_num))

@@ -5,12 +5,12 @@ import time
 import sys
 sys.path.extend(['.','..','...'])
 from parse.cdm20.fivedirections_parser import parse_event_fivedirections, parse_object_fivedirections, parse_subject_fivedirections
-from model.morse import Morse
+from model.captain import CAPTAIN
 import time
 
 def start_experiment(args):
     begin_time = time.time()
-    mo = Morse(0, 0)
+    mo = CAPTAIN(0, 0)
 
     node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')

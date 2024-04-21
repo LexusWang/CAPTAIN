@@ -4,13 +4,11 @@ import os
 import argparse
 import time
 from utils.utils import *
-from model.morse import Morse
 import time
 import pdb
 
 def start_experiment(args):
     begin_time = time.time()
-    mo = Morse(0, 0)
 
     node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
     edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')

@@ -1,43 +1,66 @@
-import torch
 import logging
 from datetime import datetime
 import pdb
+import json
 import os
 import argparse
 import numpy as np
 import time
 from utils.utils import *
-from collections import Counter
-from utils.eventClassifier import eventClassifier
-from policy.propTags import dump_event_feature
+# from collections import Counter
+# from utils.eventClassifier import eventClassifier
+from graph.Event import Event
+# from policy.propTags import dump_event_feature
 
 import tqdm
-import time
-import pandas as pd
-from model.morse import Morse
+from model.captain import CAPTAIN
 from utils.graph_detection import add_nodes_to_graph
-from utils.graphLoader import read_events_from_files
 from pathlib import Path
 import pickle
 
-# ================= Load all nodes & edges to memory ==================== #
-def load_graph(data_path, time_range, pre_loaded_path):
+def load_graph(log_file, time_range, pre_loaded_path):
     if pre_loaded_path.endswith('.pkl'):
         with open(pre_loaded_path, 'rb') as f:
-            events, nodes, principals = pickle.load(f)
+            logs = pickle.load(f)
     else:
-        events = read_events_from_files(os.path.join(data_path, 'edges.json'), time_range)
-        nodes = pd.read_json(os.path.join(data_path, 'nodes.json'), lines=True).set_index('id').to_dict(orient='index')
-        principals = pd.read_json(os.path.join(data_path, 'principals.json'), lines=True).set_index('uuid').to_dict(orient='index')
-        # cache the loaded morse and events for next run
+        if time_range:
+            detection_start_time = time_range[0]
+            detection_end_time = time_range[1]
+        else:
+            detection_start_time = 0
+            detection_end_time = 1e21
+
+        logs = []
+        loaded_line = 0
+        with open(os.path.join(log_file, 'logs.json'), 'r') as fin:
+            for line in fin:
+                loaded_line += 1
+                if loaded_line > 0 and loaded_line % 100000 == 0:
+                    print("CAPTAIN training module has loaded {:,} logs.".format(loaded_line))
+                log_data = json.loads(line)
+                if log_data['logType'] == 'EVENT':
+                    if log_data['logData']['type'] == 'UPDATE':
+                        logs.append(log_data)
+                    else:
+                        if log_data['logData']['time'] < detection_start_time:
+                            continue
+                        elif log_data['logData']['time'] > detection_end_time:
+                            break
+
+                        logs.append(log_data)
+                else:
+                    logs.append(log_data)
+
+        # cache the loaded logs for next run
         with open(os.path.join(pre_loaded_path, 'morse.pkl'), "wb") as f:
-            pickle.dump([events, nodes, principals], f)
-    return events, nodes, principals
+            pickle.dump(logs, f)
+                
+    return logs
 
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
     experiment.save_hyperparameters()
-    mo = Morse(att = args.att, decay = args.decay)
+    mo = CAPTAIN(att = args.att, decay = args.decay)
     # ============= Tag Initializer =============== #
     node_inits = {}
 
@@ -55,14 +78,16 @@ def start_experiment(args):
             checkpoint_epoch_path = args.checkpoint
             node_inits = experiment.load_checkpoint(node_inits, checkpoint_epoch_path)
 
-        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
+        # events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
+        logs = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
 
-        mo.Principals = principals
+        # mo.Principals = principals
         for epoch in range(epochs):
             print('epoch: {}'.format(epoch))
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
-            mo.reset_morse()
+            mo.reset()
+            node_buffer = {}
             # mo.reset_tags()
             total_loss = 0
 
@@ -72,50 +97,70 @@ def start_experiment(args):
             propagation_chains = []
             fp_counter = {}
             begin_time = time.time()
-            for event in tqdm.tqdm(events):
-                if event.type == 'UPDATE':
-                    try:
+            for log_data in tqdm.tqdm(logs):
+                if log_data['logType'] == 'EVENT':
+                    event = Event(None, None)
+                    event.load_from_dict(log_data['logData'])
+                    if event.type == 'UPDATE':
                         if 'exec' in event.value:
-                            mo.Nodes[event.nid].processName = event.value['exec']
+                            if event.nid in mo.Nodes:
+                                mo.Nodes[event.nid].processName = event.value['exec']
+                            elif event.nid in node_buffer:
+                                node_buffer[event.nid]['processName'] = event.value['exec']
                         elif 'name' in event.value:
-                            mo.Nodes[event.nid].name = event.value['name']
-                            mo.Nodes[event.nid].path = event.value['name']
+                            if event.nid in mo.Nodes:
+                                mo.Nodes[event.nid].name = event.value['name']
+                                mo.Nodes[event.nid].path = event.value['name']
+                            elif event.nid in node_buffer:
+                                node_buffer[event.nid]['name'] = event.value['name']
+                                node_buffer[event.nid]['path'] = event.value['name']
                         elif 'cmdl' in event.value:
-                            mo.Nodes[event.nid].cmdLine = event.value['cmdl']
-                    except KeyError:
-                        pass
-                    continue
-                if event.src not in mo.Nodes:
-                    add_nodes_to_graph(mo, event.src, nodes[event.src])
+                            if event.nid in mo.Nodes:
+                                mo.Nodes[event.nid].cmdLine = event.value['cmdl']
+                            elif event.nid in node_buffer:
+                                node_buffer[event.nid]['cmdLine'] = event.value['cmdl']
+                    else:
+                        if event.src not in mo.Nodes:
+                            add_nodes_to_graph(mo, event.src, node_buffer[event.src])
+                            del node_buffer[event.src]
 
-                if isinstance(event.dest, int) and event.dest not in mo.Nodes:
-                    add_nodes_to_graph(mo, event.dest, nodes[event.dest])
+                        if isinstance(event.dest, str) and event.dest not in mo.Nodes:
+                            add_nodes_to_graph(mo, event.dest, node_buffer[event.dest])
+                            del node_buffer[event.dest]
 
-                if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
-                    add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
+                        if isinstance(event.dest2, str) and event.dest2 not in mo.Nodes:
+                            add_nodes_to_graph(mo, event.dest2, node_buffer[event.dest2])
+                            del node_buffer[event.dest2]
 
-                diagnosis, tag_indices, s_labels, o_labels, pc, lambda_grad, thr_grad, loss = mo.add_event_generate_loss(event, None)
-                experiment.update_metrics(diagnosis, None)
+                        diagnosis, tag_indices, s_labels, o_labels, pc, lambda_grad, thr_grad, loss = mo.add_event_generate_loss(event, None)
+                        experiment.update_metrics(diagnosis, None)
 
-                if diagnosis == None:
-                    continue
+                        if diagnosis == None:
+                            continue
 
-                total_loss += loss
+                        total_loss += loss
 
-                if s_labels:
-                    node_gradients.extend(s_labels)
+                        if s_labels:
+                            node_gradients.extend(s_labels)
 
-                if o_labels:
-                    node_gradients.extend(o_labels)
+                        if o_labels:
+                            node_gradients.extend(o_labels)
 
-                edge_gradients.extend(lambda_grad)
+                        edge_gradients.extend(lambda_grad)
 
-                for key, value in thr_grad.items():
-                    if key not in fp_counter:
-                        fp_counter[key] = [0, 0, 0, 0, 0, 0, 0, 0]
-                    for i, grad in enumerate(value):
-                        if grad:
-                            fp_counter[key][i] += grad
+                        for key, value in thr_grad.items():
+                            if key not in fp_counter:
+                                fp_counter[key] = [0, 0, 0, 0, 0, 0, 0, 0]
+                            for i, grad in enumerate(value):
+                                if grad:
+                                    fp_counter[key][i] += grad
+                elif log_data['logType'] == 'NODE':
+                    node_buffer[log_data['logData']['id']] = {k: v for k, v in log_data['logData'].items()}
+                    del node_buffer[log_data['logData']['id']]['id']
+                    # print(f'Size of node buffer {len(node_buffer)}')
+                elif log_data['logType'] == 'PRINCIPAL':
+                    mo.Principals[log_data['logData']['uuid']] = {k: v for k, v in log_data['logData'].items()}
+                    del mo.Principals[log_data['logData']['uuid']]['uuid']
 
             print('The detection loss is :{:.2f}'.format(total_loss))
             experiment.save_to_metrics_file('The detection loss is :{:.2f}'.format(total_loss))
@@ -207,8 +252,6 @@ def start_experiment(args):
                     if np.absolute(mo.alpha_dict[key] - default_a0) <= 1e-6:
                         del mo.alpha_dict[key]
 
-                # print("mo.alpha_dict[('NetFlowObject', '207.46.73.59')]:{}".format(mo.alpha_dict.get(('NetFlowObject', '207.46.73.59'),0)))
-
             if 't' in args.param_type:
                 # Tune T
                 for key in fp_counter.keys():
@@ -239,88 +282,14 @@ def start_experiment(args):
             with open(os.path.join(experiment.get_experiment_output_path(), 'params/alpha-e{}.pickle'.format(epoch)), 'wb') as fout:
                 pickle.dump(mo.alpha_dict, fout)
 
-    elif args.mode == "test":
-        print("Begin preparing testing...")
-        logging.basicConfig(level=logging.INFO,
-                            filename='debug.log',
-                            filemode='w+',
-                            format='%(asctime)s %(levelname)s:%(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p')
-        ec = eventClassifier(args.ground_truth_file)
-            
-        Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
-        mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
-
-        # ================= Load all nodes & edges to memory ==================== #
-        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
-        mo.Principals = principals
-
-        if args.param_path:
-            with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-                mo.lambda_dict = pickle.load(fin)
-            with open(os.path.join(args.param_path, 'train', 'params/tau-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-                mo.tau_dict = pickle.load(fin)
-            with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-                mo.alpha_dict = pickle.load(fin)
-
-        false_alarms = []
-        begin_time = time.time()
-        for event in tqdm.tqdm(events):
-            if event.type == 'UPDATE':
-                try:
-                    if 'exec' in event.value:
-                        mo.Nodes[event.nid].processName = event.value['exec']
-                    elif 'name' in event.value:
-                        mo.Nodes[event.nid].name = event.value['name']
-                        mo.Nodes[event.nid].path = event.value['name']
-                    elif 'cmdl' in event.value:
-                        mo.Nodes[event.nid].cmdLine = event.value['cmdl']
-                except KeyError:
-                    pass
-                continue
-                
-            if event.src not in mo.Nodes:
-                add_nodes_to_graph(mo, event.src, nodes[event.src])
-
-            if isinstance(event.dest, int) and event.dest not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest, nodes[event.dest])
-
-            if isinstance(event.dest2, int) and event.dest2 not in mo.Nodes:
-                add_nodes_to_graph(mo, event.dest2, nodes[event.dest2])
-
-            gt = ec.classify(event.id)
-            # if gt:
-            #     pdb.set_trace()
-            diagnosis = mo.add_event(event, gt)
-            experiment.update_metrics(diagnosis, gt)
-            if gt == None and diagnosis != None:
-                false_alarms.append(diagnosis)
-        # calculate lengths of grad dict
-        reduced_node_num = 0
-        for key, item in mo.Nodes.items():
-            if mo.Nodes[key].tags()[2] < 0.5:
-                reduced_node_num += 1
-        print('The reduced graph has {} nodes!'.format(reduced_node_num))
-        experiment.save_to_metrics_file('The reduced graph has {} nodes!'.format(reduced_node_num))
-
-        mo.alarm_file.close()
-        experiment.alarm_dis = Counter(false_alarms)
-        experiment.detection_time = time.time()-begin_time
-        experiment.print_metrics()
-        experiment.save_metrics()
-        ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-        ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
-        print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--att", type=float)
     parser.add_argument("--decay", type=float)
-    parser.add_argument("--ground_truth_file", type=str)
+    # parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--data_path", type=str)
     parser.add_argument("--epoch", default=10, type=int)
-    parser.add_argument("--mode", type=str)
+    parser.add_argument("--mode", type=str, default="train")
     parser.add_argument("--param_type", type=str)
     parser.add_argument("--model_index", type=int)
     parser.add_argument("--data_tag", type=str)

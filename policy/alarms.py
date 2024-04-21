@@ -87,6 +87,13 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
                   alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.extend([2,3])
 
+   if event_type in {'create'}:
+      if o.isFile():
+         if itag(s.tags()) < tau_s_i:
+            if not alarms[(s.get_pid(), event.type, o.get_name())]:
+               alarm_result = prtSOAlarm(ts, "MaliciousFileCreation", s, o, alarms, event.id, event.type, alarm_file)
+               tag_indices.append(2)
+
    if event_type in {'inject'}:
       if itag(s.tags()) < tau_s_i:
          alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
@@ -99,7 +106,7 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
             tag_indices.append(2)
 
    if event_type in {'chmod'}:
-      if ((event.parameters & int('0111',8)) != 0):
+      if isinstance(event.parameters, int) and ((event.parameters & int('0111',8)) != 0):
          if itag(o.tags()) < tau_o_i:
             if not alarms[(s.get_pid(), event.type, o.get_name())]:
                alarm_result = prtSOAlarm(ts, "MkFileExecutable", s, o, alarms, event.id, event.type, alarm_file)

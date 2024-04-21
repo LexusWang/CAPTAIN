@@ -39,6 +39,13 @@ def get_target(event, s, o, gt):
     # if event_type in {'inject'}:
     #    if (isTRUSTED(citag(alarmarg.origtags)) and isUNTRUSTED(citag(o.tags()))):
     #       alarm_result = prtSSAlarm(ts,"Inject", s, o,event.id, alarm_file)
+                
+    if event_type in {'create'}:
+        if o.isFile():
+            if gt == 'MaliciousFileCreation':
+                s_target_ = [None, None, 0, None]
+            else:
+                s_target_ = [None, None, 1, None]
 
     if event_type in {'set_uid'}:
         if event.parameters == 0:
@@ -49,7 +56,7 @@ def get_target(event, s, o, gt):
     
     if event_type in {'chmod'}:
         prm = event.parameters
-        if ((prm & int('0111',8)) != 0):
+        if isinstance(prm, int) and ((prm & int('0111',8)) != 0):
             if gt == "MkFileExecutable":
                 o_target_ = [None, None, 0, None]
             else:

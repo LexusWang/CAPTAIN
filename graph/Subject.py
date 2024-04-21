@@ -1,4 +1,3 @@
-# from morse import Morse
 import math
 import re
 import json
@@ -53,10 +52,12 @@ class Subject:
         # self.id = json_dict['id']
         self.type = json_dict['type']
         self.pid = json_dict['pid']
-        if math.isnan(self.pid) == False:
+        # if math.isnan(self.pid) == False:
+        if self.pid:
             self.pid = int(self.pid)
         self.ppid = json_dict['ppid']
-        if math.isnan(self.ppid) == False:
+        # if math.isnan(self.ppid) == False:
+        if self.ppid:
             self.ppid = int(self.ppid)
         self.cmdLine = json_dict['cmdLine']
         self.processName = json_dict['processName']

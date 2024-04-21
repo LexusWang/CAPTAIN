@@ -1,7 +1,6 @@
 import json
 import pdb
 from utils.utils import *
-from model.morse import Morse
 from graph.Event import Event
 
 def read_events_from_files(edge_file, time_range):

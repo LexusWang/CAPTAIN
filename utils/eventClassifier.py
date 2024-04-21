@@ -110,7 +110,7 @@ class eventClassifier:
             if(self.classify(l[0])):
                 print(self.classify(l[0]), "alarm detected")
 
-            subject_info = re.search(r'Subject:([0-9]*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', line)
+            subject_info = re.search(r'Subject:(.*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', line)
             suuid = subject_info.group(1)
             spid = subject_info.group(2)
             spname = subject_info.group(3)

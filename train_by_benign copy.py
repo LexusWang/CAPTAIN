@@ -14,7 +14,7 @@ from policy.propTags import dump_event_feature
 import tqdm
 import time
 import pandas as pd
-from model.morse import Morse
+from model.captain import CAPTAIN
 from utils.graph_detection import add_nodes_to_graph
 from utils.graphLoader import read_events_from_files
 from pathlib import Path
@@ -37,7 +37,7 @@ def load_graph(data_path, time_range, pre_loaded_path):
 def start_experiment(args):
     experiment = Experiment(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()), args, args.experiment_prefix)
     experiment.save_hyperparameters()
-    mo = Morse(att = args.att, decay = args.decay)
+    mo = CAPTAIN(att = args.att, decay = args.decay)
     # ============= Tag Initializer =============== #
     node_inits = {}
 
@@ -62,7 +62,7 @@ def start_experiment(args):
             print('epoch: {}'.format(epoch))
             Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
             mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-epoch-{}.txt'.format(epoch)),'a')
-            mo.reset_morse()
+            mo.reset()
             # mo.reset_tags()
             total_loss = 0
 
@@ -251,6 +251,10 @@ def start_experiment(args):
         Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
         mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
 
+        # ================= Load all nodes & edges to memory ==================== #
+        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
+        mo.Principals = principals
+
         if args.param_path:
             with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(args.model_index)), 'rb') as fin:
                 mo.lambda_dict = pickle.load(fin)
@@ -258,10 +262,6 @@ def start_experiment(args):
                 mo.tau_dict = pickle.load(fin)
             with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(args.model_index)), 'rb') as fin:
                 mo.alpha_dict = pickle.load(fin)
-
-        # ================= Load all nodes & edges to memory ==================== #
-        events, nodes, principals = load_graph(args.data_path, args.time_range, experiment.get_pre_load_morse(args.data_tag))
-        mo.Principals = principals
 
         false_alarms = []
         begin_time = time.time()
@@ -295,14 +295,13 @@ def start_experiment(args):
             experiment.update_metrics(diagnosis, gt)
             if gt == None and diagnosis != None:
                 false_alarms.append(diagnosis)
-                
-        # # calculate lengths of grad dict
-        # reduced_node_num = 0
-        # for key, item in mo.Nodes.items():
-        #     if mo.Nodes[key].tags()[2] < 0.5:
-        #         reduced_node_num += 1
-        # print('The reduced graph has {} nodes!'.format(reduced_node_num))
-        # experiment.save_to_metrics_file('The reduced graph has {} nodes!'.format(reduced_node_num))
+        # calculate lengths of grad dict
+        reduced_node_num = 0
+        for key, item in mo.Nodes.items():
+            if mo.Nodes[key].tags()[2] < 0.5:
+                reduced_node_num += 1
+        print('The reduced graph has {} nodes!'.format(reduced_node_num))
+        experiment.save_to_metrics_file('The reduced graph has {} nodes!'.format(reduced_node_num))
 
         mo.alarm_file.close()
         experiment.alarm_dis = Counter(false_alarms)
