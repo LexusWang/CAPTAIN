@@ -12,3 +12,4 @@ GT/*
 test_scripts/*
 adversarial/artifacts/*
 data/*
+temp.py
