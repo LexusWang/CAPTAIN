@@ -29,7 +29,7 @@ python parse/cdm18/standard_data-cadets.py --input_data #CADETS_FILE_PATH --outp
 
 ### Training
 ```
-python train_by_benign_debug.py --att 0.2 --decay 2 --data_path data/C31 --data_tag c3-train --param_type agt --experiment_prefix Train-C3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-6T00:00:00-04:00
+python train_by_benign_debug.py --att 0.2 --decay 2 --data_path data/C3 --data_tag c3-train --param_type agt --experiment_prefix Train-C3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-6T00:00:00-04:00
 ```
 
 ### Detection (Testing)
@@ -70,8 +70,8 @@ python parse/cdm20/standard_data-cadets.py --input_data #CADETS_FILE_PATH --outp
 ### Data Preprocessing
 
 ```
-mkdir data/C5
-python parse/cdm20/standard_data-cadets.py --input_data #CADETS_FILE_PATH --output_data data/C5 --format cadets --cdm_version 20
+mkdir data/T5
+python parse/cdm20/standard_data-trace.py --input_data #TRACE_FILE_PATH --output_data data/T5 --format trace --cdm_version 20
 ```
 
 
