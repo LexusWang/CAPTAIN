@@ -9,17 +9,23 @@ import time
 import pdb
 
 def start_experiment(args):
-    # output_file = open(os.path.join(args.output_data, 'logs.json'), 'w')
+    output_file = open(os.path.join(args.output_data, 'logs.json'), 'w')
 
     ##### Load File Names #####
     # volume_list = [file for file in os.listdir(args.input_data) if file.startswith('.') == False]
     # volume_list = sorted(volume_list, key=lambda x:int(x.split('.')[2]))
     volume_list = []
-    for volume in range(args.volume_num):
+    for volume in range(204):
         if volume == 0:
-            volume_list.append(args.input_data)
+            volume_list.append(os.path.join(args.input_data, 'ta1-trace-e3-official.json', 'ta1-trace-e3-official.json'))
         else:
-            volume_list.append(args.input_data+f'.{volume}')
+            volume_list.append(os.path.join(args.input_data, 'ta1-trace-e3-official.json', f'ta1-trace-e3-official.json.{volume}'))
+            
+    for volume in range(7):
+        if volume == 0:
+            volume_list.append(os.path.join(args.input_data, 'ta1-trace-e3-official-1.json', 'ta1-trace-e3-official-1.json'))
+        else:
+            volume_list.append(os.path.join(args.input_data, 'ta1-trace-e3-official-1.json', f'ta1-trace-e3-official-1.json.{volume}'))
 
     last_event_str = ''
     node_buffer = {}
@@ -56,13 +62,13 @@ def start_experiment(args):
                             last_event_str = event_str
                             edge_num += 1
                             log_datum = {'logType':'EVENT', 'logData': json.loads(event.dumps())}
-                            # print(json.dumps(log_datum), file = output_file)
+                            print(json.dumps(log_datum), file = output_file)
                 elif record_type == 'Subject':
                     subject = parse_subject_trace(record_datum,args.cdm_version)
                     if subject:
                         node_buffer[subject.id] = subject
                         log_datum = {'logType':'NODE', 'logData': json.loads(subject.dumps())}
-                        # print(json.dumps(log_datum), file = output_file)
+                        print(json.dumps(log_datum), file = output_file)
                         node_num += 1
                 elif record_type == 'Principal':
                     record_datum['euid'] = record_datum['properties']['map']['euid']
@@ -70,20 +76,20 @@ def start_experiment(args):
                     del record_datum['properties']
                     principals_buffer[record_datum['uuid']] = record_datum
                     log_datum = {'logType':'PRINCIPAL', 'logData': record_datum}
-                    # print(json.dumps(log_datum), file = output_file)
+                    print(json.dumps(log_datum), file = output_file)
                 elif record_type.endswith('Object'):
                     object = parse_object_trace(record_datum,record_type)
                     if object:
                         node_buffer[object.id] = object
                         log_datum = {'logType':'NODE', 'logData': json.loads(object.dumps())}
-                        # print(json.dumps(log_datum), file = output_file)
+                        print(json.dumps(log_datum), file = output_file)
                         node_num += 1
                 elif record_type in {'TimeMarker', 'StartMarker', 'UnitDependency', 'Host'}:
                     pass
                 else:
                     pass
 
-    # output_file.close()
+    output_file.close()
     print("Parsing Time: {:.2f}s".format(time.time()-begin_time))
     print("#Events: {:,}".format(envt_num))
     print("#Nodes: {:,}".format(node_num))
@@ -96,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument("--output_data", type=str)
     parser.add_argument("--format", type=str)
     parser.add_argument("--cdm_version", type=int)
-    parser.add_argument("--volume_num", type=int)
+    # parser.add_argument("--volume_num", type=int)
     args = parser.parse_args()
 
     start_experiment(args)

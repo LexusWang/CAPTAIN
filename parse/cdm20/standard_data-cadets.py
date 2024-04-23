@@ -9,23 +9,7 @@ from parse.cdm20.cadets_parser import parse_event_cadets, parse_object_cadets, p
 
 def start_experiment(args):
     begin_time = time.time()
-
-    # node_file = open(os.path.join(args.output_data, 'nodes.json'), 'w')
-    # edge_file = open(os.path.join(args.output_data, 'edges.json'), 'w')
-    # principal_file = open(os.path.join(args.output_data, 'principals.json'), 'w')
-
     output_file = open(os.path.join(args.output_data, 'logs.json'), 'w')
-
-    # uuid_nid_mapping = {}
-    # node_id = 0
-
-    # loaded_line = 0
-    # last_event_str = ''
-    
-    # node_set = set()
-    # envt_num = 0
-    # edge_num = 0
-    # node_num = 0
 
     ##### Load File Names #####
     volume_list = []
