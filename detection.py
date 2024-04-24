@@ -189,18 +189,18 @@ def start_experiment(args):
             print(nid, file=fout)
             
     ## For Theia
-    from graph.Object import Object
-    from graph.Subject import Subject
-    node_names = set()
-    with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes-name.txt'), 'w') as fout:
-        for nid in alarm_nodes:
-            if isinstance(mo.Nodes[nid], Subject):
-                nname = f"{mo.Nodes[nid].pid} {mo.Nodes[nid].get_name()} {mo.Nodes[nid].get_cmdln()}"
-            elif isinstance(mo.Nodes[nid], Object):
-                nname = mo.Nodes[nid].get_name()
-            if nname not in node_names:
-                print(nname, file=fout)
-                node_names.add(nname)
+    # from graph.Object import Object
+    # from graph.Subject import Subject
+    # node_names = set()
+    # with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes-name.txt'), 'w') as fout:
+    #     for nid in alarm_nodes:
+    #         if isinstance(mo.Nodes[nid], Subject):
+    #             nname = f"{mo.Nodes[nid].pid} {mo.Nodes[nid].get_name()} {mo.Nodes[nid].get_cmdln()}"
+    #         elif isinstance(mo.Nodes[nid], Object):
+    #             nname = mo.Nodes[nid].get_name()
+    #         if nname not in node_names:
+    #             print(nname, file=fout)
+    #             node_names.add(nname)
                     
     mo.alarm_file.close()
     experiment.alarm_dis = Counter(false_alarms)
