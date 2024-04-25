@@ -1,0 +1,57 @@
+{
+    "dataset_name" : "DARPA E3 THEIA",
+    "attack_count" : 4,
+    "attacks" : [
+        {
+            "name": "Firefox Backdoor w/ Drakon In-Memory",
+            "start_timestamp": 1523383200000000000, 
+            "end_timestamp": 1523387400000000000, 
+            "entities": {
+                "process" : ["/home/admin/clean", "/home/admin/profile"],
+                "file" : ["/home/admin/clean", "/home/admin/profile", "/var/log/xdev"],
+                "ip" : ["104.228.117.212", 
+                        "141.43.176.203", 
+                        "146.153.68.151", 
+                        "161.116.88.72", 
+                        "7.149.198.40"]
+            }
+        },
+        {
+            "name": "Browser Extension w/ Drakon Dropper",
+            "start_timestamp": 1523550600000000000, 
+            "end_timestamp": 1523554200000000000, 
+            "entities": {
+                "process" : ["./gtcache", "/var/log/mail"],
+                "file" : ["/var/log/xdev", "/var/log/wdev", "/var/log/mail"],
+                "ip" : ["104.228.117.212", 
+                        "141.43.176.203", 
+                        "146.153.68.151",
+                        "149.52.198.23"]
+            }
+        },
+        {
+            "name": "Phishing E-mail w/ Link",
+            "start_timestamp": 1523381400000000000, 
+            "end_timestamp": 1523385000000000000, 
+            "entities": {
+                "process" : [],
+                "file" : [],
+                "ip" : ["62.83.155.175", 
+                        "208.75.117.3"
+                        ]
+            }
+        },
+        {
+            "name": "Phishing E-mail w/ Executable Attachment",
+            "start_timestamp": 1523642400000000000, 
+            "end_timestamp": 1523643000000000000, 
+            "entities": {
+                "process" : [],
+                "file" : ["tcexec"],
+                "ip" : []
+            }
+        }
+
+    ]
+    
+}

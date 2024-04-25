@@ -8,8 +8,10 @@ experiments/*
 pre_load_graph/*
 new_data/*
 eventClassifierTest.py
-GT/*
 test_scripts/*
 adversarial/artifacts/*
 data/*
+!/data/GT
+data/GT/*
+!data/GT/human_readable_gt
 temp.py

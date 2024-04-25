@@ -1,0 +1,55 @@
+{
+    "dataset_name" : "DARPA E3 TRACE",
+    "attack_count" : 3,
+    "attacks" : [
+        {
+            "name": "Firefox Backdoor w/ Drakon In-Memory",
+            "start_timestamp": 1523368800000000000, 
+            "end_timestamp": 1523376000000000000, 
+            "entities": {
+                "process" : ["/home/admin/cache"],
+                "file" : ["/home/admin/cache", "/var/log/xtmp"],
+                "ip" : ["145.199.103.57", 
+                        "61.130.69.232", 
+                        "2.233.33.52", 
+                        "180.156.107.146"]
+            }
+        },
+        {
+            "name": "Pine Backdoor w/ Drakon Dropper",
+            "start_timestamp": 1523637000000000000, 
+            "end_timestamp": 1523640600000000000, 
+            "entities": {
+                "process" : ["/tmp/ztmp", "/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "file" : ["/tmp/ztmp", "/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "ip" : ["145.199.103.57", 
+                        "61.130.69.232", 
+                        "2.233.33.52", 
+                        "180.156.107.146",
+                        "5.214.163.155",
+                        "45.26.25.240",
+                        "161.116.88.72",
+                        "146.153.68.151",
+                        "104.228.117.212",
+                        "141.43.176.203",
+                        "149.52.198.23",
+                        "162.66.239.75",
+                        "17.146.0.252"]
+            }
+        },
+        {
+            "name": "Phishing E-mail Link",
+            "start_timestamp": 1523640600000000000, 
+            "end_timestamp": 1523646000000000000, 
+            "entities": {
+                "process" : ["/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "file" : ["/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "ip" : ["162.66.239.75", 
+                        "103.12.253.24", 
+                        "207.103.191.4"]
+            }
+        }
+
+    ]
+    
+}
