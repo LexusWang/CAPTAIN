@@ -1,0 +1,31 @@
+{
+    "dataset_name" : "DARPA E5 CADETS",
+    "attack_count" : 2,
+    "attacks" : [
+        {
+            "name": "TA1 CADETS 1 and 2 -- Nginx Drakon APT",
+            "start_timestamp": 1558013400000000000, 
+            "end_timestamp": 1558017000000000000, 
+            "entities": {
+                "process" : [],
+                "file" : [],
+                "ip" : ["98.23.182.25", 
+                        "4.21.51.250"]
+            }
+        },
+        {
+            "name": "CADETS 1 and 2 -- Nginx Drakon APT",
+            "start_timestamp": 1558105200000000000, 
+            "end_timestamp": 1558111200000000000,
+            "entities": {
+                "process" : [],
+                "file" : ["/etc/passwd"],
+                "ip" : ["98.23.182.25",
+                        "4.21.51.250",
+                        "108.192.100.31"]
+            }
+        }
+
+    ]
+    
+}
