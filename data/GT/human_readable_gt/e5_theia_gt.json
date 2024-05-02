@@ -1,0 +1,42 @@
+{
+    "dataset_name" : "DARPA E5 THEIA",
+    "attack_count" : 3,
+    "attacks" : [
+        {
+            "name": "THEIA -- Firefox Drakon APT (Failed)",
+            "start_timestamp": 1557864000000000000, 
+            "end_timestamp": 1557867600000000000, 
+            "entities": {
+                "process" : [],
+                "file" : ["barephone-instr.apk"],
+                "ip" : ["189.141.204.211", 
+                        "153.4.41.7", 
+                        "208.203.20.42"]
+            }
+        },
+        {
+            "name": "THEIA 3 -- BinFmt-Elevate Setup",
+            "start_timestamp": 1557880200000000000, 
+            "end_timestamp": 1557880800000000000, 
+            "entities": {
+                "process" : [],
+                "file" : ["load_helper_theia.ko", "read_scan_theia.ko"],
+                "ip" : []
+            }
+        },
+        {
+            "name": "THEIA 1 -- Firefox Drakon APT BinFmt-Elevate Inject",
+            "start_timestamp": 1557945000000000000, 
+            "end_timestamp": 1557948600000000000,
+            "entities": {
+                "process" : ["pid:1162 sshd"],
+                "file" : ["load_helper_theia.ko", "read_scan_theia.ko"],
+                "ip" : ["153.4.41.7",
+                        "189.141.204.211",
+                        "208.203.20.42"]
+            }
+        }
+
+    ]
+    
+}

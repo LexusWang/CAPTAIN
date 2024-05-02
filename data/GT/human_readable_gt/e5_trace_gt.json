@@ -1,0 +1,30 @@
+{
+    "dataset_name" : "DARPA E5 TRACE",
+    "attack_count" : 2,
+    "attacks" : [
+        {
+            "name": "TRACE 2 - Firefox Drakon APT Elevate Inject",
+            "start_timestamp": 1557842400000000000, 
+            "end_timestamp": 1557856800000000000, 
+            "entities": {
+                "process" : ["pid: 16808 sshd"],
+                "file" : ["read_scan.ko", "load_helper.ko", "/etc/passwd", "etc/shadow"],
+                "ip" : ["35.106.122.76", 
+                        "192.196.28.222", 
+                        "69.155.209.87"]
+            }
+        },
+        {
+            "name": "TRACE 1 and 2 – Azazel APT (Failed)",
+            "start_timestamp": 1558098000000000000, 
+            "end_timestamp": 1558101600000000000, 
+            "entities": {
+                "process" : [],
+                "file" : ["/lib/libselinux.so"],
+                "ip" : []
+            }
+        }
+
+    ]
+    
+}
