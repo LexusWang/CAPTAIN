@@ -119,24 +119,20 @@ def start_experiment(args):
                     elif event.time > detection_end_time:
                         break
 
-                    if event.src not in mo.Nodes:
+                    if event.src not in mo.Nodes and event.src in node_buffer:
                         add_nodes_to_graph(mo, event.src, node_buffer[event.src])
                         del node_buffer[event.src]
 
-                    if isinstance(event.dest, str) and event.dest not in mo.Nodes:
+                    if isinstance(event.dest, str) and event.dest not in mo.Nodes and event.dest in node_buffer:
                         add_nodes_to_graph(mo, event.dest, node_buffer[event.dest])
                         del node_buffer[event.dest]
 
-                    if isinstance(event.dest2, str) and event.dest2 not in mo.Nodes:
+                    if isinstance(event.dest2, str) and event.dest2 not in mo.Nodes and event.dest2 in node_buffer:
                         add_nodes_to_graph(mo, event.dest2, node_buffer[event.dest2])
                         del node_buffer[event.dest2]
 
                     gt = ec.classify(event.id)
                     diagnosis = mo.add_event(event, gt)
-                    # diagnosis = mo.add_event_generate_loss(event, gt)
-                    # if gt == None and diagnosis[0]:
-                    #     pdb.set_trace()
-                    # diagnosis = diagnosis[0]
                     experiment.update_metrics(diagnosis, gt)
 
                     ## Mimicry Attack Experiments

@@ -208,16 +208,6 @@ class CAPTAIN:
         dest = self.Nodes.get(event.dest, None)
         dest2 = self.Nodes.get(event.dest2, None)
 
-        # if src and src.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
-        #     # pdb.set_trace()
-        #     print(dump_event_feature(event, src, dest, dest2))
-        # if dest and dest.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
-        #     # pdb.set_trace()
-        #     print(dump_event_feature(event, src, dest, dest2))
-        # if dest2 and dest2.id in {'ECB97D8D-649C-9FF1-D5FF-F4B39229C1F0', '964D9E8C-C3C8-5C07-9B68-3D0D0B590BBC', 'CF66482C-33A3-8DFE-5713-A1BB54C5A7C0', '7169B097-1601-297F-2F6E-CEF5924F1C68'}:
-        #     # pdb.set_trace()
-        #     print(dump_event_feature(event, src, dest, dest2))
-
         if src:
             event_feature_str = str(dump_event_feature(event, src, dest, dest2))
 
@@ -236,7 +226,11 @@ class CAPTAIN:
             tau = self.tau_dict.get(event_feature_str, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             prop_lambda = self.lambda_dict.get(event_feature_str, 0)
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
-            propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau, update_gradients=False)
+            try:
+                propTags(event, src, dest, dest2, att = self.att, decay = self.decay, prop_lambda=prop_lambda, tau=tau, update_gradients=False)
+            except AssertionError:
+                ## the format of the event is incorrect
+                return None
 
             # try:
             #     if event.type == 'update':
