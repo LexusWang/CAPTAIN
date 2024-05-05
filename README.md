@@ -103,9 +103,12 @@ python parse/cdm20/standard_data-cadets.py --input_data #CADETS_FILE_PATH --outp
 python train_by_benign.py --att 0.2 --decay 2 --data_path data/C5 --data_tag c5-train --param_type agt --experiment_prefix Train-C5 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2019-5-7T08:00:00-04:00 2019-5-10T08:00:00-04:00
 ```
 
+### Detection (Testing)
 ```
+## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-C5
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthC5.txt --data_path data/C5 --experiment_prefix Test-C5 --param_path experiments/Train-C5 --model_index 99 --time_range 2019-5-10T08:00:00-04:00 2019-5-17T18:00:00-04:00
 
+## The default parameters (without any training) can serve as the baseline
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthC5.txt --data_path data/C5 --experiment_prefix Test-C5 --time_range 2019-5-10T08:00:00-04:00 2019-5-17T18:00:00-04:00
 ```
 
