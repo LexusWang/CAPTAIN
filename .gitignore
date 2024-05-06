@@ -16,3 +16,4 @@ data/GT/*
 !data/GT/human_readable_gt
 !data/GT/groundTruth*.txt
 temp.py
+label/*

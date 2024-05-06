@@ -4,7 +4,7 @@
     "attacks" : [
         {
             "name": "Firefox Backdoor w/ Drakon In-Memory",
-            "start_timestamp": 1523383200000000000, 
+            "start_timestamp": 1523384400000000000, 
             "end_timestamp": 1523387400000000000, 
             "entities": {
                 "process" : ["/home/admin/clean", "/home/admin/profile"],
@@ -32,12 +32,13 @@
         {
             "name": "Phishing E-mail w/ Link",
             "start_timestamp": 1523381400000000000, 
-            "end_timestamp": 1523385000000000000, 
+            "end_timestamp": 1523383800000000000, 
             "entities": {
                 "process" : [],
                 "file" : [],
                 "ip" : ["62.83.155.175", 
-                        "208.75.117.3"
+                        "208.75.117.3",
+                        "208.75.117.2"
                         ]
             }
         },
