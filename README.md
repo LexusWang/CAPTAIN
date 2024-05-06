@@ -17,6 +17,9 @@ The code is tested on the Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64
 [Engagement 5 TRACE Pipeline](#engagement-5-trace-pipeline)
 
 ## Enviroment Setup
+```
+conda install --file requirements.txt
+```
 
 ## Engagement 3 CADETS Pipeline
 
