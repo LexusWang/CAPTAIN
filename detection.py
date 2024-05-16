@@ -15,6 +15,8 @@ import pandas as pd
 # writer.writerow(['Time', 'Memory Usage (MB)'])
 
 import resource
+from datetime import datetime
+import pytz
 
 from pympler import asizeof
 
@@ -67,13 +69,15 @@ def start_experiment(args):
     node_buffer = {}
     loaded_line = 0
 
-    false_alarms = []
+    # false_alarms = []
+    experiment.alarm_dis = Counter([])
 
     ## alarm node evaluation
     alarm_nodes = set()
 
     experiment.detection_time = 0
 
+    decoder = json.JSONDecoder()
     with open(log_file, 'r') as fin:
         for line in fin:
             detection_delay_marker = time.time()
@@ -84,6 +88,16 @@ def start_experiment(args):
                 # start_cpu_time = resource.getrusage(resource.RUSAGE_SELF).ru_utime
             if loaded_line > 0 and loaded_line % 100000 == 0:
                 print("CAPTAIN has detected {:,} logs.".format(loaded_line))
+                
+                dt = datetime.fromtimestamp(prt_ts / 1e9)
+                ny_tz = pytz.timezone('America/New_York')
+                ny_dt = dt.astimezone(ny_tz)
+                ny_dt_str = ny_dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+                print(ny_dt_str)
+                
+                delta_time = time.time() - begin_time
+                begin_time = time.time()
+                print(f"Detection time for 100K logs is {delta_time:.2f} s")
                 ## Overhead
                 # current_time = time.strftime('%Y-%m-%d %H:%M:%S')
                 # # cpu_usage = current_process.cpu_percent()
@@ -91,7 +105,7 @@ def start_experiment(args):
                 # writer.writerow([current_time, memory_usage.rss/(1024 * 1024)])
                 # print(f"{current_time}, Memory: {memory_usage.rss/(1024 * 1024)}MB")
             
-            log_data = json.loads(line)
+            log_data = decoder.decode(line)
             if log_data['logType'] == 'EVENT':
                 event = Event(None, None)
                 event.load_from_dict(log_data['logData'])
@@ -113,7 +127,17 @@ def start_experiment(args):
                             mo.Nodes[event.nid].cmdLine = event.value['cmdl']
                         elif event.nid in node_buffer:
                             node_buffer[event.nid]['cmdLine'] = event.value['cmdl']
+                # elif event.type == 'OBJECT_VERSION_UPDATE':
+                #     if event.old in mo.Nodes and event.new in node_buffer:
+                #         add_nodes_to_graph(mo, event.new, node_buffer[event.new])
+                #         del node_buffer[event.new]
+                #         mo.Nodes[event.new].setObjTags(mo.Nodes[event.old].tags()[2:])
+                #         if mo.mode == 'train':
+                #             mo.Nodes[event.new].set_grad(mo.Nodes[event.old].get_grad())
+                #             mo.Nodes[event.new].set_lambda_grad(mo.Nodes[event.old].get_lambda_grad())
+                #         # del mo.Nodes[event.old]
                 else:
+                    prt_ts = event.time
                     if event.time < detection_start_time:
                         continue
                     elif event.time > detection_end_time:
@@ -133,7 +157,10 @@ def start_experiment(args):
 
                     gt = ec.classify(event.id)
                     diagnosis = mo.add_event(event, gt)
+                    # diagnosis, tag_indices, s_labels, o_labels, pc, lambda_grad, thr_grad, loss = mo.add_event_generate_loss(event, gt)
                     experiment.update_metrics(diagnosis, gt)
+                    # if gt and diagnosis == None:
+                    #     pdb.set_trace()
 
                     ## Mimicry Attack Experiments
                     ## Print the tags of Node 84D440C2-4E50-4A5C-904E-C4772C4ACD5A (FileObject: /tmp/test)
@@ -142,12 +169,15 @@ def start_experiment(args):
 
                     if diagnosis != None:
                         if diagnosis == 'FileCorruption':
-                            alarm_nodes = alarm_nodes | {event.src}
+                            alarm_nodes.add(event.src)
                         else:
-                            alarm_nodes = alarm_nodes | {event.src, event.dest, event.dest2}
+                            alarm_nodes.add(event.src)
+                            alarm_nodes.add(event.dest)
+                            alarm_nodes.add(event.dest2)
 
                     if gt == None and diagnosis != None:
-                        false_alarms.append(diagnosis)
+                        # false_alarms.append(diagnosis)
+                        experiment.alarm_dis[diagnosis] += 1
             elif log_data['logType'] == 'NODE':
                 node_buffer[log_data['logData']['id']] = log_data['logData']
                 del node_buffer[log_data['logData']['id']]['id']
@@ -199,7 +229,7 @@ def start_experiment(args):
     #             node_names.add(nname)
                     
     mo.alarm_file.close()
-    experiment.alarm_dis = Counter(false_alarms)
+    # experiment.alarm_dis = Counter(false_alarms)
     experiment.print_metrics()
     experiment.save_metrics()
     ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
@@ -208,9 +238,9 @@ def start_experiment(args):
 
     ## Overhead
     # perf_file.close()
-
-
-if __name__ == '__main__':
+    
+    
+def main():
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--att", type=float, default=0.2)
     parser.add_argument("--decay", type=float, default=0)
@@ -218,7 +248,6 @@ if __name__ == '__main__':
     parser.add_argument("--data_path", nargs='?', type=str)
     parser.add_argument("--param_type", type=str)
     parser.add_argument("--model_index", type=int)
-    # parser.add_argument("--data_tag", type=str)
     parser.add_argument("--experiment_prefix", type=str)
     parser.add_argument("--checkpoint", type=str)
     parser.add_argument("--param_path", type=str)
@@ -232,3 +261,8 @@ if __name__ == '__main__':
 
     start_experiment(args)
 
+
+if __name__ == '__main__':
+    # import cProfile
+    # cProfile.run("main()")
+    main()

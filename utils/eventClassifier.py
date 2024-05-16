@@ -1,6 +1,9 @@
 from datetime import datetime
 import re
 import pdb
+import sys
+sys.path.extend(['.','..','...'])
+from policy.alarms import alarm_types
 
 class eventClassifier:
     def __init__(self, filePath):
@@ -19,7 +22,7 @@ class eventClassifier:
             curr_list = []
             for line in f:
                 clean_line = line.strip()
-                if clean_line in {"DataLeak", "MkFileExecutable", "FileExec", "MkMemExecutable", "FileCorruption", "PrivilegeEscalation", "Injection"}:
+                if clean_line in alarm_types:
                     if curr_alarm:
                         self.__addAlarmUUID(curr_alarm, curr_list)
                     curr_list = []

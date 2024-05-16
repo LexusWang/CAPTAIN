@@ -42,6 +42,8 @@ def prtSAlarm(ts, an, s, event_id, alarmfile= None):
       alarmfile.write(alarm_string+'\n')
    return an
 
+alarm_types = {"DataLeak", "MkFileExecutable", "FileExec", "MkMemExecutable", "FileCorruption", "PrivilegeEscalation", "Injection", "MaliciousFileCreation"}
+
 def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]):
    ts = event.time
    event_type = event.type
