@@ -33,13 +33,13 @@ def parse_event_trace(node_buffer, datum, cdm_version):
     event.properties = datum['properties']['map']
 
     if isinstance(datum['subject'], dict):
-        event.src = list(datum['subject'].values())[0]
+        event.src = datum['subject']["com.bbn.tc.schema.avro.cdm20.UUID"]
     
     if isinstance(datum['predicateObject'], dict):
-        event.dest = list(datum['predicateObject'].values())[0]
+        event.dest = datum['predicateObject']["com.bbn.tc.schema.avro.cdm20.UUID"]
 
     if isinstance(datum['predicateObject2'], dict):
-        event.dest2 = list(datum['predicateObject2'].values())[0]
+        event.dest2 = datum['predicateObject2']["com.bbn.tc.schema.avro.cdm20.UUID"]
 
     try:
         if datum['type'] in READ_SET:
@@ -146,23 +146,35 @@ def parse_subject_trace(datum, cdm_version):
 
 def parse_object_trace(datum, object_type):
     object = Object(id=datum['uuid'], type = object_type)
-    if isinstance(datum['baseObject']['epoch'], dict):
-        object.epoch = datum['baseObject']['epoch']['int']
     if object_type == 'FileObject':
+        if datum['type'] == 'FILE_OBJECT_FILE':
+            object.subtype = datum['type']
+            object.epoch = datum['baseObject']['epoch']['int']
+            # permission = datum['baseObject']['permission']
+            object.name = datum['baseObject']['properties']['map'].get('path', None)
+            object.path = datum['baseObject']['properties']['map'].get('path', None)
+        else:
+            return None
+    elif object_type == 'IpcObject':
         object.subtype = datum['type']
-        # permission = datum['baseObject']['permission']
-        object.name = datum['baseObject']['properties']['map'].get('path',None)
-        object.path = datum['baseObject']['properties']['map'].get('path', None)
-    elif object_type == 'UnnamedPipeObject':
-        return None
+        if object.subtype == 'IPC_OBJECT_PIPE_UNNAMED':
+            object.epoch = datum['baseObject']['epoch']['int']
+            try:
+                name = "unnamedPipe_{}".format(datum['baseObject']["properties"]["map"]["pid"])
+            except:
+                name = "unnamedPipe_unknown_pid"
+            object.name = name
+            object.path = name
+        else:
+            return None
     elif object_type == 'RegistryKeyObject':
         return None
     elif object_type == 'PacketSocketObject':
         return None
     elif object_type == 'NetFlowObject':
+        object.epoch = datum['baseObject']['epoch']['int']
         object.set_IP(datum['remoteAddress']['string'], datum['remotePort']['int'], datum['ipProtocol']['int'])
     elif object_type == 'MemoryObject':
-        # object.name = 'MEM_{}'.format(datum['memoryAddress'])
         return None
     elif object_type == 'SrcSinkObject':
         return None
