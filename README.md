@@ -16,6 +16,8 @@ The code is tested on the Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64
 
 [Engagement 5 TRACE Pipeline](#engagement-5-trace-pipeline)
 
+[Operationally Transparent Cyber (OpTC) Data](#optc-data-pipeline)
+
 ## Enviroment Setup
 ```
 conda install --file requirements.txt
@@ -82,10 +84,14 @@ python parse/cdm18/standard_data-theia.py --input_data #THEIA_FILE_PATH --output
 python train_by_benign.py --att 0 --decay 0 --data_path data/TH3 --data_tag th3-train --param_type agt --experiment_prefix Train-TH3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 ```
 
+```
+python train_by_benign.py --att 0.2 --decay 2 --data_path data/TH3 --data_tag th3-train --param_type agt --experiment_prefix Train-TH3 --lr 1e-2 --alpha 1e1 --gamma 1e1 --tau 1e1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
+```
+
 ### Detection (Testing)
 ```
 ## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-C3
-python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --param_path experiments/Train-TH3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
+python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --param_path experiments/Train-TH3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
 
 ## The default parameters (without any training) can serve as the baseline
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
@@ -126,11 +132,13 @@ python parse/cdm20/standard_data-trace.py --input_data #TRACE_FILE_PATH --output
 
 ### Training
 ```
-python train_by_benign.py --att 0.2 --decay 2 --data_path data/T5 --data_tag t5-train --param_type agt --experiment_prefix Train-T5 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2019-5-7T08:00:00-04:00 2019-5-10T08:00:00-04:00
 
 python train_by_benign.py --att 0.2 --decay 2 --data_path data/T5 --data_tag t5-train --param_type agt --experiment_prefix Train-T5 --lr 1e-3 --alpha 1e1 --gamma 1e1 --tau 1e1 --epoch 100 --time_range 2019-5-7T08:00:00-04:00 2019-5-10T08:00:00-04:00
+
+python train_by_benign.py --att 0.2 --decay 2 --data_path data/T5 --data_tag t5-train --param_type agt --experiment_prefix Train-T5 --lr 1e-2 --alpha 5 --gamma 5 --tau 5 --epoch 100 --time_range 2019-5-7T08:00:00-04:00 2019-5-10T08:00:00-04:00
 ```
 
+### Detection (Testing)
 ```
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthT5.txt --data_path data/T5 --experiment_prefix Test-T5 --param_path experiments/Train-T5 --model_index 99 --time_range 2019-5-10T08:00:00-04:00 2019-5-17T18:00:00-04:00
 
@@ -139,3 +147,22 @@ python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthT
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthT5.txt --data_path data/T5 --experiment_prefix Test-T5 --time_range 2019-5-10T08:00:00-04:00 2019-5-17T18:00:00-04:00
 ```
 
+## OpTC Data Pipeline
+
+### Data Preprocessing
+
+```
+mkdir data/optc
+python parse/cdm20/standard_data-optc.py --input_data #OPTC_FILE_PATH --output_data data/optc
+```
+
+### Training
+```
+
+python train_by_benign.py --att 0 --decay 0 --data_path data/optc --data_tag optc-train --param_type agt --experiment_prefix Train-OPTC --lr 1e-3 --alpha 1e1 --gamma 1e1 --tau 1e1 --epoch 100
+```
+
+### Detection (Testing)
+```
+python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthT5.txt --data_path data/optc --experiment_prefix Test-OPTC
+```
