@@ -164,5 +164,5 @@ python train_by_benign.py --att 0 --decay 0 --data_path data/optc --data_tag opt
 
 ### Detection (Testing)
 ```
-python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthT5.txt --data_path data/optc --experiment_prefix Test-OPTC
+python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthOPTC.txt --data_path data/optc --experiment_prefix Test-OPTC
 ```
