@@ -47,6 +47,9 @@ class Event:
         if self.type == "UPDATE":
             self.value = json_dict['value']
             self.nid = json_dict['nid']
+        elif self.type == "OBJECT_VERSION_UPDATE":
+            self.old = json_dict['old']
+            self.new = json_dict['new']
         else:
             self.id = json_dict['id']
             self.time = json_dict['time']

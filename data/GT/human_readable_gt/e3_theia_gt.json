@@ -21,7 +21,7 @@
             "start_timestamp": 1523550600000000000, 
             "end_timestamp": 1523554200000000000, 
             "entities": {
-                "process" : ["./gtcache", "/var/log/mail"],
+                "process" : [".*gtcache", "/var/log/mail"],
                 "file" : ["/var/log/xdev", "/var/log/wdev", "/var/log/mail"],
                 "ip" : ["104.228.117.212", 
                         "141.43.176.203", 
@@ -48,7 +48,7 @@
             "end_timestamp": 1523643000000000000, 
             "entities": {
                 "process" : [],
-                "file" : ["tcexec"],
+                "file" : [".*tcexec"],
                 "ip" : []
             }
         }

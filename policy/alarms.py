@@ -7,16 +7,11 @@ from policy.floatTags import TRUSTED, UNTRUSTED, BENIGN, PUBLIC
 from policy.floatTags import isTRUSTED, isUNTRUSTED
 from policy.floatTags import citag,ctag,itag,etag, isRoot, permbits
 import pdb
+from utils.utils import getTime
 
 class AlarmArguments():
    def __init__(self) -> None:
        self.rootprinc = None
-
-def getTime(ts):
-   # Transfer time to ET
-   time_local = time.localtime((ts/1e9) - 4*3600)
-   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
-   return dt
 
 def prtSOAlarm(ts, an, s, o, alarms, event_id, event_type, alarmfile= None):
    if not alarms[(s.get_pid(), event_type, o.get_name())]:
@@ -88,6 +83,13 @@ def check_alarm(event, s, o, alarms, created, alarm_file = None, tau = [0.5, 0.5
                if not alarms[(s.get_pid(), event.type, o.get_name())]:
                   alarm_result = prtSOAlarm(ts, "DataLeak", s, o, alarms, event.id, event.type, alarm_file)
                   tag_indices.extend([2,3])
+   
+   if event_type in {'remove'}:  
+      if o.isFile():
+         if itag(o.tags()) < tau_o_i:
+            if not alarms[(s.get_pid(), event.type, o.get_name())]:
+               alarm_result = prtSOAlarm(ts, "RemoveIndicator", s, o, alarms, event.id, event.type, alarm_file)
+               tag_indices.append(6)
 
    if event_type in {'create'}:
       if o.isFile():

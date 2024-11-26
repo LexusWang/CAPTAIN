@@ -190,7 +190,6 @@ def start_experiment(args):
                             mo.lambda_dict[key] = 0
                         # mo.lambda_dict[key] = mo.lambda_dict[key] - args.lr * value/experiment.fp
                         mo.lambda_dict[key] = mo.lambda_dict[key] - args.lr*value
-                        # mo.lambda_dict[key] = mo.lambda_dict[key] - 1e-6 * value
                         mo.lambda_dict[key] = np.clip(mo.lambda_dict[key], 0.0, 1.0)
                     
                     for key in list(mo.lambda_dict.keys()):
@@ -286,7 +285,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--att", type=float)
     parser.add_argument("--decay", type=float)
-    # parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--data_path", type=str)
     parser.add_argument("--epoch", default=10, type=int)
     parser.add_argument("--mode", type=str, default="train")

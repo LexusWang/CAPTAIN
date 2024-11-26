@@ -7,7 +7,7 @@
             "start_timestamp": 1523368800000000000, 
             "end_timestamp": 1523376000000000000, 
             "entities": {
-                "process" : ["/home/admin/cache"],
+                "process" : [".*cache"],
                 "file" : ["/home/admin/cache", "/var/log/xtmp"],
                 "ip" : ["145.199.103.57", 
                         "61.130.69.232", 
@@ -20,7 +20,7 @@
             "start_timestamp": 1523637000000000000, 
             "end_timestamp": 1523640600000000000, 
             "entities": {
-                "process" : ["/tmp/ztmp", "/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "process" : [".*ztmp", ".*tcexec", ".*pine"],
                 "file" : ["/tmp/ztmp", "/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
                 "ip" : ["145.199.103.57", 
                         "61.130.69.232", 
@@ -42,7 +42,7 @@
             "start_timestamp": 1523640600000000000, 
             "end_timestamp": 1523646000000000000, 
             "entities": {
-                "process" : ["/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
+                "process" : [".*tcexec", ".*pine"],
                 "file" : ["/tmp/tcexec", "/home/admin/pine/pine4.64/pine/pine"],
                 "ip" : ["162.66.239.75", 
                         "103.12.253.24", 

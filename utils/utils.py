@@ -1,10 +1,15 @@
 import os
 import torch
+import time
 import pdb
 from pathlib import Path
 from utils.Initializer import Initializer, FileObj_Initializer, NetFlowObj_Initializer
 
-
+def getTime(ts):
+   # Transfer time to ET
+   time_local = time.localtime((ts/1e9) - 4*3600)
+   dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
+   return dt
 
 class Experiment:
 
@@ -181,13 +186,3 @@ class Experiment:
         print(f"fn: {fn}")
 
         return precision, recall, accuracy, f1
-
-    # def save_evaluation_results(precision, recall, accuracy, f1):
-    #     filename = "evaluation_results.txt"
-    #     p = os.path.join(gv.project_path, gv.model_save_path, gv.save_models_dirname, filename)
-    #     with open(p, 'w+') as f:
-    #         f.write("======= evaluation results =======\n")
-    #         f.write(f"precision: {precision}\n")
-    #         f.write(f"recall: {recall}\n")
-    #         f.write(f"accuracy: {accuracy}\n")
-    #         f.write(f"f1: {f1}\n")

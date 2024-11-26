@@ -7,7 +7,7 @@
             "start_timestamp": 1523026800000000000, 
             "end_timestamp": 1523032200000000000, 
             "entities": {
-                "process" : ["/tmp/vUgefal"],
+                "process" : [".*vUgefal"],
                 "file" : ["/tmp/vUgefal", "/var/log/devc"],
                 "ip" : ["81.49.200.166", 
                         "78.205.235.65", 
@@ -21,7 +21,7 @@
             "start_timestamp": 1523473200000000000, 
             "end_timestamp": 1523475000000000000, 
             "entities": {
-                "process" : ["/tmp/grain"],
+                "process" : [".*grain"],
                 "file" : ["/tmp/grain"],
                 "ip" : ["25.159.96.207", 
                         "76.56.184.25", 
@@ -33,7 +33,7 @@
             "start_timestamp": 1523556000000000000, 
             "end_timestamp": 1523559600000000000, 
             "entities": {
-                "process" : ["/tmp/test"],
+                "process" : [".*test"],
                 "file" : ["/tmp/test"],
                 "ip" : ["25.159.96.207", 
                         "76.56.184.25", 
@@ -48,8 +48,8 @@
             "start_timestamp": 1523624400000000000, 
             "end_timestamp": 1523626200000000000, 
             "entities": {
-                "process" : ["/tmp/pEja72mA", 
-                        "/tmp/eWq10bVcx"],
+                "process" : [".*pEja72mA", 
+                        ".*eWq10bVcx"],
                 "file" : ["/tmp/pEja72mA", 
                         "/tmp/eWq10bVcx", 
                         "/tmp/memhelp.so", 

@@ -4,7 +4,7 @@ import json
 import pdb
 
 class Subject:
-    def __init__(self, id, type, pid: int, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None, training_mode = True):
+    def __init__(self, id, type, pid: int = None, ppid: int = None, parentNode: str = None, cmdLine: str = None, processName: str = None, training_mode = True):
         self.id = id
         self.type = type
         self.pid = pid

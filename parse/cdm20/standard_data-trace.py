@@ -29,17 +29,21 @@ def start_experiment(args):
     envt_num = 0
     edge_num = 0
     node_num = 0
+    
+    ##### Object Version Control #####
+    object_latest_version = {}
 
     begin_time = time.time()
     
-    for volume in volume_list:
+    decoder = json.JSONDecoder()
+    for volume in volume_list[:3]:
         print("Loading {} ...".format(volume))
         with open(os.path.join(args.input_data, volume),'r') as fin:
             for line in fin:
                 loaded_line += 1
                 if loaded_line % 100000 == 0:
                     print("CAPTAIN has parsed {:,} lines.".format(loaded_line))
-                record_datum = json.loads(line)['datum']
+                record_datum = decoder.decode(line)['datum']
                 record_type = list(record_datum.keys())[0]
                 record_datum = record_datum[record_type]
                 record_type = record_type.split('.')[-1]
@@ -55,27 +59,37 @@ def start_experiment(args):
                             last_event_str = event_str
                             edge_num += 1
                             log_datum = {'logType':'EVENT', 'logData': json.loads(event.dumps())}
-                            print(json.dumps(log_datum), file = output_file)
+                            output_file.write(json.dumps(log_datum)+'\n')
                 elif record_type == 'Subject':
                     subject = parse_subject_trace(record_datum, args.cdm_version)
                     if subject:
                         node_buffer[subject.id] = subject
                         log_datum = {'logType':'NODE', 'logData': json.loads(subject.dumps())}
-                        print(json.dumps(log_datum), file = output_file)
+                        output_file.write(json.dumps(log_datum)+'\n')
                         node_num += 1
                 elif record_type == 'Principal':
                     record_datum['euid'] = record_datum['properties']['map']['euid']
                     del record_datum['properties']
                     principals_buffer[record_datum['uuid']] = record_datum
                     log_datum = {'logType':'PRINCIPAL', 'logData': record_datum}
-                    print(json.dumps(log_datum), file = output_file)
+                    output_file.write(json.dumps(log_datum)+'\n')
                 elif record_type.endswith('Object'):
                     object = parse_object_trace(record_datum, record_type)
                     if object:
                         node_buffer[object.id] = object
                         log_datum = {'logType':'NODE', 'logData': json.loads(object.dumps())}
-                        print(json.dumps(log_datum), file = output_file)
+                        output_file.write(json.dumps(log_datum)+'\n')
                         node_num += 1
+                        try:
+                            if object.epoch == 0:
+                                object_latest_version[object.get_name()] = object.id
+                            else:
+                                update_evnt = {'type': 'OBJECT_VERSION_UPDATE', 'old': object_latest_version[object.get_name()], 'new': object.id}
+                                log_datum = {'logType':'EVENT', 'logData': update_evnt}
+                                output_file.write(json.dumps(log_datum)+'\n')
+                                object_latest_version[object.get_name()] = object.id
+                        except KeyError:
+                            pdb.set_trace()
                 elif record_type in {'TimeMarker', 'StartMarker', 'UnitDependency', 'Host'}:
                     pass
                 else:
@@ -86,8 +100,9 @@ def start_experiment(args):
     print("#Events: {:,}".format(envt_num))
     print("#Nodes: {:,}".format(node_num))
     print("#Edges: {:,}".format(edge_num))
-
-if __name__ == '__main__':
+    
+    
+def main():
     parser = argparse.ArgumentParser(description="Data Standardize")
     parser.add_argument("--input_data", type=str)
     parser.add_argument("--output_data", type=str)
@@ -97,3 +112,8 @@ if __name__ == '__main__':
 
     start_experiment(args)
 
+
+if __name__ == '__main__':
+    # import cProfile
+    # cProfile.run("main()")
+    main()

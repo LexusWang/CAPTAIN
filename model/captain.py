@@ -14,7 +14,7 @@ from parse.cdm18.fivedirections_parser import parse_event_fivedirections
 from parse.lttng_parser import parse_event_linux
 from parse.nodeParsing import parse_object as parse_object_
 from parse.nodeParsing import parse_subject as parse_subject_
-
+from utils.utils import getTime
 
 class CAPTAIN:
     def __init__(self, att, decay, alarm_file = './results/alarms.txt'):
@@ -214,7 +214,7 @@ class CAPTAIN:
             try:
                 if event.type == 'exit':
                     self.processes[src.pid]['alive'] = False
-                    del self.Nodes[event.src]
+                    # del self.Nodes[event.src]
                 elif event.type == 'create':
                     self.created[(src.get_pid(), dest.get_name())] = True
             except Exception:
