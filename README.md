@@ -1,7 +1,8 @@
-# CAPTAIN
-This is the code repository of CAPTAIN.
+# CAPTAIN: A Lightweight, Adaptive Provenance-based Intrusion Detection System
+We are proud to announce that our paper [Incorporating Gradients to Rules: Towards Lightweight, Adaptive Provenance-based Intrusion Detection](https://arxiv.org/abs/2404.14720) will be presented at NDSS Symposium 2025!
 
-The code is tested on the Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64) server.
+This is the code repository of CAPTAIN, the implementation of the proposed system in our paper.
+The code was tested on a Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64) server.
 
 ## Contents
 [Enviroment Setup](#enviroment-setup)
