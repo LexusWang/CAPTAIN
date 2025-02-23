@@ -4,8 +4,23 @@ We are proud to announce that our paper [Incorporating Gradients to Rules: Towar
 This is the code repository of CAPTAIN, the implementation of the proposed system in our paper.
 The code was tested on a Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64) server.
 
+## Citation
+
+If you use CAPTAIN in your research or wish to refer to it, please use the following citation:
+
+```bibtex
+@article{wang2024incorporating,
+  title={Incorporating gradients to rules: Towards lightweight, adaptive provenance-based intrusion detection},
+  author={Wang, Lingzhi and Shen, Xiangmin and Li, Weijian and Li, Zhenyuan and Sekar, R and Liu, Han and Chen, Yan},
+  journal={arXiv preprint arXiv:2404.14720},
+  year={2024}
+}
+```
+
 ## Contents
 [Enviroment Setup](#enviroment-setup)
+
+[Datasets](#datasets)
 
 [Engagement 3 CADETS Pipeline](#engagement-3-cadets-pipeline)
 
@@ -25,6 +40,9 @@ The code was tested on a Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-97-generic x86_64)
 ```
 conda install --file requirements.txt
 ```
+
+## Datasets
+Before starting running experiments using CAPTAIN, make sure you downloaded the datasets, including [DARPA Engagement 3](https://drive.google.com/drive/folders/1QlbUFWAGq3Hpl8wVdzOdIoZLFxkII4EK) and [DARPA Engagement 5](https://drive.google.com/drive/folders/1okt4AYElyBohW4XiOBqmsvjwXsnUjLVf).
 
 ## Engagement 3 CADETS Pipeline
 
