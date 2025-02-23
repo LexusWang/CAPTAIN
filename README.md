@@ -112,7 +112,7 @@ python train_by_benign.py --att 0.2 --decay 2 --data_path data/TH3 --data_tag th
 ### Detection (Testing)
 ```
 ## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-C3
-python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --param_path experiments/Train-TH3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
+python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --param_path experiments/Train-TH3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
 
 ## The default parameters (without any training) can serve as the baseline
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
