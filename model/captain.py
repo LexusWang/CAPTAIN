@@ -1,6 +1,13 @@
+'''
+captain.py
+
+This file defines the Class of CAPTAIN.
+'''
+
 import pdb
 import networkx as nx
 import sys
+
 sys.path.extend(['.','..','...'])
 from graph.Subject import Subject
 from graph.Object import Object
@@ -8,16 +15,9 @@ from policy.initTags import match_path, match_network_addr
 from policy.propTags import propTags, dump_event_feature
 from policy.alarms import check_alarm
 from model.target_label import get_target
-from parse.cdm18.cadets_parser import parse_event_cadets
-from parse.cdm18.trace_parser import parse_event_trace
-from parse.cdm18.fivedirections_parser import parse_event_fivedirections
-from parse.lttng_parser import parse_event_linux
-from parse.nodeParsing import parse_object as parse_object_
-from parse.nodeParsing import parse_subject as parse_subject_
-from utils.utils import getTime
 
 class CAPTAIN:
-    def __init__(self, att, decay, alarm_file = './results/alarms.txt'):
+    def __init__(self, att, decay, alarm_file = None):
         self.device = None
         self.att = att
         self.decay = decay
@@ -27,7 +27,6 @@ class CAPTAIN:
         # self.tuneFileTags = True
 
         # init graph
-        # self.G = nx.DiGraph()
         self.Nodes = {}
         self.Principals = {}
         self.processes = {}
@@ -47,28 +46,6 @@ class CAPTAIN:
         # tau dictionary
         self.tau_dict = {}
         self.tau_modify_dict = {}
-
-    # def parse_event(self, datum, format, cdm_version):
-    #     if format == 'trace':
-    #         return parse_event_trace(self, datum, cdm_version)
-    #     elif format == 'cadets':
-    #         return parse_event_cadets(self, datum, cdm_version)
-    #     elif format == 'fivedirections':
-    #         return parse_event_fivedirections(self, datum, cdm_version)
-    #     elif format == 'linux':
-    #         return parse_event_linux(self, datum)
-
-    def parse_object(self, datum, object_type, format, cdm_version):
-        return parse_object_(self, datum, object_type, format, cdm_version)
-
-    def parse_subject(self, datum, format, cdm_version):
-        return parse_subject_(self, datum, format, cdm_version)
-    
-    def forward(self):
-        pass
-
-    def backward(self):
-        pass
 
     def adjust_tau(self, fp_counter):
         # Sort the event_key by the number of alarms it triggered and keep the top 50%
@@ -92,9 +69,7 @@ class CAPTAIN:
                         self.tau_modify_dict[event_key] = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
                     self.tau_dict[event_key][i] -= self.tau_modify_dict[event_key][i]
                     self.tau_modify_dict[event_key][i] *= 0.5
-        
-            
-            
+
     def add_event_generate_loss(self, event, gt):
         diagnosis = None
         loss = 0
@@ -122,6 +97,7 @@ class CAPTAIN:
             event_feature_str = str(dump_event_feature(event, src, dest, dest2))
             if dest and (src.get_pid(), event.type, dest.get_name()) not in self.alarm:
                 self.alarm[(src.get_pid(), event.type, dest.get_name())] = False
+                
             tau = self.tau_dict.get(event_feature_str, [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             diagnosis, tag_indices = check_alarm(event, src, dest, self.alarm, self.created, self.alarm_file, tau)
             s_target, o_target = get_target(event, src, dest, gt)
@@ -210,6 +186,10 @@ class CAPTAIN:
 
         if src:
             event_feature_str = str(dump_event_feature(event, src, dest, dest2))
+            
+            ## Print Events related to 1F52B45B-9618-A060-215D-7BD61ECCAE05
+            # if event.src == '1F52B45B-9618-A060-215D-7BD61ECCAE05':
+            #     print(f"Related Event: {event_feature_str}")
 
             try:
                 if event.type == 'exit':

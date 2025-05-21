@@ -1,3 +1,11 @@
+'''
+This script is used to transfer the CADETS data in CDM 20 format 
+(used in DARPA Engagement 5) to the standard format.
+
+After the tranlation is finished, the data will be saved in the log.json
+file in the output folder.
+'''
+
 import json
 import os
 import argparse

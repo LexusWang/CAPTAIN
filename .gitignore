@@ -17,3 +17,5 @@ data/GT/*
 !data/GT/groundTruth*.txt
 temp.py
 label/*
+utils/logs
+utils/logs/*
