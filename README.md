@@ -48,22 +48,23 @@ Before starting running experiments using CAPTAIN, make sure you downloaded the 
 
 ### Data Preprocessing
 
-```
+```bash
 mkdir data/C3
 python parse/cdm18/standard_data-cadets.py --input_data #CADETS_FILE_PATH --output_data data/C3 --format cadets --cdm_version 18
 ```
 
 ### Training
-```
+```bash
 python train_by_benign.py --att 0.2 --decay 2 --data_path data/C3 --data_tag c3-train --param_type agt --experiment_prefix Train-C3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-6T00:00:00-04:00
 ```
 
 ### Detection (Testing)
-```
-## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-C3
+You can use the parameters trained in last step, or use the pre-trained parameters from [experiments/Train-C3](https://drive.google.com/file/d/15cZXBEbO0pX0e4eIma9UyDVl4P9w2Fpt/view?usp=sharing)
+```bash
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthC3.txt --data_path data/C3 --experiment_prefix Test-C3 --param_path experiments/Train-C3 --model_index 99 --time_range 2018-4-6T00:00:00-04:00 2018-4-15T00:00:00-04:00
-
-## The default parameters (without any training) can serve as the baseline
+```
+The default parameters (without any training) can serve as the baseline
+```bash
 python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthC3.txt --data_path data/C3 --experiment_prefix Test-C3 --time_range 2018-4-6T00:00:00-04:00 2018-4-15T00:00:00-04:00
 ```
 
@@ -71,23 +72,25 @@ python detection.py --att 0.2 --decay 2 --ground_truth_file data/GT/groundTruthC
 
 ### Data Preprocessing
 
-```
+```bash
 mkdir data/T3
 python parse/cdm18/standard_data-trace.py --input_data #TRACE_FILE_PATH --output_data data/T3 --format trace --cdm_version 18
 ```
 
 ### Training
-```
+```bash
 python train_by_benign.py --att 0 --decay 0 --data_path data/T3 --data_tag t31-train --param_type agt --experiment_prefix Train-T3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 
 python train_by_benign.py --att 0 --decay 0 --data_path data/T3 --data_tag t31-train --param_type agt --experiment_prefix Train-T3 --lr 1e-3 --alpha 1e1 --gamma 1e1 --tau 1e1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 ```
-
-```
-## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-T3
+### Detection (Testing)
+You can use the parameters trained in last step, or use the pre-trained parameters from [experiments/Train-T3](https://drive.google.com/file/d/1AqhJVX1Jun1ww03XbfeTGPJeQRqbaC60/view?usp=sharing)
+```bash
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthT3.txt --data_path data/T3 --experiment_prefix Test-T3 --param_path experiments/Train-T3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
+```
 
-## The default parameters (without any training) can serve as the baseline
+The default parameters (without any training) can serve as the baseline.
+```bash
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthT3.txt --data_path data/T3 --experiment_prefix Test-T3 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
 ```
 
@@ -95,26 +98,28 @@ python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthT3.
 
 ### Data Preprocessing
 
-```
+```bash
 mkdir data/TH3
 python parse/cdm18/standard_data-theia.py --input_data #THEIA_FILE_PATH --output_data data/TH3 --format theia --cdm_version 18
 ```
 
 ### Training
-```
+```bash
 python train_by_benign.py --att 0 --decay 0 --data_path data/TH3 --data_tag th3-train --param_type agt --experiment_prefix Train-TH3 --lr 1e-3 --alpha 1e-1 --gamma 1e-1 --tau 1e-1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 ```
 
-```
+```bash
 python train_by_benign.py --att 0.2 --decay 2 --data_path data/TH3 --data_tag th3-train --param_type agt --experiment_prefix Train-TH3 --lr 1e-2 --alpha 1e1 --gamma 1e1 --tau 1e1 --epoch 100 --time_range 2018-4-2T00:00:00-04:00 2018-4-10T00:00:00-04:00
 ```
 
 ### Detection (Testing)
-```
-## You can use the parameters trained in last step, or use the pre-trained parameters from experiments/Train-C3
+You can use the parameters trained in last step, or use the pre-trained parameters from [experiments/Train-TH3](https://drive.google.com/file/d/116Qr13KgUiZ36_cLt6SuxEpmRkX-yUJq/view?usp=sharing)
+```bash
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --param_path experiments/Train-TH3 --model_index 99 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
+```
 
-## The default parameters (without any training) can serve as the baseline
+The default parameters (without any training) can serve as the baseline
+```bash
 python detection.py --att 0 --decay 0 --ground_truth_file data/GT/groundTruthTH3.txt --data_path data/TH3 --experiment_prefix Test-TH3 --time_range 2018-4-10T00:00:00-04:00 2018-4-15T00:00:00-04:00
 ```
 
