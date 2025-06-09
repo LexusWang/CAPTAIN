@@ -3,11 +3,10 @@ import os
 import argparse
 import json
 import time
-import pickle
+import shutil
 from datetime import datetime
 import re
 
-from datetime import datetime
 from utils.utils import *
 from model.captain import CAPTAIN
 from graph.Event import Event
@@ -47,7 +46,7 @@ def check_node(feature, node_type, gt, time):
 def start_experiment(args):
     dataset = args.dataset
     # load ground truth
-    gt_path = f"data/GT/human_readable_gt/e3_{dataset}_gt.json"
+    gt_path = f"data/GT/human_readable_gt/{dataset}_gt.json"
     gt_file = open(gt_path, 'r', encoding='UTF-8')
     gt = json.load(gt_file)
     gt_file.close()
@@ -63,22 +62,9 @@ def start_experiment(args):
                         format='%(asctime)s %(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
     experiment.save_hyperparameters()
-        
-    if args.param_path:
-        with open(os.path.join(args.param_path, 'train', 'params/lambda-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-            mo.lambda_dict = pickle.load(fin)
-        with open(os.path.join(args.param_path, 'train', 'params/tau-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-            mo.tau_dict = pickle.load(fin)
-        with open(os.path.join(args.param_path, 'train', 'params/alpha-e{}.pickle'.format(args.model_index)), 'rb') as fin:
-            mo.alpha_dict = pickle.load(fin)
-                
-    # close interval
-    if args.time_range:
-        detection_start_time = args.time_range[0]
-        detection_end_time = args.time_range[1]
-    else:
-        detection_start_time = 0
-        detection_end_time = 1e21
+    
+    detection_start_time = 0
+    detection_end_time = 1e21
 
     Path(os.path.join(experiment.get_experiment_output_path(), 'alarms')).mkdir(parents=True, exist_ok=True)
     mo.alarm_file = open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'), 'a')
@@ -98,8 +84,6 @@ def start_experiment(args):
         for line in fin:
             detection_delay_marker = time.time()
             loaded_line += 1
-            # if loaded_line == 1:
-            #     begin_time = time.time()
             if loaded_line > 0 and loaded_line % 100000 == 0:
                 print("CAPTAIN has detected {:,} logs.".format(loaded_line))
             log_data = decoder.decode(line)
@@ -142,38 +126,69 @@ def start_experiment(args):
                         add_nodes_to_graph(mo, event.dest2, node_buffer[event.dest2])
                         del node_buffer[event.dest2]
                     
-                    related = False
-                    if event.src and event.src in mo.Nodes:
-                        if check_node(mo.Nodes[event.src].get_name(), 'process', gt, event.time):
-                            related = True
-                    if related == False and event.dest and event.dest in mo.Nodes:
-                        if isinstance(mo.Nodes[event.dest], Subject):
-                            if check_node(mo.Nodes[event.dest].get_name(), 'process', gt, event.time):
+                    if args.hop == 1:
+                        related = False
+                        if event.src and event.src in mo.Nodes:
+                            if check_node(mo.Nodes[event.src].get_name(), 'process', gt, event.time):
                                 related = True
-                        elif isinstance(mo.Nodes[event.dest], Object):
-                            if mo.Nodes[event.dest].isFile():
-                                if check_node(mo.Nodes[event.dest].get_name(), 'file', gt, event.time):
+                                
+                        if related == False and event.dest and event.dest in mo.Nodes:
+                            if isinstance(mo.Nodes[event.dest], Subject):
+                                if check_node(mo.Nodes[event.dest].get_name(), 'process', gt, event.time):
                                     related = True
-                            elif mo.Nodes[event.dest].isIP():
-                                if check_node(mo.Nodes[event.dest].get_name(), 'ip', gt, event.time):
+                            elif isinstance(mo.Nodes[event.dest], Object):
+                                if mo.Nodes[event.dest].isFile():
+                                    if check_node(mo.Nodes[event.dest].get_name(), 'file', gt, event.time):
+                                        related = True
+                                elif mo.Nodes[event.dest].isIP():
+                                    if check_node(mo.Nodes[event.dest].get_name(), 'ip', gt, event.time):
+                                        related = True
+                                        
+                        if related == False and event.dest2 and event.dest2 in mo.Nodes:
+                            if isinstance(mo.Nodes[event.dest2], Subject):
+                                if check_node(mo.Nodes[event.dest2].get_name(), 'process', gt, event.time):
                                     related = True
-                    if related == False and event.dest2 and event.dest2 in mo.Nodes:
-                        if isinstance(mo.Nodes[event.dest2], Subject):
-                            if check_node(mo.Nodes[event.dest2].get_name(), 'process', gt, event.time):
-                                related = True
-                        elif isinstance(mo.Nodes[event.dest2], Object):
-                            if mo.Nodes[event.dest2].isFile():
-                                if check_node(mo.Nodes[event.dest2].get_name(), 'file', gt, event.time):
-                                    related = True
-                            elif mo.Nodes[event.dest2].isIP():
-                                if check_node(mo.Nodes[event.dest2].get_name(), 'ip', gt, event.time):
-                                    related = True 
-                    if related:
-                        one_hop_nodes.add(event.src)
-                        one_hop_nodes.add(event.dest)
-                        one_hop_nodes.add(event.dest2)
-                    # # gt = ec.classify(event.id)
-                    # diagnosis = mo.add_event(event, None)
+                            elif isinstance(mo.Nodes[event.dest2], Object):
+                                if mo.Nodes[event.dest2].isFile():
+                                    if check_node(mo.Nodes[event.dest2].get_name(), 'file', gt, event.time):
+                                        related = True
+                                elif mo.Nodes[event.dest2].isIP():
+                                    if check_node(mo.Nodes[event.dest2].get_name(), 'ip', gt, event.time):
+                                        related = True 
+                        if related:
+                            one_hop_nodes.add(event.src)
+                            one_hop_nodes.add(event.dest)
+                            one_hop_nodes.add(event.dest2)   
+                    elif args.hop == 0:
+                        if event.src and event.src in mo.Nodes:
+                            if check_node(mo.Nodes[event.src].get_name(), 'process', gt, event.time):
+                                one_hop_nodes.add(event.src)
+                                
+                        if event.dest and event.dest in mo.Nodes:
+                            if isinstance(mo.Nodes[event.dest], Subject):
+                                if check_node(mo.Nodes[event.dest].get_name(), 'process', gt, event.time):
+                                    one_hop_nodes.add(event.dest)
+                            elif isinstance(mo.Nodes[event.dest], Object):
+                                if mo.Nodes[event.dest].isFile():
+                                    if check_node(mo.Nodes[event.dest].get_name(), 'file', gt, event.time):
+                                        one_hop_nodes.add(event.dest)
+                                elif mo.Nodes[event.dest].isIP():
+                                    if check_node(mo.Nodes[event.dest].get_name(), 'ip', gt, event.time):
+                                        one_hop_nodes.add(event.dest)
+                                        
+                        if event.dest2 and event.dest2 in mo.Nodes:
+                            if isinstance(mo.Nodes[event.dest2], Subject):
+                                if check_node(mo.Nodes[event.dest2].get_name(), 'process', gt, event.time):
+                                    one_hop_nodes.add(event.dest2)
+                            elif isinstance(mo.Nodes[event.dest2], Object):
+                                if mo.Nodes[event.dest2].isFile():
+                                    if check_node(mo.Nodes[event.dest2].get_name(), 'file', gt, event.time):
+                                        one_hop_nodes.add(event.dest2)
+                                elif mo.Nodes[event.dest2].isIP():
+                                    if check_node(mo.Nodes[event.dest2].get_name(), 'ip', gt, event.time):
+                                        one_hop_nodes.add(event.dest2)            
+                    else:
+                        raise NotImplementedError()
 
             elif log_data['logType'] == 'NODE':
                 node_buffer[log_data['logData']['id']] = log_data['logData']
@@ -207,8 +222,9 @@ def start_experiment(args):
     # with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes.txt'), 'w') as fout:
     #     for nid in alarm_nodes:
     #         print(nid, file=fout)
+    
     node_names = set()
-    with open(os.path.join(experiment.get_experiment_output_path(), 'one_hop_gt_node_feature_th3.txt'), 'w') as fout:
+    with open(args.output_gt_file, 'w') as fout:
         for nid in one_hop_nodes:
             if nid not in mo.Nodes:
                 print(nid)
@@ -230,34 +246,24 @@ def start_experiment(args):
                 print(nname, file=fout)
                 node_names.add(nname)
     
-    # experiment.alarm_dis = Counter(false_alarms)
     mo.alarm_file.close()
-    experiment.print_metrics()
-    experiment.save_metrics()
-    # ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))
-    # ec.summary(os.path.join(experiment.metric_path, "ec_summary_test.txt"))
-    print("Metrics saved in {}".format(experiment.get_experiment_output_path()))
+    shutil.rmtree()
     
     
 def main():
     parser = argparse.ArgumentParser(description="train or test the model")
     parser.add_argument("--att", type=float, default=0)
     parser.add_argument("--decay", type=float, default=0)
-    parser.add_argument("--ground_truth_file", type=str)
     parser.add_argument("--data_path", nargs='?', type=str)
     parser.add_argument("--param_type", type=str)
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--experiment_prefix", type=str)
-    parser.add_argument("--checkpoint", type=str)
-    parser.add_argument("--param_path", type=str)
-    parser.add_argument("--time_range", nargs=2, type=str, default = None)
+    parser.add_argument("--hop", type=int, default=0)
+    parser.add_argument("--output_gt_file", type = str)
     parser.add_argument("--mode", type=str, default='test')
 
     args = parser.parse_args()
-    if args.time_range:
-        args.time_range[0] = (datetime.timestamp(datetime.strptime(args.time_range[0], '%Y-%m-%dT%H:%M:%S%z')))*1e9
-        args.time_range[1] = (datetime.timestamp(datetime.strptime(args.time_range[1], '%Y-%m-%dT%H:%M:%S%z')))*1e9
-
+    
     start_experiment(args)
 
 

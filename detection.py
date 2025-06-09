@@ -205,10 +205,11 @@ def start_experiment(args):
             
             experiment.detection_time += time.time()-detection_delay_marker
             
+    mo.alarm_file.close()
+    
     # Overhead
     if OVERHEAD_EVAL:
         perf_file.close()
-    
         # Calculate CPU Time
         end_cpu_time = resource.getrusage(resource.RUSAGE_SELF).ru_utime
         logger.info(f"CPU Time used for detection: {end_cpu_time - start_cpu_time} s")
@@ -217,42 +218,63 @@ def start_experiment(args):
         max_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         logger.info(f"Memory usage for detection: {max_rss} KB")
     
+    # Log basic staticstics
     logger.info('The detection time is :{:.2f} s'.format(experiment.detection_time))
     logger.info('The event throughput is :{:.2f} events/s'.format(loaded_line/experiment.detection_time))
     logger.info("{} Mb".format(asizeof.asizeof(mo)/(1024*1024)))
     logger.info("# of nodes: {}".format(len(mo.Nodes)))
 
-    # Alarm Nodes
+    # Alarm Nodes (UUID)
     alarm_nodes = alarm_nodes - {None}
     with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes.txt'), 'w') as fout:
         for nid in alarm_nodes:
             print(nid, file=fout)
             
     # For Theia dataset, we save the alarm nodes by their names because there exist many duplications (same nodes with different node ids);
-    if IF_THEIA:
-        from graph.Object import Object
-        from graph.Subject import Subject
-        node_names = set()
-        with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes-name.txt'), 'w') as fout:
-            for nid in alarm_nodes:
-                if isinstance(mo.Nodes[nid], Subject):
-                    # nname = f"{mo.Nodes[nid].pid} {mo.Nodes[nid].get_name()} {mo.Nodes[nid].get_cmdln()}"
-                    nname = "{'subject': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
-                elif isinstance(mo.Nodes[nid], Object):
-                    # nname = mo.Nodes[nid].get_name()
-                    if mo.Nodes[nid].isFile():
-                        nname = "{'file': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
-                    elif mo.Nodes[nid].isIP():
-                        nname = "{'netflow': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
-                    else:
-                        continue
+    # if True:
+    
+    # Alarm Nodes (Node Features)
+    from graph.Object import Object
+    from graph.Subject import Subject
+    node_names = set()
+    with open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-nodes-name.txt'), 'w') as fout:
+        for nid in alarm_nodes:
+            if isinstance(mo.Nodes[nid], Subject):
+                # nname = f"{mo.Nodes[nid].pid} {mo.Nodes[nid].get_name()} {mo.Nodes[nid].get_cmdln()}"
+                nname = "{'process': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
+            elif isinstance(mo.Nodes[nid], Object):
+                # nname = mo.Nodes[nid].get_name()
+                if mo.Nodes[nid].isFile():
+                    nname = "{'file': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
+                elif mo.Nodes[nid].isIP():
+                    nname = "{'ip': "+f"'{mo.Nodes[nid].get_name()}'" + "}"
                 else:
                     continue
-                if nname not in node_names:
-                    print(nname, file=fout)
-                    node_names.add(nname)
+            else:
+                continue
+            if nname not in node_names:
+                print(nname, file=fout)
+                node_names.add(nname)
+
+    if args.ground_truth_file.endswith('groundTruthC3.txt'):
+        node_gt_index = 'c3'
+    elif args.ground_truth_file.endswith('groundTruthT3.txt'):
+        node_gt_index = 't3'
+    elif args.ground_truth_file.endswith('groundTruthTH3.txt'):
+        node_gt_index = 'th3'
+    else:
+        logger.error("We do not have labeled node-level ground truth for this dataset. To obtain node-level detection results, you need to label it by your self.")
+        node_gt_index = None
     
-    mo.alarm_file.close()
+    if node_gt_index:
+        with open(f'data/GT/node_level_gt/0_hop_node_feature_{node_gt_index}.txt','r') as fin:
+            gt_node = set(fin.read().splitlines())
+        print(f"final metrics (node-level detection 0-hop): TP: {len(gt_node & node_names)}, FP: {len(node_names - gt_node)}, FN: {len(gt_node - node_names)}")
+        
+        with open(f'data/GT/node_level_gt/1_hop_node_feature_{node_gt_index}.txt','r') as fin:
+            gt_node = set(fin.read().splitlines())
+        print(f"final metrics (node-level detection 1-hop): TP: {len(gt_node & node_names)}, FP: {len(node_names - gt_node)}, FN: {len(gt_node - node_names)}")
+    
     experiment.print_metrics()
     experiment.save_metrics()
     ec.analyzeFile(open(os.path.join(experiment.get_experiment_output_path(), 'alarms/alarms-in-test.txt'),'r'))

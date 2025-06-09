@@ -1,0 +1,15 @@
+{'process': 'tcexec'}
+{'process': 'pine'}
+{'process': 'cache'}
+{'file': '/tmp/tcexec'}
+{'ip': '162.66.239.75'}
+{'process': 'ztmp'}
+{'file': '/tmp/ztmp'}
+{'ip': '146.153.68.151'}
+{'file': '/home/admin/cache'}
+{'file': '/var/log/xtmp'}
+{'ip': '17.146.0.252'}
+{'file': '/home/admin/pine/pine4.64/pine/pine'}
+{'ip': '61.130.69.232'}
+{'ip': '103.12.253.24'}
+{'ip': '180.156.107.146'}

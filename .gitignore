@@ -14,7 +14,8 @@ data/*
 !/data/GT
 data/GT/*
 !data/GT/human_readable_gt
-!data/GT/groundTruth*.txt
+!data/GT/edge_level_gt
+!data/GT/node_level_gt
 temp.py
 label/*
 utils/logs

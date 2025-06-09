@@ -1,0 +1,17 @@
+{'process': '/home/admin/clean (deleted)'}
+{'process': '/home/admin/clean'}
+{'ip': '149.52.198.23'}
+{'process': '/var/log/mail'}
+{'process': '/etc/firefox/native-messaging-hosts/gtcache'}
+{'process': '/home/admin/profile (deleted)'}
+{'ip': '208.75.117.3'}
+{'ip': '141.43.176.203'}
+{'ip': '146.153.68.151'}
+{'ip': '161.116.88.72'}
+{'file': '/var/log/wdev'}
+{'file': '/var/log/xdev'}
+{'process': '/home/admin/profile'}
+{'ip': '208.75.117.2'}
+{'file': '/home/admin/profile'}
+{'file': '/home/admin/clean'}
+{'file': '/var/log/mail'}

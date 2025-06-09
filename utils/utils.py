@@ -91,7 +91,7 @@ class Experiment:
         return 2 * (p * r / (p + r))
 
     def print_metrics(self):
-        print(f"final metrics: tp: {self.tp:,}, fp: {self.fp:,}, fn: {self.fn:,}, tn: {self.tn:,}")
+        print(f"final metrics (edge-level detection): TP: {self.tp:,}, FP: {self.fp:,}, FN: {self.fn:,}, TN: {self.tn:,}")
 
     def save_metrics(self):
         filename = os.path.join(self.results_path, "metrics.txt")

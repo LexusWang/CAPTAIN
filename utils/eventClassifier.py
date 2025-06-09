@@ -106,12 +106,13 @@ class eventClassifier:
             if UUID in sublst:
                 self.injectionUUID[sublst] = True
 
-    def analyzeFile(self, f):
+    def analyzeFile(self, f, verbose = False):
         for line in f:
             l = line.strip().split(',')
             self.tally(l[0])
             if(self.classify(l[0])):
-                print(self.classify(l[0]), "alarm detected")
+                if verbose:
+                    print(self.classify(l[0]), "alarm detected")
 
             subject_info = re.search(r'Subject:(.*) \(pid:([0-9]*?) pname:(.*) cmdl:(.*)\)', line)
             suuid = subject_info.group(1)
@@ -120,12 +121,7 @@ class eventClassifier:
             scmdl = subject_info.group(4)
 
             if suuid not in self.reportedProcessUUID.keys():
-                # self.reportedProcessUUID[suuid] = ' '.join([l[6]]+l[13:-1])
                 self.reportedProcessUUID[suuid] = ' '.join(spname+scmdl)
-                # if len(l[14:-1]) > 5:
-                #     p_name = ' '.join(l[14:19])
-                # else:
-                #     p_name = ' '.join(l[14:-1])
                 if spname in self.reportedProcessName.keys():
                     self.reportedProcessName[spname] += 1
                 else:
